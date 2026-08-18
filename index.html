@@ -124,6 +124,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 .db-arrow { color: #c1c7cd; font-size: 14px; font-weight: 900; }
 
 .sl-item { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 8px; }
+.share-badge { background:#fff4e5; color:#c2410c; border:1px solid #fed7aa; }
 </style>
 </head>
 <body>
@@ -966,6 +967,7 @@ function renderList() {
               '<span style="font-size:18px;font-weight:900;">' + db.customerName + '</span>' +
               (db.birth ? '<span style="font-size:13px;color:var(--tx-sub);font-weight:700;">' + db.birth + '</span>' : '') +
               '<span class="badge b-type">' + db.dbType + '</span>' +
+              (shareNote(db.dbType) ? '<span class="badge share-badge">💰 ' + shareNote(db.dbType) + '</span>' : '') +
             '</div>' + badge +
           '</div>' +
           '<div style="font-size:13px;color:var(--tx-sub);margin-bottom:6px;font-weight:700;">퍼미션: ' + db.permDate + ' | 배분: ' + (db.assignDate || '-') + '</div>' +
@@ -1579,6 +1581,12 @@ async function submitResult() {
   }
 }
 
+function shareNote(dbType) {
+  if (dbType === '보장분석' || dbType === '재무설계') return '수수료 30% 쉐어';
+  if (dbType === '법인') return '수수료 10% 쉐어';
+  return '';
+}
+
 function showStatList(fcName, key, label) {
   const monthList = DB_LIST.filter(db => (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)));
   let list = monthList.filter(db => db.assignedFC === fcName);
@@ -1586,6 +1594,7 @@ function showStatList(fcName, key, label) {
   list = list.filter(db => {
     if (key === 'unassigned') return db.status === '배정대기';
     if (db.status === '배정대기') return false;
+    if (key === 'total') return true;
 
     const r = db.result || '';
     if (key === 'ta') return !!r;
@@ -1612,7 +1621,7 @@ function showStatList(fcName, key, label) {
             '<div style="font-size:15px;font-weight:900;">' + db.customerName + ' <span style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + (db.birth||'') + '</span></div>' +
             resultBadge +
           '</div>' +
-          '<div style="font-size:13px;font-weight:700;"><a href="tel:' + db.phone + '" style="color:var(--blue);text-decoration:none;">📞 ' + db.phone + '</a> · <span class="badge b-type">' + db.dbType + '</span></div>' +
+          '<div style="font-size:13px;font-weight:700;"><a href="tel:' + db.phone + '" style="color:var(--blue);text-decoration:none;">📞 ' + db.phone + '</a> · <span class="badge b-type">' + db.dbType + '</span>' + (shareNote(db.dbType) ? ' <span class="badge share-badge">💰 ' + shareNote(db.dbType) + '</span>' : '') + '</div>' +
           '<div style="font-size:12px;color:var(--tx-sub);font-weight:600;margin-top:4px;">배분: ' + (db.assignDate||'-') + '</div>' +
         '</div>';
     }).join('');
@@ -1728,7 +1737,7 @@ function loadStats() {
     statsHtml += '<div class="card" style="border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.03);">' +
         '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">' +
           '<div style="font-size:18px; font-weight:900;">' + fc + ' FC</div>' +
-          '<div style="font-size:13px; font-weight:700; color:var(--blue); background:#e5f0ff; padding:4px 10px; border-radius:12px;">총 배정: ' + d.total + '건</div>' +
+          '<div onclick="showStatList(\'' + fc + '\',\'total\',\'총 배정\')" style="cursor:pointer; font-size:13px; font-weight:700; color:var(--blue); background:#e5f0ff; padding:4px 10px; border-radius:12px; text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:2px;">총 배정: ' + d.total + '건</div>' +
         '</div>' +
         '<div style="font-size:11px;color:var(--tx-sub);font-weight:700;margin-bottom:8px;">👆 항목을 누르면 해당 DB 목록을 볼 수 있어요</div>' +
         '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; text-align:center; margin-bottom:12px;">' +
