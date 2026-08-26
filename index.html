@@ -215,6 +215,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
           <option value="보장분석">보장분석</option>
           <option value="재무설계">재무설계</option>
           <option value="법인">법인</option>
+          <option value="광고DB">광고DB</option>
         </select>
       </div>
 
@@ -270,6 +271,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
             <option value="보장분석">보장분석</option>
             <option value="재무설계">재무설계</option>
             <option value="법인">법인</option>
+          <option value="광고DB">광고DB</option>
           </select>
         </div>
       </div>
@@ -391,6 +393,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
         <option value="보장분석">보장분석</option>
         <option value="재무설계">재무설계</option>
         <option value="법인">법인</option>
+          <option value="광고DB">광고DB</option>
       </select>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
@@ -857,14 +860,15 @@ function renderList() {
   }
 
   if(finalFiltered.length > 0) {
-    const typeCounts = { '본사퍼미션':0, '보장분석':0, '재무설계':0, '법인':0 };
+    const typeCounts = { '본사퍼미션':0, '보장분석':0, '재무설계':0, '법인':0, '광고DB':0 };
     finalFiltered.forEach(d => { if(typeCounts[d.dbType] !== undefined) typeCounts[d.dbType]++; });
     
     const dbCards = [
       { type: '본사퍼미션', count: typeCounts['본사퍼미션'] },
       { type: '보장분석', count: typeCounts['보장분석'] },
       { type: '재무설계', count: typeCounts['재무설계'] },
-      { type: '법인', count: typeCounts['법인'] }
+      { type: '법인', count: typeCounts['법인'] },
+      { type: '광고DB', count: typeCounts['광고DB'] }
     ];
 
     document.getElementById('dbTypeBreakdown').innerHTML = dbCards.map(c => 
