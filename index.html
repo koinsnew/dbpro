@@ -214,7 +214,6 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
           <option value="본사퍼미션">본사퍼미션</option>
           <option value="보장분석">보장분석</option>
           <option value="재무설계">재무설계</option>
-          <option value="법인">법인</option>
           <option value="광고DB">광고DB</option>
         </select>
       </div>
@@ -270,8 +269,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
             <option value="본사퍼미션">본사퍼미션</option>
             <option value="보장분석">보장분석</option>
             <option value="재무설계">재무설계</option>
-            <option value="법인">법인</option>
-          <option value="광고DB">광고DB</option>
+            <option value="광고DB">광고DB</option>
           </select>
         </div>
       </div>
@@ -392,8 +390,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
         <option value="본사퍼미션">본사퍼미션</option>
         <option value="보장분석">보장분석</option>
         <option value="재무설계">재무설계</option>
-        <option value="법인">법인</option>
-          <option value="광고DB">광고DB</option>
+        <option value="광고DB">광고DB</option>
       </select>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
@@ -860,14 +857,13 @@ function renderList() {
   }
 
   if(finalFiltered.length > 0) {
-    const typeCounts = { '본사퍼미션':0, '보장분석':0, '재무설계':0, '법인':0, '광고DB':0 };
+    const typeCounts = { '본사퍼미션':0, '보장분석':0, '재무설계':0, '광고DB':0 };
     finalFiltered.forEach(d => { if(typeCounts[d.dbType] !== undefined) typeCounts[d.dbType]++; });
     
     const dbCards = [
       { type: '본사퍼미션', count: typeCounts['본사퍼미션'] },
       { type: '보장분석', count: typeCounts['보장분석'] },
       { type: '재무설계', count: typeCounts['재무설계'] },
-      { type: '법인', count: typeCounts['법인'] },
       { type: '광고DB', count: typeCounts['광고DB'] }
     ];
 
@@ -1590,7 +1586,6 @@ async function submitResult() {
 
 function shareNote(dbType) {
   if (dbType === '보장분석' || dbType === '재무설계') return '수수료 30% 쉐어';
-  if (dbType === '법인') return '수수료 10% 쉐어';
   return '';
 }
 
@@ -1686,25 +1681,22 @@ function loadStats() {
   document.getElementById('contractListArea').innerHTML = contractListHtml;
 
   if (ME.role === '관리자') {
-    let t1=0, t2=0, t3=0, t4=0;
+    let t1=0, t2=0, t3=0;
     monthList.filter(db => db.status !== '배정불가(모두거절)').forEach(db => {
       if(db.dbType === '본사퍼미션') t1++;
       else if(db.dbType === '보장분석') t2++;
       else if(db.dbType === '재무설계') t3++;
-      else if(db.dbType === '법인') t4++;
     });
 
     const cost1 = (COST_LIST['본사퍼미션'] || 0) * t1;
     const cost2 = (COST_LIST['보장분석'] || 0) * t2;
     const cost3 = (COST_LIST['재무설계'] || 0) * t3;
-    const cost4 = (COST_LIST['법인'] || 0) * t4;
-    const grandTotal = cost1 + cost2 + cost3 + cost4;
+    const grandTotal = cost1 + cost2 + cost3;
 
     document.getElementById('costBreakdownArea').innerHTML = 
       '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--tx-main);"><span>본사퍼미션 (' + t1 + '건)</span> <span>' + cost1.toLocaleString() + '원</span></div>' +
       '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--tx-main);"><span>보장분석 (' + t2 + '건)</span> <span>' + cost2.toLocaleString() + '원</span></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--tx-main);"><span>재무설계 (' + t3 + '건)</span> <span>' + cost3.toLocaleString() + '원</span></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--tx-main);"><span>법인 (' + t4 + '건)</span> <span>' + cost4.toLocaleString() + '원</span></div>';
+      '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--tx-main);"><span>재무설계 (' + t3 + '건)</span> <span>' + cost3.toLocaleString() + '원</span></div>';
     document.getElementById('s_totalCost').innerText = grandTotal.toLocaleString() + '원';
   }
 
