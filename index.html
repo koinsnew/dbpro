@@ -304,13 +304,10 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 
   <div id="pg-stats" style="display:none;padding:20px;">
     <div style="font-size:22px;font-weight:900;margin-bottom:24px;">월간 통계 현황</div>
-    <div id="adminCostArea" class="card" style="display:none; background:#f0f7ff; border-color:#cce0ff;">
-      <div style="font-size:15px;font-weight:900;color:var(--blue);margin-bottom:12px;">📊 종류별 배정 건수 및 합산 사업비</div>
-      <div id="costBreakdownArea" style="display:flex; flex-direction:column; gap:8px;"></div>
-      <div style="margin-top:16px; border-top:1px dashed #bfdbfe; padding-top:12px; font-size:16px; font-weight:900;">
-        선택 월 예상 총 사업비: <span id="s_totalCost" style="color:var(--red);">0원</span>
-      </div>
-      <div style="font-size:11px;color:var(--tx-sub);margin-top:8px;font-weight:600;">* 단가 변경은 구글 시트 'DB단가' 탭에서 가능합니다.</div>
+    <div id="commissionArea" class="card" style="display:none; background:#f0f7ff; border-color:#cce0ff;">
+      <div style="font-size:15px;font-weight:900;color:var(--blue);margin-bottom:10px;">💰 당월 총 수수료</div>
+      <div style="font-size:28px; font-weight:900; color:var(--blue);"><span id="s_totalComm">0원</span></div>
+      <div id="commHint" style="font-size:11px;color:var(--tx-sub);margin-top:8px;font-weight:600;"></div>
     </div>
     
     <div id="fcStatsArea"></div>
@@ -434,7 +431,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 <script>
 let ME = null;
 let DB_LIST = [];
-let COST_LIST = {};
+let TYPE_LIST = [];
 let FC_LIST = [];
 let curMonth = '';
 let curDate = '';
@@ -482,6 +479,7 @@ google.script.run = (function () {
     saveBulkDB:          function (a) { return { dbArray: a[0], commonData: a[1] }; },
     updateDB:            function (a) { return { id: a[0], d: a[1], base64Files: a[2] }; },
     deleteDB:            function (a) { return { id: a[0] }; },
+    saveCommission:      function (a) { return { dbId: a[0], amount: a[1] }; },
     respondToAssignment: function (a) { return { dbId: a[0], fcName: a[1], isAccept: a[2], dbType: a[3] }; },
     saveResultWithFiles: function (a) { return { dbId: a[0], data: a[1], base64Files: a[2] }; }
   };
@@ -610,12 +608,12 @@ function handleLogin(isAutoStart) {
       
       if(u.role === '관리자') {
         document.getElementById('ni-input').style.display = 'flex';
-        document.getElementById('adminCostArea').style.display = 'block';
+        document.getElementById('commissionArea').style.display = 'block';
         document.getElementById('filterGrid').style.gridTemplateColumns = '1fr 1fr';
         document.getElementById('reminderBtn').style.display = 'inline-block';
       } else {
         document.getElementById('ni-input').style.display = 'none';
-        document.getElementById('adminCostArea').style.display = 'none';
+        document.getElementById('commissionArea').style.display = 'none';
         document.getElementById('filterGrid').style.gridTemplateColumns = '1fr'; 
         document.getElementById('reminderBtn').style.display = 'none';
       }
@@ -679,7 +677,7 @@ function loadData(loadingMsg) {
     .withSuccessHandler(function(res) {
       const data = JSON.parse(res);
       DB_LIST = data.dbList;
-      COST_LIST = data.costList;
+      TYPE_LIST = data.typeList || [];
       FC_LIST = data.fcList || []; 
       
       let manualOpt = '<option value="">FC를 선택하세요</option>';
@@ -691,6 +689,14 @@ function loadData(loadingMsg) {
       document.getElementById('i_manualFC').innerHTML = manualOpt;
       document.getElementById('b_manualFC').innerHTML = manualOpt;
       document.getElementById('e_assignedFC').innerHTML = editOpt;
+
+      var typeOpt = '';
+      TYPE_LIST.forEach(function(t){ typeOpt += '<option value="' + t.type + '">' + t.type + '</option>'; });
+      if (typeOpt) {
+        document.getElementById('i_dbType').innerHTML = typeOpt;
+        document.getElementById('b_dbType').innerHTML = typeOpt;
+        document.getElementById('e_dbType').innerHTML = typeOpt;
+      }
 
       hideLoader();
       goPage('list');
@@ -857,15 +863,11 @@ function renderList() {
   }
 
   if(finalFiltered.length > 0) {
-    const typeCounts = { '본사퍼미션':0, '보장분석':0, '재무설계':0, '광고DB':0 };
-    finalFiltered.forEach(d => { if(typeCounts[d.dbType] !== undefined) typeCounts[d.dbType]++; });
+    const typeCounts = {};
+    TYPE_LIST.forEach(function(t){ typeCounts[t.type] = 0; });
+    finalFiltered.forEach(d => { typeCounts[d.dbType] = (typeCounts[d.dbType] || 0) + 1; });
     
-    const dbCards = [
-      { type: '본사퍼미션', count: typeCounts['본사퍼미션'] },
-      { type: '보장분석', count: typeCounts['보장분석'] },
-      { type: '재무설계', count: typeCounts['재무설계'] },
-      { type: '광고DB', count: typeCounts['광고DB'] }
-    ];
+    const dbCards = TYPE_LIST.map(function(t){ return { type: t.type, count: typeCounts[t.type] || 0 }; });
 
     document.getElementById('dbTypeBreakdown').innerHTML = dbCards.map(c => 
       '<div onclick="toggleDbType(\'' + c.type + '\')" style="background:' + (curDBTypeFilter === c.type ? 'var(--blue)' : '#fff') + '; color:' + (curDBTypeFilter === c.type ? '#fff' : 'inherit') + '; border:1px solid ' + (curDBTypeFilter === c.type ? 'var(--blue)' : 'var(--border)') + '; border-radius:12px; padding:12px; text-align:center; cursor:pointer; transition:all 0.2s;">' +
@@ -875,7 +877,7 @@ function renderList() {
     ).join('');
     
     document.getElementById('dbTypeBreakdown').style.display = 'grid';
-    document.getElementById('dbTypeBreakdown').style.gridTemplateColumns = 'repeat(4, 1fr)'; 
+    document.getElementById('dbTypeBreakdown').style.gridTemplateColumns = 'repeat(' + Math.min(dbCards.length || 1, 4) + ', 1fr)'; 
 
     var chartData = finalFiltered.filter(function(d){ return curDBTypeFilter === 'all' || d.dbType === curDBTypeFilter; });
     renderChart(chartData);
@@ -1584,8 +1586,32 @@ async function submitResult() {
   }
 }
 
+function openCommission(dbId, current) {
+  Swal.fire({
+    title: '수수료 입력',
+    input: 'number',
+    inputValue: current || '',
+    inputLabel: '이 청약 건의 수수료(원)',
+    inputPlaceholder: '숫자만 입력',
+    showCancelButton: true, confirmButtonText: '저장', cancelButtonText: '취소', confirmButtonColor: '#007aff'
+  }).then(function (res) {
+    if (!res.isConfirmed) return;
+    showLoader('수수료 저장 중...');
+    google.script.run
+      .withSuccessHandler(function (r) {
+        var j = JSON.parse(r);
+        if (j.success) { Swal.fire({icon:'success', title:'수수료 저장 완료', timer:1200, showConfirmButton:false}); loadData('갱신 중...'); }
+        else { hideLoader(); Swal.fire('오류', j.error, 'error'); }
+      })
+      .withFailureHandler(function (e) { hideLoader(); Swal.fire('오류', e.message, 'error'); })
+      .saveCommission(dbId, res.value);
+  });
+}
+
 function shareNote(dbType) {
-  if (dbType === '보장분석' || dbType === '재무설계') return '수수료 30% 쉐어';
+  for (var i = 0; i < TYPE_LIST.length; i++) {
+    if (TYPE_LIST[i].type === dbType) return TYPE_LIST[i].share > 0 ? ('수수료 ' + TYPE_LIST[i].share + '% 쉐어') : '';
+  }
   return '';
 }
 
@@ -1634,70 +1660,59 @@ function showStatList(fcName, key, label) {
 function loadStats() {
   const monthList = DB_LIST.filter(db => (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)));
   
-  let contractList = monthList.filter(db => db.result && db.result.includes('청약'));
-  let contractListHtml = '';
-  let totalContractPremium = 0; 
-  
-  if(contractList.length > 0) {
-      let flattened = [];
-      contractList.forEach(db => {
-          if (db.details && db.details.contracts && db.details.contracts.length > 0) {
-             db.details.contracts.forEach(c => {
-                flattened.push({ dbId: db.id, fc: db.assignedFC, date: c.date, name: c.name, comp: c.comp, prod: c.prod, prem: c.prem, origDate: db.assignDate });
-             });
-          } else if (db.details && db.details.contractDate) {
-             flattened.push({ dbId: db.id, fc: db.assignedFC, date: db.details.contractDate, name: db.details.contractorName || db.customerName, comp: db.details.insComp, prod: db.details.insProd, prem: db.details.premium, origDate: db.assignDate });
-          }
-      });
+  var isAdmin = (ME.role === '관리자');
+  var isPartner = (ME.role === '파트너');
+  var commFactor = isPartner ? 0.1 : 1;
 
-      flattened.sort((a, b) => {
-          let da = a.date ? a.date : a.origDate;
-          let db = b.date ? b.date : b.origDate;
-          return db.localeCompare(da);
-      });
-      
-      contractListHtml = flattened.map(c => {
-          let p = Number(String(c.prem).replace(/[^0-9]/g, '')) || 0;
-          totalContractPremium += p; 
-          let premText = p > 0 ? p.toLocaleString() + '원' : '-';
-          
-          return '<div style="background:#fff; border:1px solid var(--border); border-left:4px solid var(--blue); padding:16px; border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.02);">' +
-              '<div>' +
-                  '<div style="font-size:12px; font-weight:700; color:var(--tx-sub); margin-bottom:4px;">' + (c.date || c.origDate) + ' | ' + c.fc + ' FC</div>' +
-                  '<div style="font-size:16px; font-weight:900; color:var(--tx-main);">' + (c.name || '') + ' 고객님</div>' +
-                  '<div style="font-size:13px; font-weight:600; color:var(--tx-sub); margin-top:2px;">' + (c.comp || '') + ' ' + (c.prod || '') + '</div>' +
-              '</div>' +
-              '<div style="font-size:18px; font-weight:900; color:var(--blue);">' + premText + '</div>' +
-          '</div>';
+  var contractList = monthList.filter(function (db) { return db.result && db.result.indexOf('청약') >= 0; });
+  var totalCommission = 0;
+  var contractListHtml = '';
+
+  if (contractList.length > 0) {
+    contractList.sort(function (a, b) { return String(b.assignDate || '').localeCompare(String(a.assignDate || '')); });
+    contractListHtml = contractList.map(function (db) {
+      var cs = (db.details && db.details.contracts) ? db.details.contracts : [];
+      var premSum = 0;
+      var lines = cs.map(function (c) {
+        var p = Number(String(c.prem || '').replace(/[^0-9]/g, '')) || 0; premSum += p;
+        return '<div style="font-size:13px; font-weight:600; color:var(--tx-sub); margin-top:2px;">· ' + (c.name || '') + ' / ' + (c.comp || '') + ' ' + (c.prod || '') + ' / ' + (p > 0 ? p.toLocaleString() + '원' : '-') + '</div>';
       }).join('');
-      
-      contractListHtml += '<div style="background:#e5f0ff; border:2px solid #bfdbfe; padding:16px; border-radius:12px; margin-top:12px; display:flex; justify-content:space-between; align-items:center;">' +
-          '<div style="font-size:16px; font-weight:800; color:var(--blue);">당월 청약 보험료 총 합계</div>' +
-          '<div style="font-size:22px; font-weight:900; color:var(--blue);">' + totalContractPremium.toLocaleString() + '원</div>' +
-      '</div>';
+      var comm = Number(String((db.details && db.details.commission) || '').replace(/[^0-9]/g, '')) || 0;
+      totalCommission += comm;
+      var shownComm = Math.round(comm * commFactor);
+      var commLabel = isPartner ? '수수료(10%)' : '수수료';
+      var adminBtn = isAdmin ? '<button onclick="openCommission(\'' + db.id + '\',' + comm + ')" class="btn btn-ghost" style="margin-top:8px;padding:6px 10px;font-size:12px;border-color:var(--blue);color:var(--blue);">💵 수수료 입력</button>' : '';
+      return '<div style="background:#fff; border:1px solid var(--border); border-left:4px solid var(--blue); padding:16px; border-radius:12px; margin-bottom:8px;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
+            '<div style="flex:1; min-width:0;">' +
+              '<div style="font-size:12px; font-weight:700; color:var(--tx-sub); margin-bottom:4px;">' + (db.assignDate || '') + ' | ' + db.assignedFC + ' FC</div>' +
+              '<div style="font-size:16px; font-weight:900; color:var(--tx-main);">' + db.customerName + ' 고객님</div>' +
+              lines +
+            '</div>' +
+            '<div style="text-align:right; margin-left:10px; flex-shrink:0;">' +
+              '<div style="font-size:11px; font-weight:700; color:var(--tx-sub);">' + commLabel + '</div>' +
+              '<div style="font-size:18px; font-weight:900; color:var(--red);">' + shownComm.toLocaleString() + '원</div>' +
+              '<div style="font-size:11px; color:var(--tx-sub);">보험료 ' + premSum.toLocaleString() + '원</div>' +
+            '</div>' +
+          '</div>' + adminBtn +
+        '</div>';
+    }).join('');
+    var shownTotal = Math.round(totalCommission * commFactor);
+    contractListHtml += '<div style="background:#e5f0ff; border:2px solid #bfdbfe; padding:16px; border-radius:12px; margin-top:12px; display:flex; justify-content:space-between; align-items:center;">' +
+        '<div style="font-size:16px; font-weight:800; color:var(--blue);">당월 총 수수료' + (isPartner ? ' (파트너 10%)' : '') + '</div>' +
+        '<div style="font-size:22px; font-weight:900; color:var(--blue);">' + shownTotal.toLocaleString() + '원</div>' +
+    '</div>';
   } else {
-      contractListHtml = '<div style="text-align:center; padding:30px; color:var(--tx-sub); font-size:14px; font-weight:700; background:#fff; border-radius:12px; border:1px dashed var(--border);">이번 달 청약 내역이 없습니다.</div>';
+    contractListHtml = '<div style="text-align:center; padding:30px; color:var(--tx-sub); font-size:14px; font-weight:700; background:#fff; border-radius:12px; border:1px dashed var(--border);">이번 달 청약 내역이 없습니다.</div>';
   }
   document.getElementById('contractListArea').innerHTML = contractListHtml;
 
-  if (ME.role === '관리자') {
-    let t1=0, t2=0, t3=0;
-    monthList.filter(db => db.status !== '배정불가(모두거절)').forEach(db => {
-      if(db.dbType === '본사퍼미션') t1++;
-      else if(db.dbType === '보장분석') t2++;
-      else if(db.dbType === '재무설계') t3++;
-    });
-
-    const cost1 = (COST_LIST['본사퍼미션'] || 0) * t1;
-    const cost2 = (COST_LIST['보장분석'] || 0) * t2;
-    const cost3 = (COST_LIST['재무설계'] || 0) * t3;
-    const grandTotal = cost1 + cost2 + cost3;
-
-    document.getElementById('costBreakdownArea').innerHTML = 
-      '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--tx-main);"><span>본사퍼미션 (' + t1 + '건)</span> <span>' + cost1.toLocaleString() + '원</span></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--tx-main);"><span>보장분석 (' + t2 + '건)</span> <span>' + cost2.toLocaleString() + '원</span></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--tx-main);"><span>재무설계 (' + t3 + '건)</span> <span>' + cost3.toLocaleString() + '원</span></div>';
-    document.getElementById('s_totalCost').innerText = grandTotal.toLocaleString() + '원';
+  var _commEl = document.getElementById('commissionArea');
+  if (_commEl) {
+    _commEl.style.display = (isAdmin || isPartner) ? 'block' : 'none';
+    var shownTop = Math.round(totalCommission * commFactor);
+    document.getElementById('s_totalComm').innerText = shownTop.toLocaleString() + '원';
+    document.getElementById('commHint').innerText = isPartner ? '파트너 정산분 = 전체 수수료의 10%' : '당월 청약 수수료 합계 (전체 100%)';
   }
 
   const fcMap = {};
@@ -1727,7 +1742,7 @@ function loadStats() {
 
   let statsHtml = '';
   for(let fc in fcMap) {
-    if(ME.role !== '관리자' && fc !== ME.name) continue;
+    if(ME.role !== '관리자' && ME.role !== '파트너' && fc !== ME.name) continue;
     let d = fcMap[fc];
     
     let meetingRate = d.total > 0 ? (((d.ap + d.pc) / d.total) * 100).toFixed(1) : 0;
