@@ -1799,6 +1799,8 @@ function loadStats() {
 }
 
 // ===== DB 신청(선착순 실시간) & 파트너 스코프 =====
+function fmtMonth(m) { var x = String(m || '').match(/^(\d{4})-(\d{1,2})/); return x ? (x[1] + '년 ' + parseInt(x[2], 10) + '월') : (m || ''); }
+
 function myScopeType() { return (ME && ME.role === '파트너' && ME.name === '럽맘') ? '럽맘' : ''; }
 
 function loadBatches(silent) {
@@ -1826,13 +1828,18 @@ function renderBatches(d) {
       var right = sold
         ? '<div style="text-align:center;"><div style="font-size:12px;font-weight:800;color:var(--red);">모두 신청 완료</div><div style="font-size:24px;font-weight:900;color:var(--red);">0</div></div>'
         : '<div style="display:flex;gap:6px;align-items:center;"><input id="q_' + i + '" type="number" min="1" max="' + x.remaining + '" value="1" class="inp" style="width:60px;padding:8px;text-align:center;"><button onclick="applyBatch(' + i + ')" class="btn btn-primary" style="padding:8px 14px;font-size:13px;">신청</button></div>';
-      return '<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">' +
-        '<div style="min-width:0;">' +
-          '<div style="font-size:12px;font-weight:700;color:var(--tx-sub);">' + x.month + ' · ' + x.round + '</div>' +
-          '<div style="font-size:17px;font-weight:900;">' + x.dbType + '</div>' +
-          '<div style="font-size:13px;font-weight:700;color:var(--blue);margin-top:4px;">단가 ' + (x.price||0).toLocaleString() + '원</div>' +
-          '<div style="font-size:13px;font-weight:700;margin-top:2px;">잔여 <span style="color:' + (sold?'var(--red)':'var(--green)') + ';">' + x.remaining + '</span> / ' + x.qty + '</div>' +
-        '</div>' + right +
+      return '<div class="card">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">' +
+          '<div style="min-width:0;flex:1;">' +
+            '<div style="font-size:12px;font-weight:700;color:var(--tx-sub);">' + fmtMonth(x.month) + ' · ' + x.round + '</div>' +
+            '<div style="font-size:18px;font-weight:900;margin-top:2px;">' + x.dbType + '</div>' +
+          '</div>' + right +
+        '</div>' +
+        (x.desc ? '<div style="font-size:13px;font-weight:600;color:var(--tx-main);background:#f5f5f7;border-radius:10px;padding:10px 12px;margin-top:10px;white-space:pre-wrap;line-height:1.5;">' + esc(x.desc) + '</div>' : '') +
+        '<div style="display:flex;gap:16px;margin-top:10px;font-size:13px;font-weight:700;">' +
+          '<div style="color:var(--blue);">단가 ' + (x.price||0).toLocaleString() + '원</div>' +
+          '<div>잔여 <span style="color:' + (sold?'var(--red)':'var(--green)') + ';">' + x.remaining + '</span> / ' + x.qty + '</div>' +
+        '</div>' +
       '</div>';
     }).join('');
   }
@@ -1845,7 +1852,7 @@ function renderBatches(d) {
   } else {
     mhtml = mc.map(function (c) {
       return '<div style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--green);padding:14px;border-radius:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">' +
-        '<div><div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + c.month + ' · ' + c.round + ' · ' + c.ts + '</div>' +
+        '<div><div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + fmtMonth(c.month) + ' · ' + c.round + ' · ' + c.ts + '</div>' +
         '<div style="font-size:15px;font-weight:900;">' + c.dbType + ' <span style="color:var(--blue);">' + c.qty + '개</span></div></div>' +
         '<div style="text-align:right;"><span class="badge b-done">신청완료</span><div style="font-size:15px;font-weight:900;color:var(--red);margin-top:4px;">' + (c.amount||0).toLocaleString() + '원</div></div>' +
       '</div>';
