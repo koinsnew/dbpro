@@ -141,7 +141,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
   <div class="card anim-tech" style="width:100%;max-width:380px;padding:40px 30px;">
     <div style="text-align:center;margin-bottom:40px;">
       <div class="anim-item-1" style="font-size:32px;font-weight:900;color:var(--tx-main);letter-spacing:-0.5px;">데이터 PRO</div>
-      <div class="anim-item-1" style="font-size:12px;font-weight:700;color:var(--blue);margin-top:6px;">Heritage Finance System</div>
+      <div class="anim-item-1" style="font-size:12px;font-weight:700;color:var(--blue);margin-top:6px;">Heritage DB System</div>
     </div>
     <div class="anim-item-2" style="margin-bottom:16px;">
       <input id="lname" type="text" class="inp" placeholder="이름을 입력하세요" autocomplete="off">
@@ -192,6 +192,16 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     <div id="dbTypeBreakdown" style="display:none; grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:24px;"></div>
 
     <div id="dbListArea"></div>
+  </div>
+
+  <div id="pg-apply" style="display:none;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:22px;font-weight:900;">DB 신청 <span style="font-size:12px;font-weight:700;color:var(--tx-sub);">(선착순 실시간)</span></div>
+      <button onclick="loadBatches()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;">🔄 새로고침</button>
+    </div>
+    <div id="batchArea"></div>
+    <div style="margin-top:28px;margin-bottom:12px;font-size:16px;font-weight:900;">📄 내 신청 내역</div>
+    <div id="myClaimArea"></div>
   </div>
 
   <div id="pg-input" style="display:none;padding:20px;">
@@ -318,6 +328,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 
   <nav class="bnav">
     <div class="bni on" id="ni-list" onclick="goPage('list')"><span style="font-size:20px;margin-bottom:2px;">📅</span>일정</div>
+    <div class="bni" id="ni-apply" onclick="goPage('apply')"><span style="font-size:20px;margin-bottom:2px;">🧾</span>DB신청</div>
     <div class="bni" id="ni-input" style="display:none;" onclick="goPage('input')"><span style="font-size:20px;margin-bottom:2px;">➕</span>DB입력</div>
     <div class="bni" id="ni-stats" onclick="goPage('stats')"><span style="font-size:20px;margin-bottom:2px;">📊</span>통계</div>
   </nav>
@@ -442,6 +453,8 @@ let curDBId = null;
 let curEditDBId = null;
 let myChart = null;
 let parsedBulkData = [];
+let BATCH_POLL = null;
+let BATCHES = [];
 
 // ============================================================
 //  프론트(GitHub) → 백엔드(Apps Script) 연동 계층
@@ -480,6 +493,8 @@ google.script.run = (function () {
     updateDB:            function (a) { return { id: a[0], d: a[1], base64Files: a[2] }; },
     deleteDB:            function (a) { return { id: a[0] }; },
     saveCommission:      function (a) { return { dbId: a[0], amount: a[1] }; },
+    getBatchData:        function (a) { return { fcName: a[0], scopeType: a[1] }; },
+    claimBatch:          function (a) { return { month: a[0], round: a[1], dbType: a[2], fcName: a[3], qty: a[4] }; },
     respondToAssignment: function (a) { return { dbId: a[0], fcName: a[1], isAccept: a[2], dbType: a[3] }; },
     saveResultWithFiles: function (a) { return { dbId: a[0], data: a[1], base64Files: a[2] }; }
   };
@@ -648,13 +663,15 @@ function changeMonth() {
 }
 
 function goPage(id) {
-  ['list','input','stats'].forEach(p => {
+  ['list','apply','input','stats'].forEach(p => {
     document.getElementById('pg-'+p).style.display = (p===id) ? 'block' : 'none';
     const nav = document.getElementById('ni-'+p);
     if(nav) nav.classList.toggle('on', p===id);
   });
   if(id === 'list') { renderDays(); renderList(); }
   if(id === 'stats') loadStats();
+  if (BATCH_POLL) { clearInterval(BATCH_POLL); BATCH_POLL = null; }
+  if (id === 'apply') { loadBatches(); BATCH_POLL = setInterval(function(){ loadBatches(true); }, 10000); }
 }
 
 function toggleInputMode(mode) {
@@ -837,6 +854,7 @@ function renderList() {
   const admin = (ME.role === '관리자');
   
   let monthList = DB_LIST.filter(db => db.assignDate && db.assignDate.startsWith(curMonth));
+  var _sc = myScopeType(); if (_sc) monthList = monthList.filter(function(db){ return String(db.dbType||'').indexOf(_sc) >= 0; });
   let dateFiltered = monthList;
   if(curDate) dateFiltered = monthList.filter(db => db.assignDate === curDate);
   
@@ -1616,7 +1634,8 @@ function shareNote(dbType) {
 }
 
 function showStatList(fcName, key, label) {
-  const monthList = DB_LIST.filter(db => (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)));
+  let monthList = DB_LIST.filter(db => (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)));
+  var _sc = myScopeType(); if (_sc) monthList = monthList.filter(function(db){ return String(db.dbType||'').indexOf(_sc) >= 0; });
   let list = monthList.filter(db => db.assignedFC === fcName);
   
   list = list.filter(db => {
@@ -1658,13 +1677,16 @@ function showStatList(fcName, key, label) {
 }
 
 function loadStats() {
-  const monthList = DB_LIST.filter(db => (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)));
+  let monthList = DB_LIST.filter(db => (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)));
+  var _sc = myScopeType(); if (_sc) monthList = monthList.filter(function(db){ return String(db.dbType||'').indexOf(_sc) >= 0; });
   
   var isAdmin = (ME.role === '관리자');
   var isPartner = (ME.role === '파트너');
-  var commFactor = isPartner ? 0.1 : 1;
+  var isFC = (!isAdmin && !isPartner);
+  var commFactor = isAdmin ? 1 : (isPartner ? 0.15 : 0.7);
 
   var contractList = monthList.filter(function (db) { return db.result && db.result.indexOf('청약') >= 0; });
+  if (isFC) contractList = contractList.filter(function (db) { return db.assignedFC === ME.name; });
   var totalCommission = 0;
   var contractListHtml = '';
 
@@ -1680,7 +1702,7 @@ function loadStats() {
       var comm = Number(String((db.details && db.details.commission) || '').replace(/[^0-9]/g, '')) || 0;
       totalCommission += comm;
       var shownComm = Math.round(comm * commFactor);
-      var commLabel = isPartner ? '수수료(10%)' : '수수료';
+      var commLabel = isAdmin ? '수수료' : ('수수료(' + Math.round(commFactor * 100) + '%)');
       var adminBtn = isAdmin ? '<button onclick="openCommission(\'' + db.id + '\',' + comm + ')" class="btn btn-ghost" style="margin-top:8px;padding:6px 10px;font-size:12px;border-color:var(--blue);color:var(--blue);">💵 수수료 입력</button>' : '';
       return '<div style="background:#fff; border:1px solid var(--border); border-left:4px solid var(--blue); padding:16px; border-radius:12px; margin-bottom:8px;">' +
           '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
@@ -1699,7 +1721,7 @@ function loadStats() {
     }).join('');
     var shownTotal = Math.round(totalCommission * commFactor);
     contractListHtml += '<div style="background:#e5f0ff; border:2px solid #bfdbfe; padding:16px; border-radius:12px; margin-top:12px; display:flex; justify-content:space-between; align-items:center;">' +
-        '<div style="font-size:16px; font-weight:800; color:var(--blue);">당월 총 수수료' + (isPartner ? ' (파트너 10%)' : '') + '</div>' +
+        '<div style="font-size:16px; font-weight:800; color:var(--blue);">당월 총 수수료' + (isAdmin ? '' : ' (' + Math.round(commFactor * 100) + '%)') + '</div>' +
         '<div style="font-size:22px; font-weight:900; color:var(--blue);">' + shownTotal.toLocaleString() + '원</div>' +
     '</div>';
   } else {
@@ -1709,10 +1731,10 @@ function loadStats() {
 
   var _commEl = document.getElementById('commissionArea');
   if (_commEl) {
-    _commEl.style.display = (isAdmin || isPartner) ? 'block' : 'none';
+    _commEl.style.display = 'block';
     var shownTop = Math.round(totalCommission * commFactor);
     document.getElementById('s_totalComm').innerText = shownTop.toLocaleString() + '원';
-    document.getElementById('commHint').innerText = isPartner ? '파트너 정산분 = 전체 수수료의 10%' : '당월 청약 수수료 합계 (전체 100%)';
+    document.getElementById('commHint').innerText = isAdmin ? '당월 청약 수수료 합계 (전체 100%)' : ('내 정산분 = 전체 수수료의 ' + Math.round(commFactor * 100) + '%');
   }
 
   const fcMap = {};
@@ -1774,6 +1796,84 @@ function loadStats() {
       '</div>';
   }
   document.getElementById('fcStatsArea').innerHTML = statsHtml || '<div style="text-align:center;font-weight:700;color:var(--tx-sub);">데이터 없음</div>';
+}
+
+// ===== DB 신청(선착순 실시간) & 파트너 스코프 =====
+function myScopeType() { return (ME && ME.role === '파트너' && ME.name === '럽맘') ? '럽맘' : ''; }
+
+function loadBatches(silent) {
+  if (!silent) showLoader('DB 물량을 불러오는 중...');
+  google.script.run
+    .withSuccessHandler(function (res) {
+      hideLoader();
+      var d;
+      try { d = JSON.parse(res); } catch (e) { return; }
+      if (!d.success) { document.getElementById('batchArea').innerHTML = '<div style="color:var(--red);font-weight:700;">불러오기 실패: ' + (d.error||'') + '</div>'; return; }
+      renderBatches(d);
+    })
+    .withFailureHandler(function (e) { hideLoader(); })
+    .getBatchData(ME.name, myScopeType());
+}
+
+function renderBatches(d) {
+  BATCHES = d.batches || [];
+  var html;
+  if (BATCHES.length === 0) {
+    html = '<div style="text-align:center;padding:30px;color:var(--tx-sub);font-weight:700;background:#fff;border-radius:12px;border:1px dashed var(--border);">신청 가능한 DB 물량이 없습니다.</div>';
+  } else {
+    html = BATCHES.map(function (x, i) {
+      var sold = x.remaining <= 0;
+      var right = sold
+        ? '<div style="text-align:center;"><div style="font-size:12px;font-weight:800;color:var(--red);">모두 신청 완료</div><div style="font-size:24px;font-weight:900;color:var(--red);">0</div></div>'
+        : '<div style="display:flex;gap:6px;align-items:center;"><input id="q_' + i + '" type="number" min="1" max="' + x.remaining + '" value="1" class="inp" style="width:60px;padding:8px;text-align:center;"><button onclick="applyBatch(' + i + ')" class="btn btn-primary" style="padding:8px 14px;font-size:13px;">신청</button></div>';
+      return '<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">' +
+        '<div style="min-width:0;">' +
+          '<div style="font-size:12px;font-weight:700;color:var(--tx-sub);">' + x.month + ' · ' + x.round + '</div>' +
+          '<div style="font-size:17px;font-weight:900;">' + x.dbType + '</div>' +
+          '<div style="font-size:13px;font-weight:700;color:var(--blue);margin-top:4px;">단가 ' + (x.price||0).toLocaleString() + '원</div>' +
+          '<div style="font-size:13px;font-weight:700;margin-top:2px;">잔여 <span style="color:' + (sold?'var(--red)':'var(--green)') + ';">' + x.remaining + '</span> / ' + x.qty + '</div>' +
+        '</div>' + right +
+      '</div>';
+    }).join('');
+  }
+  document.getElementById('batchArea').innerHTML = html;
+
+  var mc = d.myClaims || [];
+  var mhtml;
+  if (mc.length === 0) {
+    mhtml = '<div style="text-align:center;padding:20px;color:var(--tx-sub);font-weight:700;background:#fff;border-radius:12px;border:1px dashed var(--border);">아직 신청 내역이 없습니다.</div>';
+  } else {
+    mhtml = mc.map(function (c) {
+      return '<div style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--green);padding:14px;border-radius:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">' +
+        '<div><div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + c.month + ' · ' + c.round + ' · ' + c.ts + '</div>' +
+        '<div style="font-size:15px;font-weight:900;">' + c.dbType + ' <span style="color:var(--blue);">' + c.qty + '개</span></div></div>' +
+        '<div style="text-align:right;"><span class="badge b-done">신청완료</span><div style="font-size:15px;font-weight:900;color:var(--red);margin-top:4px;">' + (c.amount||0).toLocaleString() + '원</div></div>' +
+      '</div>';
+    }).join('');
+    mhtml += '<div style="background:#e5f0ff;border:2px solid #bfdbfe;padding:16px;border-radius:12px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:16px;font-weight:800;color:var(--blue);">내 부담 합계금액</div><div style="font-size:22px;font-weight:900;color:var(--blue);">' + (d.myTotal||0).toLocaleString() + '원</div></div>';
+  }
+  document.getElementById('myClaimArea').innerHTML = mhtml;
+}
+
+function applyBatch(i) {
+  var x = BATCHES[i]; if (!x) return;
+  var el = document.getElementById('q_' + i);
+  var qty = el ? Number(el.value) : 0;
+  if (!qty || qty < 1) return Swal.fire('수량 확인', '신청 수량을 1개 이상 입력하세요.', 'warning');
+  if (qty > x.remaining) return Swal.fire('수량 초과', '잔여 수량(' + x.remaining + '개)보다 많이 신청할 수 없습니다.', 'warning');
+  Swal.fire({ title: 'DB 신청', text: x.dbType + ' ' + qty + '개를 신청하시겠습니까?', icon: 'question', showCancelButton: true, confirmButtonText: '신청', cancelButtonText: '취소', confirmButtonColor: '#007aff' }).then(function (res) {
+    if (!res.isConfirmed) return;
+    showLoader('신청 처리 중...');
+    google.script.run
+      .withSuccessHandler(function (r) {
+        hideLoader();
+        var dd; try { dd = JSON.parse(r); } catch (e) { Swal.fire('오류','응답 오류','error'); return; }
+        if (dd.success) { Swal.fire({ icon:'success', title:'신청 완료', text:'잔여 ' + dd.remaining + '개', timer:1500, showConfirmButton:false }); loadBatches(true); }
+        else { Swal.fire('신청 불가', dd.error || '', 'error'); loadBatches(true); }
+      })
+      .withFailureHandler(function (e) { hideLoader(); Swal.fire('오류', e.message, 'error'); })
+      .claimBatch(x.month, x.round, x.dbType, ME.name, qty);
+  });
 }
 </script>
 </body>
