@@ -200,6 +200,15 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
       <button onclick="loadBatches()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;">🔄 새로고침</button>
     </div>
     <div id="batchArea"></div>
+    <div class="card" style="background:#fff7ed;border:2px solid #fdba74;">
+      <div style="font-size:15px;font-weight:900;color:#c2410c;margin-bottom:10px;">📌 DB 배분 규칙 (필독)</div>
+      <ol style="margin:0;padding-left:20px;font-size:13px;font-weight:700;color:var(--tx-main);line-height:1.9;">
+        <li><strong style="color:#c2410c;">인당 50건까지</strong> 신청 가능</li>
+        <li>TA부터 계약체결까지 <strong style="color:#c2410c;">과정 및 결과 입력</strong>을 안 하면 <strong style="color:#c2410c;">DB신청 불가</strong></li>
+        <li>DB는 <strong style="color:#c2410c;">배분 당일 미수락 시</strong> 다른 FC에게 배정됨</li>
+        <li>DB 배분 후 <strong style="color:#c2410c;">배분당일 포함 2일 안에 TA 결과</strong> 입력 안 되면 다른 FC에게 배정됨</li>
+      </ol>
+    </div>
     <div style="margin-top:28px;margin-bottom:12px;font-size:16px;font-weight:900;">📄 내 신청 내역</div>
     <div id="myClaimArea"></div>
   </div>
@@ -455,6 +464,7 @@ let myChart = null;
 let parsedBulkData = [];
 let BATCH_POLL = null;
 let BATCHES = [];
+let MY_CLAIM_QTY = 0;
 
 // ============================================================
 //  프론트(GitHub) → 백엔드(Apps Script) 연동 계층
@@ -495,6 +505,7 @@ google.script.run = (function () {
     saveCommission:      function (a) { return { dbId: a[0], amount: a[1] }; },
     getBatchData:        function (a) { return { fcName: a[0], scopeType: a[1] }; },
     claimBatch:          function (a) { return { month: a[0], round: a[1], dbType: a[2], fcName: a[3], qty: a[4] }; },
+    cancelClaim:         function (a) { return { fcName: a[0], claimId: a[1] }; },
     respondToAssignment: function (a) { return { dbId: a[0], fcName: a[1], isAccept: a[2], dbType: a[3] }; },
     saveResultWithFiles: function (a) { return { dbId: a[0], data: a[1], base64Files: a[2] }; }
   };
@@ -1846,6 +1857,7 @@ function renderBatches(d) {
   document.getElementById('batchArea').innerHTML = html;
 
   var mc = d.myClaims || [];
+  MY_CLAIM_QTY = (typeof d.myQty === 'number') ? d.myQty : mc.reduce(function(s, c){ return s + (Number(c.qty)||0); }, 0);
   var mhtml;
   if (mc.length === 0) {
     mhtml = '<div style="text-align:center;padding:20px;color:var(--tx-sub);font-weight:700;background:#fff;border-radius:12px;border:1px dashed var(--border);">아직 신청 내역이 없습니다.</div>';
@@ -1854,7 +1866,10 @@ function renderBatches(d) {
       return '<div style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--green);padding:14px;border-radius:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">' +
         '<div><div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + fmtMonth(c.month) + ' · ' + c.round + ' · ' + c.ts + '</div>' +
         '<div style="font-size:15px;font-weight:900;">' + c.dbType + ' <span style="color:var(--blue);">' + c.qty + '개</span></div></div>' +
-        '<div style="text-align:right;"><span class="badge b-done">신청완료</span><div style="font-size:15px;font-weight:900;color:var(--red);margin-top:4px;">' + (c.amount||0).toLocaleString() + '원</div></div>' +
+        '<div style="text-align:right;"><span class="badge b-done">신청완료</span>' +
+        '<div style="font-size:15px;font-weight:900;color:var(--red);margin-top:4px;">' + (c.amount||0).toLocaleString() + '원</div>' +
+        '<button onclick="cancelClaim(' + c.id + ')" class="btn btn-ghost" style="margin-top:6px;padding:4px 10px;font-size:11px;color:var(--red);border-color:#ffcccc;">신청 취소</button>' +
+        '</div>' +
       '</div>';
     }).join('');
     mhtml += '<div style="background:#e5f0ff;border:2px solid #bfdbfe;padding:16px;border-radius:12px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:16px;font-weight:800;color:var(--blue);">내 부담 합계금액</div><div style="font-size:22px;font-weight:900;color:var(--blue);">' + (d.myTotal||0).toLocaleString() + '원</div></div>';
@@ -1868,6 +1883,7 @@ function applyBatch(i) {
   var qty = el ? Number(el.value) : 0;
   if (!qty || qty < 1) return Swal.fire('수량 확인', '신청 수량을 1개 이상 입력하세요.', 'warning');
   if (qty > x.remaining) return Swal.fire('수량 초과', '잔여 수량(' + x.remaining + '개)보다 많이 신청할 수 없습니다.', 'warning');
+  if (MY_CLAIM_QTY + qty > 50) return Swal.fire('신청 제한', '인당 최대 50건까지만 신청할 수 있습니다. (현재 ' + MY_CLAIM_QTY + '건)', 'warning');
   Swal.fire({ title: 'DB 신청', text: x.dbType + ' ' + qty + '개를 신청하시겠습니까?', icon: 'question', showCancelButton: true, confirmButtonText: '신청', cancelButtonText: '취소', confirmButtonColor: '#007aff' }).then(function (res) {
     if (!res.isConfirmed) return;
     showLoader('신청 처리 중...');
@@ -1880,6 +1896,22 @@ function applyBatch(i) {
       })
       .withFailureHandler(function (e) { hideLoader(); Swal.fire('오류', e.message, 'error'); })
       .claimBatch(x.month, x.round, x.dbType, ME.name, qty);
+  });
+}
+
+function cancelClaim(claimId) {
+  Swal.fire({ title: '신청 취소', text: '이 신청을 취소하시겠습니까? (잔여 수량이 복구됩니다)', icon: 'warning', showCancelButton: true, confirmButtonText: '신청 취소', cancelButtonText: '닫기', confirmButtonColor: '#ff3b30' }).then(function (res) {
+    if (!res.isConfirmed) return;
+    showLoader('취소 처리 중...');
+    google.script.run
+      .withSuccessHandler(function (r) {
+        hideLoader();
+        var d; try { d = JSON.parse(r); } catch (e) { Swal.fire('오류', '응답 오류', 'error'); return; }
+        if (d.success) { Swal.fire({ icon: 'success', title: '신청이 취소되었습니다.', timer: 1300, showConfirmButton: false }); loadBatches(true); }
+        else { Swal.fire('취소 실패', d.error || '', 'error'); loadBatches(true); }
+      })
+      .withFailureHandler(function (e) { hideLoader(); Swal.fire('오류', e.message, 'error'); })
+      .cancelClaim(ME.name, claimId);
   });
 }
 </script>
