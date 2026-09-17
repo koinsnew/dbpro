@@ -448,6 +448,19 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
   </div>
 </div>
 
+<div id="mReminder" class="modal-overlay" style="display:none;">
+  <div class="modal-content">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:18px;font-weight:900;">🔔 미수락 알림 발송</div>
+      <button onclick="document.getElementById('mReminder').style.display='none'" class="btn btn-ghost" style="padding:6px 12px;border-radius:12px;font-size:13px;">닫기</button>
+    </div>
+    <label class="chk-label" style="margin-bottom:12px;font-weight:800;"><input type="checkbox" id="rm_all" onchange="toggleAllReminder(this)"> 전체 선택</label>
+    <div id="rm_list" style="max-height:50vh;overflow-y:auto;"></div>
+    <button onclick="sendReminderSelected()" class="btn btn-primary btn-full" style="margin-top:16px;background:#ff9500;">선택 건 알림 발송</button>
+  </div>
+</div>
+
 <script>
 let ME = null;
 let DB_LIST = [];
@@ -497,7 +510,7 @@ google.script.run = (function () {
   var ARGMAP = {
     getUserList:         function (a) { return {}; },
     getAllData:          function (a) { return {}; },
-    sendReminderEmails:  function (a) { return {}; },
+    sendReminderEmails:  function (a) { return { ids: a[0] }; },
     saveDB:              function (a) { return { d: a[0], base64Files: a[1] }; },
     saveBulkDB:          function (a) { return { dbArray: a[0], commonData: a[1] }; },
     updateDB:            function (a) { return { id: a[0], d: a[1], base64Files: a[2] }; },
@@ -643,6 +656,7 @@ function handleLogin(isAutoStart) {
         document.getElementById('filterGrid').style.gridTemplateColumns = '1fr'; 
         document.getElementById('reminderBtn').style.display = 'none';
       }
+      document.getElementById('ni-apply').style.display = (u.role === '파트너') ? 'none' : 'flex';
       
       if(!isAutoStart) Swal.fire({icon:'success', title:'로그인 성공!', timer:1200, showConfirmButton:false});
       loadData('데이터를 불러오는 중입니다...');
@@ -737,24 +751,40 @@ function loadData(loadingMsg) {
 }
 
 function sendReminder() {
-    if(!confirm('현재 배정대기(미수락) 상태인 DB를 가진 모든 FC에게 수락 촉구 알림 메일을 일괄 발송하시겠습니까?')) return;
-    showLoader('알림 메일 발송 중입니다...');
-    google.script.run
-        .withSuccessHandler(function(res) {
-            hideLoader();
-            const r = JSON.parse(res);
-            if(r.success) {
-                if(r.count === 0) Swal.fire('발송 완료', '현재 배정대기 중인 DB가 없습니다.', 'info');
-                else Swal.fire('발송 완료', `총 ${r.count}명의 FC에게 수락 촉구 메일을 성공적으로 발송했습니다.`, 'success');
-            } else {
-                Swal.fire('발송 실패', r.error, 'error');
-            }
-        })
-        .withFailureHandler(function(error) {
-            hideLoader();
-            Swal.fire('오류', error.message, 'error');
-        })
-        .sendReminderEmails();
+  var pending = DB_LIST.filter(function(db){ return db.status === '배정대기' && db.assignedFC; });
+  if (pending.length === 0) { Swal.fire('알림', '현재 배정대기(미수락) 중인 DB가 없습니다.', 'info'); return; }
+  document.getElementById('rm_all').checked = false;
+  document.getElementById('rm_list').innerHTML = pending.map(function(db){
+    return '<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;">' +
+      '<input type="checkbox" class="rm-item" value="' + db.id + '">' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:14px;font-weight:900;">' + db.customerName + ' <span style="font-size:12px;color:var(--blue);font-weight:700;">' + db.assignedFC + ' FC</span></div>' +
+        '<div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + db.dbType + ' · 배분 ' + (db.assignDate||'-') + '</div>' +
+      '</div>' +
+    '</label>';
+  }).join('');
+  document.getElementById('mReminder').style.display = 'flex';
+}
+
+function toggleAllReminder(el) {
+  document.querySelectorAll('.rm-item').forEach(function(c){ c.checked = el.checked; });
+}
+
+function sendReminderSelected() {
+  var ids = Array.prototype.slice.call(document.querySelectorAll('.rm-item:checked')).map(function(c){ return c.value; });
+  if (ids.length === 0) return Swal.fire('선택 필요', '발송할 DB를 1건 이상 선택하세요.', 'warning');
+  if (!confirm(ids.length + '건에 대해 담당 FC에게 수락 촉구 알림을 발송하시겠습니까?')) return;
+  showLoader('알림 메일 발송 중입니다...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoader();
+      var r; try { r = JSON.parse(res); } catch(e){ Swal.fire('오류','응답 오류','error'); return; }
+      document.getElementById('mReminder').style.display = 'none';
+      if(r.success) Swal.fire('발송 완료', '총 ' + r.count + '명의 FC에게 ' + (r.dbCount||ids.length) + '건 알림을 발송했습니다.', 'success');
+      else Swal.fire('발송 실패', r.error, 'error');
+    })
+    .withFailureHandler(function(error) { hideLoader(); Swal.fire('오류', error.message, 'error'); })
+    .sendReminderEmails(ids);
 }
 
 function renderDays() {
