@@ -202,12 +202,24 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     <div id="batchArea"></div>
     <div class="card" style="background:#fff7ed;border:2px solid #fdba74;">
       <div style="font-size:15px;font-weight:900;color:#c2410c;margin-bottom:10px;">📌 DB 배분 규칙 (필독)</div>
-      <ol style="margin:0;padding-left:20px;font-size:13px;font-weight:700;color:var(--tx-main);line-height:1.9;">
-        <li><strong style="color:#c2410c;">인당 50건까지</strong> 신청 가능</li>
-        <li>TA부터 계약체결까지 <strong style="color:#c2410c;">과정 및 결과 입력</strong>을 안 하면 <strong style="color:#c2410c;">DB신청 불가</strong></li>
-        <li>DB는 <strong style="color:#c2410c;">배분 당일 미수락 시</strong> 다른 FC에게 배정됨</li>
-        <li>DB 배분 후 <strong style="color:#c2410c;">배분당일 포함 2일 안에 TA 결과</strong> 입력 안 되면 다른 FC에게 배정됨</li>
-      </ol>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #fed7aa;border-radius:10px;padding:11px 12px;">
+          <span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#c2410c;color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1;">1</span>
+          <div style="font-size:13px;font-weight:700;line-height:1.5;color:var(--tx-main);"><strong style="color:#c2410c;">인당 50건까지</strong> 신청 가능</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #fed7aa;border-radius:10px;padding:11px 12px;">
+          <span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#c2410c;color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1;">2</span>
+          <div style="font-size:13px;font-weight:700;line-height:1.5;color:var(--tx-main);">TA부터 계약체결까지 <strong style="color:#c2410c;">과정 및 결과 입력</strong>을 안 하면 <strong style="color:#c2410c;">DB신청 불가</strong></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #fed7aa;border-radius:10px;padding:11px 12px;">
+          <span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#c2410c;color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1;">3</span>
+          <div style="font-size:13px;font-weight:700;line-height:1.5;color:var(--tx-main);">DB는 <strong style="color:#c2410c;">배분 당일 미수락 시</strong> 다른 FC에게 배정됨</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #fed7aa;border-radius:10px;padding:11px 12px;">
+          <span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#c2410c;color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1;">4</span>
+          <div style="font-size:13px;font-weight:700;line-height:1.5;color:var(--tx-main);">DB 배분 후 <strong style="color:#c2410c;">배분당일 포함 2일 안에 TA 결과</strong> 입력 안 되면 다른 FC에게 배정됨</div>
+        </div>
+      </div>
     </div>
     <div style="margin-top:28px;margin-bottom:12px;font-size:16px;font-weight:900;">📄 내 신청 내역</div>
     <div id="myClaimArea"></div>
@@ -1775,7 +1787,7 @@ function loadStats() {
     _commEl.style.display = 'block';
     var shownTop = Math.round(totalCommission * commFactor);
     document.getElementById('s_totalComm').innerText = shownTop.toLocaleString() + '원';
-    document.getElementById('commHint').innerText = isAdmin ? '당월 청약 수수료 합계 (전체 100%)' : ('내 정산분 = 전체 수수료의 ' + Math.round(commFactor * 100) + '%');
+    document.getElementById('commHint').innerText = isAdmin ? '당월 청약 수수료 합계 (전체 100%)' : (isPartner ? '' : ('내 정산분 = 전체 수수료의 ' + Math.round(commFactor * 100) + '%'));
   }
 
   const fcMap = {};
