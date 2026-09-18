@@ -221,6 +221,10 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
         </div>
       </div>
     </div>
+    <div id="allClaimWrap" style="display:none;">
+      <div style="margin-top:28px;margin-bottom:12px;font-size:16px;font-weight:900;">🗂️ 전체 신청내역 <span style="font-size:12px;font-weight:700;color:var(--tx-sub);">(FC를 눌러 DB 배분)</span></div>
+      <div id="allClaimArea"></div>
+    </div>
     <div style="margin-top:28px;margin-bottom:12px;font-size:16px;font-weight:900;">📄 내 신청 내역</div>
     <div id="myClaimArea"></div>
   </div>
@@ -460,6 +464,19 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
   </div>
 </div>
 
+<div id="mAssign" class="modal-overlay" style="display:none;">
+  <div class="modal-content">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div id="as_title" style="font-size:17px;font-weight:900;">DB 배분</div>
+      <button onclick="document.getElementById('mAssign').style.display='none'" class="btn btn-ghost" style="padding:6px 12px;border-radius:12px;font-size:13px;">닫기</button>
+    </div>
+    <label class="chk-label" style="margin-bottom:12px;font-weight:800;"><input type="checkbox" id="as_all" onchange="toggleAllAssign(this)"> 전체 선택</label>
+    <div id="as_list" style="max-height:50vh;overflow-y:auto;"></div>
+    <button onclick="submitAssign()" class="btn btn-primary btn-full" style="margin-top:16px;">선택 DB 배분</button>
+  </div>
+</div>
+
 <div id="mReminder" class="modal-overlay" style="display:none;">
   <div class="modal-content">
     <div class="modal-handle"></div>
@@ -490,6 +507,7 @@ let parsedBulkData = [];
 let BATCH_POLL = null;
 let BATCHES = [];
 let MY_CLAIM_QTY = 0;
+let ASSIGN_FC = '';
 
 // ============================================================
 //  프론트(GitHub) → 백엔드(Apps Script) 연동 계층
@@ -531,6 +549,7 @@ google.script.run = (function () {
     getBatchData:        function (a) { return { fcName: a[0], scopeType: a[1] }; },
     claimBatch:          function (a) { return { month: a[0], round: a[1], dbType: a[2], fcName: a[3], qty: a[4] }; },
     cancelClaim:         function (a) { return { fcName: a[0], claimId: a[1] }; },
+    assignDBsTo:         function (a) { return { ids: a[0], fcName: a[1] }; },
     respondToAssignment: function (a) { return { dbId: a[0], fcName: a[1], isAccept: a[2], dbType: a[3] }; },
     saveResultWithFiles: function (a) { return { dbId: a[0], data: a[1], base64Files: a[2] }; }
   };
@@ -1917,6 +1936,26 @@ function renderBatches(d) {
     mhtml += '<div style="background:#e5f0ff;border:2px solid #bfdbfe;padding:16px;border-radius:12px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:16px;font-weight:800;color:var(--blue);">내 부담 합계금액</div><div style="font-size:22px;font-weight:900;color:var(--blue);">' + (d.myTotal||0).toLocaleString() + '원</div></div>';
   }
   document.getElementById('myClaimArea').innerHTML = mhtml;
+
+  var acWrap = document.getElementById('allClaimWrap');
+  if (ME.role === '관리자') {
+    acWrap.style.display = 'block';
+    var ac = d.allClaims || [];
+    var byFc = {};
+    ac.forEach(function(c){ if(!byFc[c.fc]) byFc[c.fc] = { qty:0, items:[] }; byFc[c.fc].qty += c.qty; byFc[c.fc].items.push(c); });
+    var keys = Object.keys(byFc);
+    var ahtml = keys.length ? keys.map(function(fc){
+      var g = byFc[fc];
+      var lines = g.items.map(function(c){ return '<div style="font-size:12px;color:var(--tx-sub);font-weight:700;margin-top:2px;">· ' + fmtMonth(c.month) + ' ' + c.round + ' · ' + c.dbType + ' ' + c.qty + '개</div>'; }).join('');
+      return '<div onclick="openAssign(' + jstr(fc) + ')" style="background:#fff;border:1px solid var(--border);border-left:4px solid #7c3aed;border-radius:12px;padding:14px;margin-bottom:8px;cursor:pointer;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<div style="font-size:15px;font-weight:900;">' + fc + ' <span style="font-size:12px;color:#7c3aed;font-weight:800;">신청 ' + g.qty + '건</span></div>' +
+          '<span style="font-size:12px;font-weight:800;color:#7c3aed;border:1px solid #ddd6fe;background:#f5f3ff;border-radius:8px;padding:5px 10px;">DB 배분 ▶</span>' +
+        '</div>' + lines +
+      '</div>';
+    }).join('') : '<div style="text-align:center;padding:16px;color:var(--tx-sub);font-weight:700;background:#fff;border-radius:12px;border:1px dashed var(--border);">신청 내역이 없습니다.</div>';
+    document.getElementById('allClaimArea').innerHTML = ahtml;
+  } else if (acWrap) { acWrap.style.display = 'none'; }
 }
 
 function applyBatch(i) {
@@ -1955,6 +1994,46 @@ function cancelClaim(claimId) {
       .withFailureHandler(function (e) { hideLoader(); Swal.fire('오류', e.message, 'error'); })
       .cancelClaim(ME.name, claimId);
   });
+}
+
+function jstr(s){ return "'" + String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'") + "'"; }
+
+function openAssign(fcName) {
+  ASSIGN_FC = fcName;
+  var pool = DB_LIST.filter(function(db){ return !db.assignedFC || String(db.status).indexOf('배정불가') >= 0 || String(db.status).indexOf('배정거절') >= 0; });
+  document.getElementById('as_title').innerText = fcName + ' FC에게 배분';
+  document.getElementById('as_all').checked = false;
+  if (pool.length === 0) {
+    document.getElementById('as_list').innerHTML = '<div style="text-align:center;padding:20px;color:var(--tx-sub);font-weight:700;">배분 가능한 미배정 DB가 없습니다.</div>';
+  } else {
+    document.getElementById('as_list').innerHTML = pool.map(function(db){
+      return '<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;">' +
+        '<input type="checkbox" class="as-item" value="' + db.id + '">' +
+        '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:900;">' + db.customerName + ' <span style="font-size:12px;color:var(--blue);font-weight:700;">' + db.dbType + '</span></div>' +
+        '<div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + (db.phone||'') + ' · ' + (db.status||'') + '</div></div>' +
+      '</label>';
+    }).join('');
+  }
+  document.getElementById('mAssign').style.display = 'flex';
+}
+
+function toggleAllAssign(el){ document.querySelectorAll('.as-item').forEach(function(c){ c.checked = el.checked; }); }
+
+function submitAssign(){
+  var ids = Array.prototype.slice.call(document.querySelectorAll('.as-item:checked')).map(function(c){ return c.value; });
+  if (ids.length === 0) return Swal.fire('선택 필요', '배분할 DB를 1건 이상 선택하세요.', 'warning');
+  if (!confirm(ASSIGN_FC + ' FC에게 ' + ids.length + '건을 배분하시겠습니까?')) return;
+  showLoader('배분 처리 중...');
+  google.script.run
+    .withSuccessHandler(function(res){
+      hideLoader();
+      var r; try { r = JSON.parse(res); } catch(e){ Swal.fire('오류','응답 오류','error'); return; }
+      document.getElementById('mAssign').style.display = 'none';
+      if (r.success) { Swal.fire('배분 완료', ASSIGN_FC + ' FC에게 ' + r.count + '건 배분되었습니다.', 'success'); loadData('갱신 중...'); }
+      else Swal.fire('배분 실패', r.error, 'error');
+    })
+    .withFailureHandler(function(e){ hideLoader(); Swal.fire('오류', e.message, 'error'); })
+    .assignDBsTo(ids, ASSIGN_FC);
 }
 </script>
 </body>
