@@ -514,6 +514,7 @@ let BATCHES = [];
 let MY_CLAIM_QTY = 0;
 let ASSIGN_FC = '';
 let ASSIGN_POOL = [];
+let CLAIM_TYPES_BY_FC = {};
 
 // ============================================================
 //  프론트(GitHub) → 백엔드(Apps Script) 연동 계층
@@ -1948,7 +1949,13 @@ function renderBatches(d) {
     acWrap.style.display = 'block';
     var ac = d.allClaims || [];
     var byFc = {};
-    ac.forEach(function(c){ if(!byFc[c.fc]) byFc[c.fc] = { qty:0, items:[] }; byFc[c.fc].qty += c.qty; byFc[c.fc].items.push(c); });
+    CLAIM_TYPES_BY_FC = {};
+    ac.forEach(function(c){
+      if(!byFc[c.fc]) byFc[c.fc] = { qty:0, items:[] };
+      byFc[c.fc].qty += c.qty; byFc[c.fc].items.push(c);
+      if(!CLAIM_TYPES_BY_FC[c.fc]) CLAIM_TYPES_BY_FC[c.fc] = [];
+      if(c.dbType && CLAIM_TYPES_BY_FC[c.fc].indexOf(c.dbType) < 0) CLAIM_TYPES_BY_FC[c.fc].push(c.dbType);
+    });
     var keys = Object.keys(byFc);
     var ahtml = keys.length ? keys.map(function(fc){
       var g = byFc[fc];
@@ -2012,9 +2019,10 @@ function openAssign(fcName) {
 
   var counts = {};
   ASSIGN_POOL.forEach(function(db){ var t = db.dbType || '(미지정)'; counts[t] = (counts[t] || 0) + 1; });
-  var types = Object.keys(counts);
-  var opt = '<option value="">DB 종류를 선택하세요</option>';
-  types.forEach(function(t){ opt += '<option value="' + t + '">' + t + ' (' + counts[t] + '건)</option>'; });
+  var claimedTypes = CLAIM_TYPES_BY_FC[fcName] || [];
+  var types = claimedTypes.length ? claimedTypes : Object.keys(counts);
+  var opt = '<option value="">신청한 DB 종류를 선택하세요</option>';
+  types.forEach(function(t){ opt += '<option value="' + t + '">' + t + ' (' + (counts[t] || 0) + '건 가능)</option>'; });
   document.getElementById('as_type').innerHTML = opt;
   document.getElementById('as_type').value = '';
 
