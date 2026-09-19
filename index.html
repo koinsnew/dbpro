@@ -264,11 +264,11 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
       
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
         <div><div class="fl">고객명</div><input type="text" id="i_name" class="inp" placeholder="이름 입력"></div>
-        <div><div class="fl">생년월일</div><input type="text" id="i_birth" class="inp" placeholder="예: 900101"></div>
+        <div><div class="fl">생년월일 / 나이대</div><input type="text" id="i_birth" class="inp" placeholder="예: 900101" style="margin-bottom:6px;"><select id="i_ageband" class="inp inp-arrow" style="padding:10px;font-size:13px;" onchange="if(this.value){document.getElementById('i_birth').value=this.value;}"><option value="">나이대 선택</option><option>10대</option><option>20대</option><option>30대</option><option>40대</option><option>50대</option><option>60대</option><option>70대 이상</option></select></div>
       </div>
       
-      <div style="margin-bottom:16px;"><div class="fl">전화번호</div><input type="tel" id="i_phone" class="inp" placeholder="010-0000-0000"></div>
-      <div style="margin-bottom:16px;"><div class="fl">주소</div><input type="text" id="i_address" class="inp" placeholder="상세 주소 입력"></div>
+      <div style="margin-bottom:16px;"><div class="fl">전화번호</div><input type="tel" id="i_phone" class="inp" placeholder="010-0000-0000" maxlength="13" oninput="phoneInput(this)"></div>
+      <div style="margin-bottom:16px;"><div class="fl">주소 / 지역</div><input type="text" id="i_address" class="inp" placeholder="상세 주소 입력" style="margin-bottom:6px;"><select id="i_region" class="inp inp-arrow" onchange="if(this.value){document.getElementById('i_address').value=this.value;}"><option value="">지역 선택</option><option>서울</option><option>경기</option><option>기타</option></select></div>
       
       <div style="margin-bottom:16px;">
         <div class="fl">평일/주말 가능유무</div>
@@ -428,10 +428,10 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
       <div><div class="fl">고객명</div><input type="text" id="e_name" class="inp" placeholder="이름 입력"></div>
-      <div><div class="fl">생년월일</div><input type="text" id="e_birth" class="inp" placeholder="YY-MM-DD"></div>
+      <div><div class="fl">생년월일 / 나이대</div><input type="text" id="e_birth" class="inp" placeholder="예: 900101" style="margin-bottom:6px;"><select id="e_ageband" class="inp inp-arrow" style="padding:10px;font-size:13px;" onchange="if(this.value){document.getElementById('e_birth').value=this.value;}"><option value="">나이대 선택</option><option>10대</option><option>20대</option><option>30대</option><option>40대</option><option>50대</option><option>60대</option><option>70대 이상</option></select></div>
     </div>
-    <div style="margin-bottom:16px;"><div class="fl">전화번호</div><input type="tel" id="e_phone" class="inp"></div>
-    <div style="margin-bottom:16px;"><div class="fl">주소</div><input type="text" id="e_address" class="inp"></div>
+    <div style="margin-bottom:16px;"><div class="fl">전화번호</div><input type="tel" id="e_phone" class="inp" maxlength="13" oninput="phoneInput(this)"></div>
+    <div style="margin-bottom:16px;"><div class="fl">주소 / 지역</div><input type="text" id="e_address" class="inp" style="margin-bottom:6px;"><select id="e_region" class="inp inp-arrow" onchange="if(this.value){document.getElementById('e_address').value=this.value;}"><option value="">지역 선택</option><option>서울</option><option>경기</option><option>기타</option></select></div>
     <div style="margin-bottom:16px;">
       <div class="fl">평일/주말 가능유무</div>
       <select id="e_avail" class="inp inp-arrow">
@@ -2059,6 +2059,16 @@ function submitAssign(){
     })
     .withFailureHandler(function(e){ hideLoader(); Swal.fire('오류', e.message, 'error'); })
     .assignDBsTo(ids, ASSIGN_FC);
+}
+
+function phoneInput(el) {
+  var s = el.value.replace(/[^0-9]/g, '');
+  if (s.length > 11) s = s.slice(0, 11);
+  var out;
+  if (s.length < 4) out = s;
+  else if (s.length < 8) out = s.slice(0, 3) + '-' + s.slice(3);
+  else out = s.slice(0, 3) + '-' + s.slice(3, 7) + '-' + s.slice(7);
+  el.value = out;
 }
 </script>
 </body>
