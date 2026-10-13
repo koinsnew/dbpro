@@ -949,8 +949,8 @@ function renderList() {
 
   if(admin) {
     let fcHtml = '<option value="all">👥 FC 전체</option>';
-    FC_LIST.forEach(fc => {
-      fcHtml += '<option value="'+fc+'" '+(curFC === fc ? 'selected' : '')+'>'+fc+'</option>';
+    bulkAssignees().forEach(fc => {
+      fcHtml += '<option value="'+fc+'" '+(curFC === fc ? 'selected' : '')+'>'+fc+(ADMIN_ASSIGNEES.indexOf(fc) >= 0 && FC_LIST.indexOf(fc) < 0 ? ' (관리자)' : '')+'</option>';
     });
     document.getElementById('fcSelect').innerHTML = fcHtml;
     document.getElementById('fcSelect').style.display = 'inline-block';
