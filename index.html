@@ -312,9 +312,10 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
       <div style="margin-bottom:16px; background:#f0f7ff; padding:12px; border-radius:12px; border:1px solid #cce0ff;">
         <label class="chk-label" style="color:var(--blue);"><input type="checkbox" id="b_isManual" onchange="toggleManualFC('bulk')"> 일괄 수동(직접) 배정</label>
         <div id="manualFC_area_bulk" style="display:none; margin-top:10px;">
-           <select id="b_manualFC" class="inp inp-arrow" style="padding:10px;font-size:13px;">
-              <option value="">FC를 선택하세요</option>
-           </select>
+           <div style="font-size:12px;font-weight:700;color:var(--tx-sub);margin-bottom:8px;">FC와 수량을 정하면 붙여넣은 순서대로 배정되고, 남은 DB는 미배정으로 등록됩니다.</div>
+           <div id="bulkAllocRows"></div>
+           <button type="button" onclick="addAllocRow()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;border-color:var(--blue);color:var(--blue);">➕ FC 추가</button>
+           <div id="bulkAllocSummary" style="margin-top:10px;font-size:13px;font-weight:800;"></div>
         </div>
       </div>
 
@@ -767,7 +768,6 @@ function loadData(loadingMsg) {
         editOpt += '<option value="'+fc+'">수동 배정 - '+fc+'</option>'; 
       });
       document.getElementById('i_manualFC').innerHTML = manualOpt;
-      document.getElementById('b_manualFC').innerHTML = manualOpt;
       document.getElementById('e_assignedFC').innerHTML = editOpt;
 
       var typeOpt = '';
@@ -874,6 +874,8 @@ function toggleManualFC(mode) {
     const el = document.getElementById('b_isManual');
     const area = document.getElementById('manualFC_area_bulk');
     if (el && area) area.style.display = el.checked ? 'block' : 'none';
+    if (el && el.checked && !document.querySelector('#bulkAllocRows .alloc-row')) addAllocRow();
+    applyBulkAlloc();
   }
 }
 
@@ -1027,6 +1029,7 @@ function renderList() {
         let adminBtns = '';
         if(admin) {
            adminBtns = '<div style="display:flex;gap:8px;margin-top:12px;border-top:1px dashed var(--border);padding-top:12px;">' +
+             (!db.assignedFC ? '<button onclick="quickAssign(\'' + db.id + '\')" class="btn btn-primary" style="flex:1;padding:8px;font-size:13px;">👤 FC 배정</button>' : '') +
              '<button onclick="openEditDB(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;padding:8px;font-size:13px;">✏️ 수정/재배정</button>' +
              '<button onclick="deleteDB(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;padding:8px;font-size:13px;color:var(--red);background:#fff2f2;">🗑️ 삭제</button>' +
            '</div>';
@@ -1337,11 +1340,11 @@ function renderBulkCards() {
     return;
   }
 
-  let fcOpts = '<option value="auto">⚙️ 자동 배정 (Round-Robin)</option>';
+  let fcOpts = '<option value="auto">⚙️ 자동 배정 (Round-Robin)</option><option value="none">⏸️ 미배정 (나중에 배정)</option>';
   FC_LIST.forEach(fc => fcOpts += '<option value="' + esc(fc) + '">👤 ' + esc(fc) + '</option>');
   const availArr = ['무관','평일만 가능','주말만 가능'];
 
-  if (isLuvmomBulk()) { box.innerHTML = parsedBulkData.map(function(d, i){ return luvmomCard(d, i, fcOpts); }).join(''); document.getElementById('bulkCount').innerText = '(' + parsedBulkData.length + '건)'; document.getElementById('previewArea').style.display = 'block'; return; }
+  if (isLuvmomBulk()) { box.innerHTML = parsedBulkData.map(function(d, i){ return luvmomCard(d, i, fcOpts); }).join(''); document.getElementById('bulkCount').innerText = '(' + parsedBulkData.length + '건)'; document.getElementById('previewArea').style.display = 'block'; applyBulkAlloc(); return; }
   box.innerHTML = parsedBulkData.map((d, i) => {
     const av = d.parsedAvail || '무관';
     const avSel = availArr.map(a => '<option value="' + a + '" ' + (a===av?'selected':'') + '>' + a + '</option>').join('');
@@ -1373,6 +1376,7 @@ function renderBulkCards() {
 
   document.getElementById('bulkCount').innerText = '(' + parsedBulkData.length + '건)';
   document.getElementById('previewArea').style.display = 'block';
+  applyBulkAlloc();
 }
 
 function setAllFC() {
@@ -1403,11 +1407,10 @@ async function submitBulkDB() {
   const dbType = document.getElementById('b_dbType').value;
   
   const isGlobalManual = document.getElementById('b_isManual').checked;
-  const globalManualFC = document.getElementById('b_manualFC').value;
 
   if(!assignDate) return Swal.fire('입력 오류', '공통 배분 날짜를 지정해주세요.', 'warning');
   if(parsedBulkData.length === 0) return Swal.fire('데이터 없음', '먼저 텍스트를 분류(파싱)해주세요.', 'warning');
-  if(isGlobalManual && !globalManualFC) return Swal.fire('FC 선택', '일괄 수동 배정할 FC를 선택하세요.', 'warning');
+  if(isGlobalManual) { var _chk = checkAllocRows(); if (_chk) return Swal.fire('배정 확인', _chk, 'warning'); applyBulkAlloc(); }
 
   showLoader('총 ' + parsedBulkData.length + '건의 DB 정보 및 파일을 업로드 중입니다...');
 
@@ -1415,7 +1418,6 @@ async function submitBulkDB() {
     let finalData = [];
     for(let i=0; i<parsedBulkData.length; i++) {
        let fcVal = document.getElementById('bk_fc_'+i).value;
-       if (isGlobalManual) fcVal = globalManualFC;
 
        const files = await getBase64Files('bk_files_'+i);
        
@@ -1436,7 +1438,8 @@ async function submitBulkDB() {
          request: document.getElementById('bk_req_'+i).value.trim() || '',
          note: document.getElementById('bk_note_'+i).value.trim() || '',
          isManual: (fcVal !== 'auto'),
-         manualFC: (fcVal !== 'auto') ? fcVal : '',
+         manualFC: (fcVal !== 'auto' && fcVal !== 'none') ? fcVal : '',
+         unassigned: (fcVal === 'none'),
          files: files
        });
     }
@@ -1454,6 +1457,7 @@ async function submitBulkDB() {
           Swal.fire({icon:'success', title:'대량 등록 완료', text: r.count + '건이 등록 및 배정되었습니다.', confirmButtonColor:'#34c759'});
           document.getElementById('b_rawData').value = '';
           document.getElementById('b_isManual').checked = false;
+          document.getElementById('bulkAllocRows').innerHTML = '';
           toggleManualFC('bulk');
           document.getElementById('previewArea').style.display = 'none';
           document.getElementById('previewBox').innerHTML = '';
@@ -2213,9 +2217,86 @@ function luvmomCollect(i, assignDate, dbType, fcVal, files) {
     request: v.interest ? ('관심항목: ' + v.interest) : '',
     note: noteParts.join(' / '),
     isManual: (fcVal !== 'auto'),
-    manualFC: (fcVal !== 'auto') ? fcVal : '',
+    manualFC: (fcVal !== 'auto' && fcVal !== 'none') ? fcVal : '',
+    unassigned: (fcVal === 'none'),
     files: files
   };
+}
+
+// ===== 일괄 수동 배정: FC + 수량 =====
+function addAllocRow(fc, qty) {
+  var box = document.getElementById('bulkAllocRows');
+  var opts = '<option value="">FC 선택</option>' + FC_LIST.map(function(f){ return '<option value="' + esc(f) + '"' + (f === fc ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('');
+  var row = document.createElement('div');
+  row.className = 'alloc-row';
+  row.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:8px;';
+  row.innerHTML = '<select class="inp inp-arrow al-fc" style="flex:1;padding:9px;font-size:13px;" onchange="applyBulkAlloc()">' + opts + '</select>' +
+    '<input type="number" min="1" class="inp al-qty" placeholder="수량" value="' + (qty || '') + '" style="width:76px;padding:9px;font-size:13px;text-align:center;" oninput="applyBulkAlloc()">' +
+    '<button type="button" onclick="this.parentElement.remove(); applyBulkAlloc();" class="btn btn-ghost" style="padding:8px 10px;font-size:12px;color:var(--red);border-color:#ffcccc;">삭제</button>';
+  box.appendChild(row);
+  applyBulkAlloc();
+}
+
+function readAllocRows() {
+  return Array.prototype.slice.call(document.querySelectorAll('#bulkAllocRows .alloc-row')).map(function(r){
+    return { fc: r.querySelector('.al-fc').value, qty: parseInt(r.querySelector('.al-qty').value, 10) || 0 };
+  });
+}
+
+function checkAllocRows() {
+  var rows = readAllocRows();
+  if (!rows.length) return 'FC와 수량을 1개 이상 입력하세요.';
+  for (var i = 0; i < rows.length; i++) {
+    if (!rows[i].fc) return (i + 1) + '번째 줄의 FC를 선택하세요.';
+    if (rows[i].qty < 1) return (i + 1) + '번째 줄의 수량을 입력하세요.';
+  }
+  var sum = rows.reduce(function(s, r){ return s + r.qty; }, 0);
+  if (parsedBulkData.length && sum > parsedBulkData.length) return '배정 수량 합계(' + sum + '건)가 등록할 DB(' + parsedBulkData.length + '건)보다 많습니다.';
+  return '';
+}
+
+function applyBulkAlloc() {
+  var chk = document.getElementById('b_isManual');
+  var sum = document.getElementById('bulkAllocSummary');
+  if (!chk || !chk.checked) { if (sum) sum.innerHTML = ''; return; }
+  var rows = readAllocRows();
+  var total = parsedBulkData.length;
+  var idx = 0;
+  rows.forEach(function(r){
+    for (var k = 0; k < r.qty && idx < total; k++, idx++) {
+      var sel = document.getElementById('bk_fc_' + idx);
+      if (sel) sel.value = r.fc || 'none';
+    }
+  });
+  for (var j = idx; j < total; j++) {
+    var s2 = document.getElementById('bk_fc_' + j);
+    if (s2) s2.value = 'none';
+  }
+  var want = rows.reduce(function(s, r){ return s + r.qty; }, 0);
+  if (!sum) return;
+  if (!total) { sum.innerHTML = '<span style="color:var(--tx-sub);">배정 수량 합계 ' + want + '건 · 텍스트를 분류하면 카드에 바로 적용됩니다.</span>'; return; }
+  var over = want > total ? ' <span style="color:var(--red);">(수량이 ' + (want - total) + '건 초과)</span>' : '';
+  sum.innerHTML = '총 ' + total + '건 중 <span style="color:var(--blue);">배정 ' + Math.min(want, total) + '건</span> · <span style="color:var(--red);">미배정 ' + Math.max(total - want, 0) + '건</span>' + over;
+}
+
+// 카드에서 미배정 DB에 FC 배정
+function quickAssign(dbId) {
+  var opts = {};
+  FC_LIST.forEach(function(f){ opts[f] = f; });
+  Swal.fire({ title: 'FC 배정', input: 'select', inputOptions: opts, inputPlaceholder: 'FC를 선택하세요', showCancelButton: true, confirmButtonText: '배정', cancelButtonText: '취소', confirmButtonColor: '#007aff',
+    inputValidator: function(v){ return v ? undefined : 'FC를 선택하세요'; } }).then(function(res){
+    if (!res.isConfirmed) return;
+    showLoader('배정 중...');
+    google.script.run
+      .withSuccessHandler(function(r){
+        hideLoader();
+        var j; try { j = JSON.parse(r); } catch(e){ Swal.fire('오류', '응답 오류', 'error'); return; }
+        if (j.success) { Swal.fire({ icon:'success', title: res.value + ' FC에게 배정했습니다.', timer:1300, showConfirmButton:false }); loadData('갱신 중...'); }
+        else Swal.fire('배정 실패', j.error || '', 'error');
+      })
+      .withFailureHandler(function(e){ hideLoader(); Swal.fire('오류', e.message, 'error'); })
+      .assignDBsTo([dbId], res.value);
+  });
 }
 </script>
 </body>
