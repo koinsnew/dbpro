@@ -2096,11 +2096,11 @@ var LUV_FIELDS = [
   { k:'birth',        label:'생년월일', keys:['생년월일','생일'] },
   { k:'permDate',     label:'퍼미션 날짜(지정일)', keys:['퍼미션','지정일'], type:'date' },
   { k:'address',      label:'주소', keys:['주소','지역'], wide:true },
-  { k:'joinDate',     label:'가입일', keys:['가입일'], type:'date' },
+  { k:'joinDate',     label:'럽맘 가입일', keys:['가입일'], type:'date' },
   { k:'pregWeek',     label:'임신주수', keys:['임신주수','주수'] },
   { k:'dueDate',      label:'출산예정일', keys:['출산예정일','예정일'], type:'date' },
   { k:'hospital',     label:'진료병원', keys:['진료병원','병원'] },
-  { k:'joinPath',     label:'가입경로', keys:['가입경로','경로'] },
+  { k:'joinPath',     label:'럽맘 가입경로', keys:['가입경로','경로'] },
   { k:'interest',     label:'관심항목', keys:['관심항목','관심'], wide:true },
   { k:'memo',         label:'고객메모', keys:['고객메모','메모'], wide:true }
 ];
@@ -2198,11 +2198,11 @@ function luvmomCollect(i, assignDate, dbType, fcVal, files) {
   var v = {};
   LUV_FIELDS.forEach(function(f){ var el = document.getElementById('lv_' + f.k + '_' + i); v[f.k] = el ? el.value.trim() : ''; });
   var noteParts = [];
-  if (v.joinDate) noteParts.push('가입일: ' + v.joinDate);
+  if (v.joinDate) noteParts.push('럽맘 가입일: ' + v.joinDate);
   if (v.pregWeek) noteParts.push('임신주수: ' + v.pregWeek);
   if (v.dueDate)  noteParts.push('출산예정일: ' + v.dueDate);
   if (v.hospital) noteParts.push('진료병원: ' + v.hospital);
-  if (v.joinPath) noteParts.push('가입경로: ' + v.joinPath);
+  if (v.joinPath) noteParts.push('럽맘 가입경로: ' + v.joinPath);
   if (v.memo)     noteParts.push('메모: ' + v.memo);
   return {
     permDate: v.permDate || assignDate,
