@@ -300,7 +300,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
         <div><div class="fl">공통 배분 날짜</div><input type="date" id="b_assignDate" class="inp" style="padding:10px;font-size:13px;"></div>
         <div>
           <div class="fl">공통 DB 종류</div>
-          <select id="b_dbType" class="inp inp-arrow" style="padding:10px;font-size:13px;">
+          <select id="b_dbType" class="inp inp-arrow" style="padding:10px;font-size:13px;" onchange="if(parsedBulkData.length) renderBulkCards();">
             <option value="본사퍼미션">본사퍼미션</option>
             <option value="보장분석">보장분석</option>
             <option value="재무설계">재무설계</option>
@@ -1242,6 +1242,7 @@ function parseRawData() {
   const curYear = new Date().getFullYear();
   const rows = rawData.split(/\r?\n/).map(r => r.trim()).filter(r => r.length > 0);
   parsedBulkData = [];
+  if (isLuvmomBulk()) { parsedBulkData = parseLuvmomRows(rows, curYear); renderBulkCards(); return; }
 
   rows.forEach(row => {
     if (!/\d/.test(row)) return;
@@ -1340,6 +1341,7 @@ function renderBulkCards() {
   FC_LIST.forEach(fc => fcOpts += '<option value="' + esc(fc) + '">👤 ' + esc(fc) + '</option>');
   const availArr = ['무관','평일만 가능','주말만 가능'];
 
+  if (isLuvmomBulk()) { box.innerHTML = parsedBulkData.map(function(d, i){ return luvmomCard(d, i, fcOpts); }).join(''); document.getElementById('bulkCount').innerText = '(' + parsedBulkData.length + '건)'; document.getElementById('previewArea').style.display = 'block'; return; }
   box.innerHTML = parsedBulkData.map((d, i) => {
     const av = d.parsedAvail || '무관';
     const avSel = availArr.map(a => '<option value="' + a + '" ' + (a===av?'selected':'') + '>' + a + '</option>').join('');
@@ -1417,6 +1419,10 @@ async function submitBulkDB() {
 
        const files = await getBase64Files('bk_files_'+i);
        
+       if (isLuvmomBulk()) {
+         finalData.push(luvmomCollect(i, assignDate, dbType, fcVal, files));
+         continue;
+       }
        finalData.push({
          permDate: document.getElementById('bk_perm_'+i).value || '',
          assignDate: assignDate,
@@ -2077,6 +2083,139 @@ function phoneInput(el) {
   else if (s.length < 8) out = s.slice(0, 3) + '-' + s.slice(3);
   else out = s.slice(0, 3) + '-' + s.slice(3, 7) + '-' + s.slice(7);
   el.value = out;
+}
+
+// ===== 럽맘 대량 입력 전용 =====
+var LUV_FIELDS = [
+  { k:'customerName', label:'고객명', keys:['고객명','이름','성함'] },
+  { k:'phone',        label:'전화번호', keys:['전화번호','연락처','휴대폰','핸드폰'] },
+  { k:'birth',        label:'생년월일', keys:['생년월일','생일'] },
+  { k:'permDate',     label:'퍼미션 날짜(지정일)', keys:['퍼미션','지정일'], type:'date' },
+  { k:'address',      label:'주소', keys:['주소','지역'], wide:true },
+  { k:'joinDate',     label:'가입일', keys:['가입일'], type:'date' },
+  { k:'pregWeek',     label:'임신주수', keys:['임신주수','주수'] },
+  { k:'dueDate',      label:'출산예정일', keys:['출산예정일','예정일'], type:'date' },
+  { k:'hospital',     label:'진료병원', keys:['진료병원','병원'] },
+  { k:'joinPath',     label:'가입경로', keys:['가입경로','경로'] },
+  { k:'interest',     label:'관심항목', keys:['관심항목','관심'], wide:true },
+  { k:'memo',         label:'고객메모', keys:['고객메모','메모'], wide:true }
+];
+
+function isLuvmomBulk() {
+  var el = document.getElementById('b_dbType');
+  return !!(el && String(el.value).indexOf('럽맘') >= 0);
+}
+
+function luvSplit(row) {
+  var cells;
+  if (row.indexOf('\t') >= 0) cells = row.split('\t');
+  else if (row.indexOf(',') >= 0) cells = row.split(',');
+  else cells = row.split(/\s{2,}/);
+  return cells.map(function(c){ return c.trim(); });
+}
+
+function luvDate(v, curYear) {
+  var t = String(v || '').trim();
+  if (!t) return '';
+  var m = t.match(/^((?:19|20)?\d{2})[-./년\s]+(\d{1,2})[-./월\s]+(\d{1,2})/);
+  if (m) {
+    var y = parseInt(m[1], 10);
+    if (m[1].length === 2) y = (y <= (curYear % 100) + 1) ? 2000 + y : 1900 + y;
+    return y + '-' + String(parseInt(m[2],10)).padStart(2,'0') + '-' + String(parseInt(m[3],10)).padStart(2,'0');
+  }
+  if (/^\d{8}$/.test(t)) return t.slice(0,4) + '-' + t.slice(4,6) + '-' + t.slice(6,8);
+  return t;
+}
+
+function luvPhone(v) {
+  var s = String(v || '').replace(/[^0-9]/g, '');
+  if (s.length === 10 && s.charAt(0) === '1') s = '0' + s;
+  if (s.length === 11) return s.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+  if (s.length === 10) return s.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+  return String(v || '').trim();
+}
+
+function parseLuvmomRows(rows, curYear) {
+  var out = [];
+  if (!rows.length) return out;
+  // 헤더 행이 있으면 열 이름으로 매칭
+  var head = luvSplit(rows[0]);
+  var map = {};
+  head.forEach(function(h, idx){
+    var hn = h.replace(/\s/g, '');
+    LUV_FIELDS.forEach(function(f){
+      if (map[f.k] !== undefined) return;
+      if (f.keys.some(function(key){ return hn.indexOf(key) >= 0; })) map[f.k] = idx;
+    });
+  });
+  var hasHeader = Object.keys(map).length >= 2;
+
+  rows.forEach(function(row, ri){
+    if (hasHeader && ri === 0) return;
+    var cells = luvSplit(row);
+    var d = {};
+    if (hasHeader) {
+      LUV_FIELDS.forEach(function(f){ if (map[f.k] !== undefined) d[f.k] = cells[map[f.k]] || ''; });
+    } else {
+      if (!/\d/.test(row)) return;
+      var c = classifyCells(cells.filter(function(x){ return x; }), curYear);
+      d.customerName = c.customerName || ''; d.phone = c.phone || ''; d.birth = c.birth || '';
+      d.permDate = c.permDate || ''; d.address = c.address || '';
+      d.memo = [c.currentPremium, c.request, c.note].filter(function(x){ return x; }).join(' / ');
+    }
+    d.phone = luvPhone(d.phone);
+    ['permDate','joinDate','dueDate'].forEach(function(k){ d[k] = luvDate(d[k], curYear); });
+    if (d.customerName || d.phone) out.push(d);
+  });
+  return out;
+}
+
+function luvmomCard(d, i, fcOpts) {
+  var cells = LUV_FIELDS.map(function(f){
+    var type = f.type === 'date' ? ' type="date"' : '';
+    var extra = f.k === 'phone' ? ' maxlength="13" oninput="phoneInput(this)"' : '';
+    var html = '<div' + (f.wide ? ' style="grid-column:1 / -1;"' : '') + '><div class="fl">' + f.label + '</div>' +
+      '<input id="lv_' + f.k + '_' + i + '"' + type + extra + ' class="inp inp-sm" value="' + esc(d[f.k]) + '"></div>';
+    return html;
+  }).join('');
+  return '<div class="bulk-card">' +
+    '<div class="bulk-head"><span>#' + (i+1) + ' <span class="badge" style="background:#fdf2f8;color:#be185d;border:1px solid #fbcfe8;">럽맘</span></span>' +
+    '<span style="font-size:11px;color:var(--tx-sub);">' + esc(d.customerName||'이름?') + ' / ' + esc(d.phone||'번호?') + '</span></div>' +
+    '<div class="bulk-grid2" style="margin-bottom:8px;">' + cells + '</div>' +
+    '<div class="row1"><div class="fl" style="color:var(--blue);">담당 FC 배정 (DB별 개별 지정)</div><select id="bk_fc_' + i + '" class="inp inp-sm inp-arrow bulk-fc">' + fcOpts + '</select></div>' +
+    '<div class="drop-zone" style="margin-top:12px; padding:12px;" id="dz_bulk_' + i + '" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, \'bk_files_' + i + '\', \'msg_bulk_' + i + '\')" onclick="document.getElementById(\'bk_files_' + i + '\').click()">' +
+      '<span class="dz-msg" id="msg_bulk_' + i + '">파일 첨부 (클릭/드래그)</span>' +
+      '<input type="file" id="bk_files_' + i + '" multiple style="display:none;" onchange="updateFileCount(this, \'msg_bulk_' + i + '\')">' +
+    '</div>' +
+  '</div>';
+}
+
+function luvmomCollect(i, assignDate, dbType, fcVal, files) {
+  var v = {};
+  LUV_FIELDS.forEach(function(f){ var el = document.getElementById('lv_' + f.k + '_' + i); v[f.k] = el ? el.value.trim() : ''; });
+  var noteParts = [];
+  if (v.joinDate) noteParts.push('가입일: ' + v.joinDate);
+  if (v.pregWeek) noteParts.push('임신주수: ' + v.pregWeek);
+  if (v.dueDate)  noteParts.push('출산예정일: ' + v.dueDate);
+  if (v.hospital) noteParts.push('진료병원: ' + v.hospital);
+  if (v.joinPath) noteParts.push('가입경로: ' + v.joinPath);
+  if (v.memo)     noteParts.push('메모: ' + v.memo);
+  return {
+    permDate: v.permDate || assignDate,
+    assignDate: assignDate,
+    customerName: v.customerName,
+    birth: v.birth,
+    phone: v.phone,
+    address: v.address,
+    dbType: dbType,
+    avail: '무관',
+    currentPremium: '',
+    request: v.interest ? ('관심항목: ' + v.interest) : '',
+    note: noteParts.join(' / '),
+    isManual: (fcVal !== 'auto'),
+    manualFC: (fcVal !== 'auto') ? fcVal : '',
+    files: files
+  };
 }
 </script>
 </body>
