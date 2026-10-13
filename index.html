@@ -514,6 +514,8 @@ let BATCH_POLL = null;
 let BATCHES = [];
 let MY_CLAIM_QTY = 0;
 let ASSIGN_FC = '';
+const ADMIN_ASSIGNEES = ['옥영훈', '김태건', '박동준', '조시온'];
+function bulkAssignees() { var out = FC_LIST.slice(); ADMIN_ASSIGNEES.forEach(function(n){ if (out.indexOf(n) < 0) out.push(n); }); return out; }
 let ASSIGN_POOL = [];
 let CLAIM_TYPES_BY_FC = {};
 
@@ -1341,7 +1343,7 @@ function renderBulkCards() {
   }
 
   let fcOpts = '<option value="auto">⚙️ 자동 배정 (Round-Robin)</option><option value="none">⏸️ 미배정 (나중에 배정)</option>';
-  FC_LIST.forEach(fc => fcOpts += '<option value="' + esc(fc) + '">👤 ' + esc(fc) + '</option>');
+  bulkAssignees().forEach(fc => fcOpts += '<option value="' + esc(fc) + '">👤 ' + esc(fc) + (ADMIN_ASSIGNEES.indexOf(fc) >= 0 && FC_LIST.indexOf(fc) < 0 ? ' (관리자)' : '') + '</option>');
   const availArr = ['무관','평일만 가능','주말만 가능'];
 
   if (isLuvmomBulk()) { box.innerHTML = parsedBulkData.map(function(d, i){ return luvmomCard(d, i, fcOpts); }).join(''); document.getElementById('bulkCount').innerText = '(' + parsedBulkData.length + '건)'; document.getElementById('previewArea').style.display = 'block'; applyBulkAlloc(); return; }
@@ -1381,7 +1383,7 @@ function renderBulkCards() {
 
 function setAllFC() {
   const opts = { 'auto': '⚙️ 자동 배정 (Round-Robin)' };
-  FC_LIST.forEach(fc => opts[fc] = '👤 ' + fc);
+  bulkAssignees().forEach(fc => opts[fc] = '👤 ' + fc);
   Swal.fire({
     title: '전체 FC 일괄 지정',
     text: '아래에서 선택한 FC를 모든 카드에 적용합니다.',
@@ -2226,7 +2228,7 @@ function luvmomCollect(i, assignDate, dbType, fcVal, files) {
 // ===== 일괄 수동 배정: FC + 수량 =====
 function addAllocRow(fc, qty) {
   var box = document.getElementById('bulkAllocRows');
-  var opts = '<option value="">FC 선택</option>' + FC_LIST.map(function(f){ return '<option value="' + esc(f) + '"' + (f === fc ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('');
+  var opts = '<option value="">FC 선택</option>' + bulkAssignees().map(function(f){ return '<option value="' + esc(f) + '"' + (f === fc ? ' selected' : '') + '>' + esc(f) + (ADMIN_ASSIGNEES.indexOf(f) >= 0 && FC_LIST.indexOf(f) < 0 ? ' (관리자)' : '') + '</option>'; }).join('');
   var row = document.createElement('div');
   row.className = 'alloc-row';
   row.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:8px;';
