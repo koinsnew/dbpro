@@ -515,7 +515,7 @@ let BATCHES = [];
 let MY_CLAIM_QTY = 0;
 let ASSIGN_FC = '';
 const ADMIN_ASSIGNEES = ['옥영훈', '김태건', '박동준', '조시온'];
-function bulkAssignees() { var out = FC_LIST.slice(); ADMIN_ASSIGNEES.forEach(function(n){ if (out.indexOf(n) < 0) out.push(n); }); return out; }
+function bulkAssignees() { var out = FC_LIST.slice(); ADMIN_ASSIGNEES.forEach(function(n){ if (out.indexOf(n) < 0) out.push(n); }); return out.sort(function(a, b){ return String(a).localeCompare(String(b), 'ko'); }); }
 let ASSIGN_POOL = [];
 let CLAIM_TYPES_BY_FC = {};
 
@@ -761,7 +761,7 @@ function loadData(loadingMsg) {
       const data = JSON.parse(res);
       DB_LIST = data.dbList;
       TYPE_LIST = data.typeList || [];
-      FC_LIST = data.fcList || []; 
+      FC_LIST = (data.fcList || []).slice().sort(function(a, b){ return String(a).localeCompare(String(b), 'ko'); }); 
       
       let manualOpt = '<option value="">FC를 선택하세요</option>';
       let editOpt = '<option value="current">변경하지 않음 (기존 유지)</option><option value="auto">시스템 자동 배정 (Round-Robin)</option>';
