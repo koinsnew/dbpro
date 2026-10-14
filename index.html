@@ -340,9 +340,6 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
   </div>
 
   <div id="pg-stats" style="display:none;padding:20px;">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
-      <button onclick="captureStats()" class="btn btn-ghost" style="padding:8px 12px;font-size:13px;font-weight:800;color:var(--blue);border-color:#cce0ff;background:#f0f7ff;white-space:nowrap;">📸 통계 이미지로 공유</button>
-    </div>
     <div id="statsCapture" style="background:var(--bg-main);">
     <div style="margin-bottom:20px;">
       <div style="font-size:22px;font-weight:900;">월간 통계 현황</div>
@@ -355,8 +352,11 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     </div>
     
     <div id="statTypeSelWrap"></div>
-    <div id="taGapArea"></div>
-    <div id="typeStatsArea"></div>
+    <div id="capRegion" style="background:var(--bg-main);">
+      <div id="capHeader" style="display:none;padding:4px 2px 12px;"></div>
+      <div id="taGapArea"></div>
+      <div id="typeStatsArea"></div>
+    </div>
     <div id="fcStatsArea"></div>
     
     <div style="margin-top:32px; margin-bottom:16px; font-size:18px; font-weight:900; color:var(--tx-main);">🎉 당월 청약 리스트</div>
@@ -2403,7 +2403,10 @@ function renderStatsExtras(monthList, fcMap) {
   '</select>';
   var shown = STAT_TYPE === 'all' ? { name: '전체 DB', m: allSum } : { name: STAT_TYPE, m: map[STAT_TYPE] };
   var selWrap = document.getElementById('statTypeSelWrap');
-  if (selWrap) selWrap.innerHTML = '<div class="no-cap" style="font-size:13px;font-weight:800;color:var(--tx-sub);margin:4px 0 6px;">📂 DB 선택 (아래 통계 전체에 적용)</div>' + sel;
+  if (selWrap) selWrap.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 6px;">' +
+      '<div style="font-size:13px;font-weight:800;color:var(--tx-sub);">📂 DB 선택 (아래 통계 전체에 적용)</div>' +
+      '<button onclick="captureStats()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;font-weight:800;color:var(--blue);border-color:#cce0ff;background:#f0f7ff;white-space:nowrap;">📸 캡처</button>' +
+    '</div>' + sel;
   area.innerHTML = '<div style="font-size:18px;font-weight:900;margin:8px 0 12px;">🗂️ DB종류별 통계</div>' + typeStatCard(shown.name, shown.m);
 }
 
@@ -2439,13 +2442,19 @@ function typeStatCard(t, m) {
 }
 function captureStats() {
   if (typeof html2canvas === 'undefined') return Swal.fire('잠시 후 다시 시도', '이미지 도구를 불러오는 중입니다.', 'info');
-  var el = document.getElementById('statsCapture');
+  var el = document.getElementById('capRegion');
+  var hd = document.getElementById('capHeader');
+  var now = new Date();
+  hd.innerHTML = '<div style="font-size:18px;font-weight:900;">헤리티지 데이터 PRO 통계</div>' +
+    '<div style="font-size:12px;font-weight:700;color:var(--tx-sub);margin-top:2px;">' + fmtMonth(curMonth) + ' · ' + esc(STAT_TYPE === 'all' ? '전체 DB' : STAT_TYPE) + ' · ' + (now.getMonth() + 1) + '/' + now.getDate() + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' 기준</div>';
+  hd.style.display = 'block';
   showLoader('통계 이미지를 만드는 중...');
   html2canvas(el, {
     scale: Math.min(2, window.devicePixelRatio || 2), backgroundColor: '#f5f5f7', useCORS: true,
     windowWidth: el.scrollWidth,
     ignoreElements: function(n){ return n.classList && n.classList.contains('no-cap'); }
   }).then(function(canvas){
+    hd.style.display = 'none';
     hideLoader();
     var name = '데이터PRO_통계_' + curMonth + '.png';
     canvas.toBlob(function(blob){
@@ -2466,7 +2475,7 @@ function captureStats() {
         }
       });
     }, 'image/png');
-  }).catch(function(e){ hideLoader(); Swal.fire('캡처 실패', String(e), 'error'); });
+  }).catch(function(e){ hd.style.display = 'none'; hideLoader(); Swal.fire('캡처 실패', String(e), 'error'); });
 }
 
 function statDetailHtml(db) {
