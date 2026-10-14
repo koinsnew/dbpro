@@ -572,6 +572,7 @@ google.script.run = (function () {
     claimBatch:          function (a) { return { month: a[0], round: a[1], dbType: a[2], fcName: a[3], qty: a[4] }; },
     cancelClaim:         function (a) { return { fcName: a[0], claimId: a[1] }; },
     assignDBsTo:         function (a) { return { ids: a[0], fcName: a[1] }; },
+    setDBStatus:         function (a) { return { id: a[0], status: a[1] }; },
     respondToAssignment: function (a) { return { dbId: a[0], fcName: a[1], isAccept: a[2], dbType: a[3] }; },
     saveResultWithFiles: function (a) { return { dbId: a[0], data: a[1], base64Files: a[2] }; }
   };
@@ -1025,6 +1026,7 @@ function renderList() {
         let badge = '<span class="badge b-wait">' + db.status + '</span>';
         if(db.status === '진행중') badge = '<span class="badge b-prog">진행중</span>';
         if(db.status === '결과완료') badge = '<span class="badge b-done">' + db.result + '</span>';
+        if(admin) badge = '<span onclick="openStatusChange(\'' + db.id + '\')" title="진행상태 변경" style="cursor:pointer;white-space:nowrap;">' + badge + '<span style="font-size:10px;color:var(--tx-sub);margin-left:2px;">▼</span></span>';
 
         const stepHtml = cardSteps(db);
 
@@ -2516,6 +2518,59 @@ function showTypeStatList(key, label) {
     return false;
   });
   openStatListModal((t === 'all' ? '전체 DB' : t) + ' · ' + label, list);
+}
+
+// ===== 관리자: 카드 상태 뱃지로 진행상태 변경 =====
+var STATUS_RESULTS = ['TA완료', 'AP', 'PC', '청약', '부재', '결번', '거절', '기타'];
+function openStatusChange(id) {
+  var db = DB_LIST.find(function(x){ return x.id === id; });
+  if (!db) return;
+  var cur = db.status === '결과완료' ? db.result : db.status;
+  var opts = (db.assignedFC ? ['배정대기', '진행중'] : []).concat(STATUS_RESULTS);
+  function btn(v) {
+    var on = v === cur;
+    var color = /부재|결번|거절/.test(v) ? 'var(--red)' : (v === '청약' ? 'var(--green)' : 'var(--blue)');
+    return '<button type="button" onclick="applyStatusChange(\'' + id + '\',\'' + v + '\')" style="outline:none;padding:12px 4px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;border:2px solid ' + (on ? color : 'rgba(0,0,0,0.12)') + ';background:' + (on ? '#f0f7ff' : '#fff') + ';color:' + (on ? color : 'var(--tx-main)') + ';">' + v + (on ? ' ✓' : '') + '</button>';
+  }
+  Swal.fire({
+    title: '진행상태 변경',
+    html: '<div style="font-size:13px;font-weight:700;color:var(--tx-sub);margin-bottom:12px;">' + esc(db.assignedFC || '미배정') + ' · ' + esc(db.dbType) + ' · <strong style="color:var(--tx-main);">' + esc(db.customerName) + '</strong><br>현재: <strong style="color:var(--blue);">' + esc(cur || '-') + '</strong></div>' +
+          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' + opts.map(btn).join('') + '</div>' +
+          '<div style="font-size:11px;color:var(--tx-sub);font-weight:600;margin-top:10px;">청약을 고르면 계약 정보 입력 창이 열립니다.</div>',
+    showConfirmButton: false, showCancelButton: true, cancelButtonText: '닫기'
+  });
+}
+
+function applyStatusChange(id, val) {
+  var db = DB_LIST.find(function(x){ return x.id === id; });
+  if (!db) return;
+  var cur = db.status === '결과완료' ? db.result : db.status;
+  if (val === cur) { Swal.close(); return; }
+  Swal.close();
+  if (val === '청약') {
+    openResult(id);
+    var radio = document.querySelector('input[name="resType"][value="청약"]');
+    if (radio) { radio.checked = true; toggleResFields(); }
+    return;
+  }
+  function done(r) {
+    var j; try { j = typeof r === 'string' ? JSON.parse(r) : r; } catch (e) { j = { success: false, error: '응답 오류' }; }
+    if (j && j.success) { Swal.fire({ icon: 'success', title: db.customerName + ' → ' + val, timer: 1200, showConfirmButton: false }); loadData('갱신 중...'); }
+    else { hideLoader(); Swal.fire('변경 실패', (j && j.error) || '', 'error'); }
+  }
+  function fail(e) {
+    hideLoader();
+    var msg = String(e && e.message || e);
+    if (msg.indexOf('알 수 없는 요청') >= 0) msg = '진행중/배정대기 변경은 Apps Script(code.gs) 업데이트 후 사용할 수 있습니다.';
+    Swal.fire('변경 실패', msg, 'error');
+  }
+  showLoader('진행상태 변경 중...');
+  if (STATUS_RESULTS.indexOf(val) >= 0) {
+    google.script.run.withSuccessHandler(done).withFailureHandler(fail)
+      .saveResultWithFiles(id, { result: val, details: db.details || {} }, []);
+  } else {
+    google.script.run.withSuccessHandler(done).withFailureHandler(fail).setDBStatus(id, val);
+  }
 }
 </script>
 </body>
