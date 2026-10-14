@@ -525,6 +525,7 @@ let BATCH_POLL = null;
 let BATCHES = [];
 let MY_CLAIM_QTY = 0;
 let ASSIGN_FC = '';
+let STAT_TYPE = 'all';
 const ADMIN_ASSIGNEES = ['옥영훈', '김태건', '박동준', '조시온'];
 function bulkAssignees() { var out = FC_LIST.slice(); ADMIN_ASSIGNEES.forEach(function(n){ if (out.indexOf(n) < 0) out.push(n); }); return out.sort(function(a, b){ return String(a).localeCompare(String(b), 'ko'); }); }
 let ASSIGN_POOL = [];
@@ -1772,7 +1773,7 @@ function showStatList(fcName, key, label) {
             resultBadge +
           '</div>' +
           '<div style="font-size:13px;font-weight:700;"><a href="tel:' + db.phone + '" style="color:var(--blue);text-decoration:none;">📞 ' + db.phone + '</a> · <span class="badge b-type">' + db.dbType + '</span>' + (shareNote(db.dbType) ? ' <span class="badge share-badge">💰 ' + shareNote(db.dbType) + '</span>' : '') + '</div>' +
-          '<div style="font-size:12px;color:var(--tx-sub);font-weight:600;margin-top:4px;">배분: ' + (db.assignDate||'-') + '</div>' +
+          statDetailHtml(db) +
         '</div>';
     }).join('');
   }
@@ -2394,34 +2395,43 @@ function renderStatsExtras(monthList, fcMap) {
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b, 'ko');
   });
   if (!types.length) { area.innerHTML = ''; return; }
-  area.innerHTML = '<div style="font-size:18px;font-weight:900;margin:8px 0 12px;">🗂️ DB종류별 통계</div>' + types.map(function(t){
-    var m = map[t];
-    var assigned = m.total - m.noFC;
-    var noTA = assigned - m.ta;
-    var taPct = assigned ? Math.round(m.ta / assigned * 100) : 0;
-    var meet = assigned ? ((m.ap + m.pc) / assigned * 100).toFixed(1) : '0.0';
-    var con = assigned ? (m.contract / assigned * 100).toFixed(1) : '0.0';
-    function cell(label, val, color) {
-      return '<div style="background:#f5f5f7;border-radius:10px;padding:8px 2px;text-align:center;"><div style="font-size:10px;font-weight:700;color:var(--tx-sub);white-space:nowrap;">' + label + '</div><div style="font-size:15px;font-weight:900;color:' + (color || 'var(--tx-main)') + ';">' + val + '</div></div>';
-    }
-    return '<div class="card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
-        '<div style="font-size:16px;font-weight:900;">' + t + '</div>' +
-        '<div style="font-size:12px;font-weight:800;color:var(--blue);background:#e5f0ff;padding:4px 10px;border-radius:12px;">총 ' + m.total + '건' + (m.noFC ? ' · 미배정 ' + m.noFC : '') + '</div>' +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;">' +
-        cell('TA완료', m.ta, 'var(--blue)') + cell('TA미입력', noTA, noTA > 0 ? 'var(--red)' : 'var(--green)') + cell('AP', m.ap, 'var(--blue)') + cell('PC', m.pc, '#f57c00') + cell('청약', m.contract, 'var(--green)') +
-      '</div>' +
-      '<div style="height:8px;background:#ffe1e1;border-radius:6px;overflow:hidden;margin-bottom:8px;"><div style="height:100%;width:' + taPct + '%;background:var(--green);"></div></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;">' +
-        '<span style="color:var(--tx-sub);">TA율 ' + taPct + '%</span>' +
-        '<span style="color:var(--blue);">미팅률 ' + meet + '%</span>' +
-        '<span style="color:var(--green);">청약률 ' + con + '%</span>' +
-      '</div>' +
-    '</div>';
-  }).join('');
+  var allSum = { total: 0, noFC: 0, wait: 0, ta: 0, ap: 0, pc: 0, contract: 0, fail: 0 };
+  types.forEach(function(t){ Object.keys(allSum).forEach(function(k){ allSum[k] += map[t][k]; }); });
+  if (STAT_TYPE !== 'all' && types.indexOf(STAT_TYPE) < 0) STAT_TYPE = 'all';
+  var sel = '<select id="statTypeSel" class="inp inp-arrow no-cap" style="padding:10px 12px;font-size:14px;font-weight:800;margin-bottom:12px;border-color:var(--blue);color:var(--blue);" onchange="STAT_TYPE=this.value; loadStats();">' +
+    '<option value="all"' + (STAT_TYPE === 'all' ? ' selected' : '') + '>전체 DB (' + allSum.total + '건)</option>' +
+    types.map(function(t){ return '<option value="' + esc(t) + '"' + (STAT_TYPE === t ? ' selected' : '') + '>' + esc(t) + ' (' + map[t].total + '건)</option>'; }).join('') +
+  '</select>';
+  var shown = STAT_TYPE === 'all' ? { name: '전체 DB', m: allSum } : { name: STAT_TYPE, m: map[STAT_TYPE] };
+  area.innerHTML = '<div style="font-size:18px;font-weight:900;margin:8px 0 12px;">🗂️ DB종류별 통계</div>' + sel + typeStatCard(shown.name, shown.m);
 }
 
+function typeStatCard(t, m) {
+  var assigned = m.total - m.noFC;
+  var noTA = assigned - m.ta;
+  var taPct = assigned ? Math.round(m.ta / assigned * 100) : 0;
+  var meet = assigned ? ((m.ap + m.pc) / assigned * 100).toFixed(1) : '0.0';
+  var con = assigned ? (m.contract / assigned * 100).toFixed(1) : '0.0';
+  function cell(label, val, color) {
+    return '<div style="background:#f5f5f7;border-radius:10px;padding:8px 2px;text-align:center;"><div style="font-size:10px;font-weight:700;color:var(--tx-sub);white-space:nowrap;">' + label + '</div><div style="font-size:15px;font-weight:900;color:' + (color || 'var(--tx-main)') + ';">' + val + '</div></div>';
+  }
+  return '<div class="card">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+      '<div style="font-size:16px;font-weight:900;">' + esc(t) + '</div>' +
+      '<div style="font-size:12px;font-weight:800;color:var(--blue);background:#e5f0ff;padding:4px 10px;border-radius:12px;">총 ' + m.total + '건' + (m.noFC ? ' · 미배정 ' + m.noFC : '') + (m.wait ? ' · 미수락 ' + m.wait : '') + '</div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px;">' +
+      cell('TA완료', m.ta, 'var(--blue)') + cell('TA미입력', noTA, noTA > 0 ? 'var(--red)' : 'var(--green)') + cell('AP', m.ap, 'var(--blue)') + cell('PC', m.pc, '#f57c00') + cell('청약', m.contract, 'var(--green)') +
+    '</div>' +
+    '<div style="margin-bottom:10px;">' + cell('부재 · 결번 · 거절 · 기타', m.fail, 'var(--red)') + '</div>' +
+    '<div style="height:8px;background:#ffe1e1;border-radius:6px;overflow:hidden;margin-bottom:8px;"><div style="height:100%;width:' + taPct + '%;background:var(--green);"></div></div>' +
+    '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;">' +
+      '<span style="color:var(--tx-sub);">TA율 ' + taPct + '%</span>' +
+      '<span style="color:var(--blue);">미팅률 ' + meet + '%</span>' +
+      '<span style="color:var(--green);">청약률 ' + con + '%</span>' +
+    '</div>' +
+  '</div>';
+}
 function captureStats() {
   if (typeof html2canvas === 'undefined') return Swal.fire('잠시 후 다시 시도', '이미지 도구를 불러오는 중입니다.', 'info');
   var el = document.getElementById('statsCapture');
@@ -2452,6 +2462,28 @@ function captureStats() {
       });
     }, 'image/png');
   }).catch(function(e){ hideLoader(); Swal.fire('캡처 실패', String(e), 'error'); });
+}
+
+function statDetailHtml(db) {
+  var rows = [];
+  function row(icon, label, val) { if (val !== undefined && val !== null && String(val).trim() !== '') rows.push('<div style="display:flex;gap:6px;margin-top:4px;"><span style="flex-shrink:0;width:74px;color:var(--tx-sub);">' + icon + ' ' + label + '</span><span style="flex:1;min-width:0;word-break:break-all;">' + val + '</span></div>'); }
+  row('📌', '상태', esc(db.status) + (db.assignedFC ? ' · ' + esc(db.assignedFC) : ''));
+  row('📅', '배분일', esc(db.assignDate || '-'));
+  row('🗓️', '퍼미션', esc(db.permDate || ''));
+  row('📍', '주소', esc(db.address));
+  row('🕘', '가능일정', db.avail && db.avail !== '무관' ? esc(db.avail) : '');
+  row('💰', '기납입', esc(db.currentPremium));
+  row('🔔', '요청', esc(db.request));
+  row('🗒️', '비고', esc(db.note));
+  var d = db.details || {};
+  var cs = d.contracts && d.contracts.length ? d.contracts : (d.contractDate ? [{ date: d.contractDate, name: d.contractorName, comp: d.insComp, prod: d.insProd, prem: d.premium }] : []);
+  cs.forEach(function(c, i){
+    var p = Number(String(c.prem || '').replace(/[^0-9]/g, '')) || 0;
+    row('🎉', '청약' + (cs.length > 1 ? ' ' + (i + 1) : ''), esc(c.date || '') + ' · ' + esc(c.name || '') + ' · ' + esc((c.comp || '') + ' ' + (c.prod || '')) + (p ? ' · <strong style="color:var(--blue);">' + p.toLocaleString() + '원</strong>' : ''));
+  });
+  row('📝', '상세내용', esc(d.otherNote));
+  if (db.files && db.files.length) rows.push('<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">' + db.files.map(function(f){ return '<a href="' + f.url + '" target="_blank" style="background:#e5f0ff;color:var(--blue);padding:4px 8px;border-radius:6px;text-decoration:none;font-size:12px;">📎 ' + esc(f.name || '첨부파일') + '</a>'; }).join('') + '</div>');
+  return '<div style="background:#f5f5f7;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;font-weight:600;color:var(--tx-main);line-height:1.45;">' + rows.join('') + '</div>';
 }
 </script>
 </body>
