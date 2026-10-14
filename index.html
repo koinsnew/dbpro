@@ -1759,25 +1759,7 @@ function showStatList(fcName, key, label) {
     return false;
   });
 
-  document.getElementById('sl_title').innerText = fcName + ' · ' + label + ' (' + list.length + '건)';
-  const body = document.getElementById('sl_body');
-
-  if (list.length === 0) {
-    body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tx-sub);font-weight:700;">해당 내역이 없습니다.</div>';
-  } else {
-    body.innerHTML = list.map(db => {
-      const resultBadge = db.result ? '<span class="badge b-done" style="margin-left:4px;">' + db.result + '</span>' : '';
-      return '<div class="sl-item">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
-            '<div style="font-size:15px;font-weight:900;">' + db.customerName + ' <span style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + (db.birth||'') + '</span></div>' +
-            resultBadge +
-          '</div>' +
-          '<div style="font-size:13px;font-weight:700;"><a href="tel:' + db.phone + '" style="color:var(--blue);text-decoration:none;">📞 ' + db.phone + '</a> · <span class="badge b-type">' + db.dbType + '</span>' + (shareNote(db.dbType) ? ' <span class="badge share-badge">💰 ' + shareNote(db.dbType) + '</span>' : '') + '</div>' +
-          statDetailHtml(db) +
-        '</div>';
-    }).join('');
-  }
-  document.getElementById('mStatList').style.display = 'flex';
+  openStatListModal(fcName + ' · ' + label, list);
 }
 
 function loadStats() {
@@ -2412,18 +2394,22 @@ function typeStatCard(t, m) {
   var taPct = assigned ? Math.round(m.ta / assigned * 100) : 0;
   var meet = assigned ? ((m.ap + m.pc) / assigned * 100).toFixed(1) : '0.0';
   var con = assigned ? (m.contract / assigned * 100).toFixed(1) : '0.0';
-  function cell(label, val, color) {
-    return '<div style="background:#f5f5f7;border-radius:10px;padding:8px 2px;text-align:center;"><div style="font-size:10px;font-weight:700;color:var(--tx-sub);white-space:nowrap;">' + label + '</div><div style="font-size:15px;font-weight:900;color:' + (color || 'var(--tx-main)') + ';">' + val + '</div></div>';
+  function cell(label, val, color, key) {
+    return '<div onclick="showTypeStatList(\'' + key + '\',\'' + label + '\')" style="cursor:pointer;background:#f5f5f7;border-radius:10px;padding:8px 2px;text-align:center;"><div style="font-size:10px;font-weight:700;color:var(--tx-sub);white-space:nowrap;">' + label + '</div><div class="stat-num" style="font-size:15px;font-weight:900;color:' + (color || 'var(--tx-main)') + ';">' + val + '</div></div>';
   }
   return '<div class="card">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
       '<div style="font-size:16px;font-weight:900;">' + esc(t) + '</div>' +
-      '<div style="font-size:12px;font-weight:800;color:var(--blue);background:#e5f0ff;padding:4px 10px;border-radius:12px;">총 ' + m.total + '건' + (m.noFC ? ' · 미배정 ' + m.noFC : '') + (m.wait ? ' · 미수락 ' + m.wait : '') + '</div>' +
+      '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">' +
+        '<span onclick="showTypeStatList(\'total\',\'전체\')" class="stat-num" style="cursor:pointer;font-size:12px;font-weight:800;color:var(--blue);background:#e5f0ff;padding:4px 8px;border-radius:12px;">총 ' + m.total + '건</span>' +
+        (m.noFC ? '<span onclick="showTypeStatList(\'noFC\',\'미배정\')" class="stat-num" style="cursor:pointer;font-size:12px;font-weight:800;color:var(--red);background:#fff2f2;padding:4px 8px;border-radius:12px;">미배정 ' + m.noFC + '</span>' : '') +
+        (m.wait ? '<span onclick="showTypeStatList(\'wait\',\'미수락\')" class="stat-num" style="cursor:pointer;font-size:12px;font-weight:800;color:#a16207;background:#fefce8;padding:4px 8px;border-radius:12px;">미수락 ' + m.wait + '</span>' : '') +
+      '</div>' +
     '</div>' +
     '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px;">' +
-      cell('TA완료', m.ta, 'var(--blue)') + cell('TA미입력', noTA, noTA > 0 ? 'var(--red)' : 'var(--green)') + cell('AP', m.ap, 'var(--blue)') + cell('PC', m.pc, '#f57c00') + cell('청약', m.contract, 'var(--green)') +
+      cell('TA완료', m.ta, 'var(--blue)', 'ta') + cell('TA미입력', noTA, noTA > 0 ? 'var(--red)' : 'var(--green)', 'noTA') + cell('AP', m.ap, 'var(--blue)', 'ap') + cell('PC', m.pc, '#f57c00', 'pc') + cell('청약', m.contract, 'var(--green)', 'contract') +
     '</div>' +
-    '<div style="margin-bottom:10px;">' + cell('부재 · 결번 · 거절 · 기타', m.fail, 'var(--red)') + '</div>' +
+    '<div style="margin-bottom:10px;">' + cell('부재 · 결번 · 거절 · 기타', m.fail, 'var(--red)', 'fail') + '</div>' +
     '<div style="height:8px;background:#ffe1e1;border-radius:6px;overflow:hidden;margin-bottom:8px;"><div style="height:100%;width:' + taPct + '%;background:var(--green);"></div></div>' +
     '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;">' +
       '<span style="color:var(--tx-sub);">TA율 ' + taPct + '%</span>' +
@@ -2484,6 +2470,52 @@ function statDetailHtml(db) {
   row('📝', '상세내용', esc(d.otherNote));
   if (db.files && db.files.length) rows.push('<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">' + db.files.map(function(f){ return '<a href="' + f.url + '" target="_blank" style="background:#e5f0ff;color:var(--blue);padding:4px 8px;border-radius:6px;text-decoration:none;font-size:12px;">📎 ' + esc(f.name || '첨부파일') + '</a>'; }).join('') + '</div>');
   return '<div style="background:#f5f5f7;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;font-weight:600;color:var(--tx-main);line-height:1.45;">' + rows.join('') + '</div>';
+}
+
+function openStatListModal(title, list) {
+  document.getElementById('sl_title').innerText = title + ' (' + list.length + '건)';
+  const body = document.getElementById('sl_body');
+
+  if (list.length === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tx-sub);font-weight:700;">해당 내역이 없습니다.</div>';
+  } else {
+    body.innerHTML = list.map(db => {
+      const resultBadge = db.result ? '<span class="badge b-done" style="margin-left:4px;">' + db.result + '</span>' : '';
+      return '<div class="sl-item">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+            '<div style="font-size:15px;font-weight:900;">' + db.customerName + ' <span style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + (db.birth||'') + '</span></div>' +
+            resultBadge +
+          '</div>' +
+          '<div style="font-size:13px;font-weight:700;"><a href="tel:' + db.phone + '" style="color:var(--blue);text-decoration:none;">📞 ' + db.phone + '</a> · <span class="badge b-type">' + db.dbType + '</span>' + (shareNote(db.dbType) ? ' <span class="badge share-badge">💰 ' + shareNote(db.dbType) + '</span>' : '') + '</div>' +
+          statDetailHtml(db) +
+        '</div>';
+    }).join('');
+  }
+  document.getElementById('mStatList').style.display = 'flex';
+}
+
+function showTypeStatList(key, label) {
+  var t = STAT_TYPE;
+  var list = DB_LIST.filter(function(db){ return (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)); });
+  var sc = myScopeType(); if (sc) list = list.filter(function(db){ return String(db.dbType || '').indexOf(sc) >= 0; });
+  if (ME.role !== '관리자' && ME.role !== '파트너') list = list.filter(function(db){ return db.assignedFC === ME.name; });
+  if (t !== 'all') list = list.filter(function(db){ return (db.dbType || '(미지정)') === t; });
+  list = list.filter(function(db){
+    var r = db.result || '';
+    if (key === 'total') return true;
+    if (key === 'noFC') return !db.assignedFC;
+    if (!db.assignedFC) return false;
+    if (key === 'wait') return db.status === '배정대기';
+    if (key === 'noTA') return !r;
+    if (db.status === '배정대기') return false;
+    if (key === 'ta') return !!r;
+    if (key === 'ap') return r.indexOf('AP') >= 0;
+    if (key === 'pc') return r.indexOf('PC') >= 0;
+    if (key === 'contract') return r.indexOf('청약') >= 0;
+    if (key === 'fail') return /부재|결번|거절|기타/.test(r) && !/AP|PC|청약/.test(r);
+    return false;
+  });
+  openStatListModal((t === 'all' ? '전체 DB' : t) + ' · ' + label, list);
 }
 </script>
 </body>
