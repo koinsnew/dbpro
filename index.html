@@ -1137,7 +1137,7 @@ function renderChart(dataList) {
       t.unassigned++;
     } else {
       const r = d.result || '';
-      if (r) t.ta_all++; 
+      if (r || d.status === '재통화') t.ta_all++; 
       
       if (r.indexOf('AP') >= 0) t.ap++;
       else if (r.indexOf('PC') >= 0) t.pc++;
@@ -1753,14 +1753,14 @@ function showStatList(fcName, key, label) {
   if (STAT_TYPE !== 'all') list = list.filter(db => (db.dbType || '(미지정)') === STAT_TYPE);
   
   list = list.filter(db => {
-    if (key === 'noTA') return !db.result;
+    if (key === 'noTA') return !db.result && db.status !== '재통화';
     if (key === 'recall') return db.status === '재통화';
     if (key === 'unassigned') return db.status === '배정대기';
     if (db.status === '배정대기') return false;
     if (key === 'total') return true;
 
     const r = db.result || '';
-    if (key === 'ta') return !!r;
+    if (key === 'ta') return !!r || db.status === '재통화';
     if (key === 'ap') return r.indexOf('AP') >= 0;
     if (key === 'pc') return r.indexOf('PC') >= 0;
     if (key === 'contract') return r.indexOf('청약') >= 0;
@@ -1851,7 +1851,7 @@ function loadStats() {
       } else {
         const r = db.result || '';
         if (db.status === '재통화') fcMap[db.assignedFC].recall++;
-        if(r) fcMap[db.assignedFC].ta++;
+        if(r || db.status === '재통화') fcMap[db.assignedFC].ta++;
 
         if(r.includes('AP')) fcMap[db.assignedFC].ap++;
         else if(r.includes('PC')) fcMap[db.assignedFC].pc++;
@@ -2383,7 +2383,7 @@ function renderStatsExtras(monthList, fcMap) {
     if (db.status === '배정대기') { m.wait++; return; }
     if (db.status === '재통화') m.recall++;
     var r = db.result || '';
-    if (r) m.ta++;
+    if (r || db.status === '재통화') m.ta++;
     if (r.indexOf('AP') >= 0) m.ap++;
     else if (r.indexOf('PC') >= 0) m.pc++;
     else if (r.indexOf('청약') >= 0) m.contract++;
@@ -2529,9 +2529,9 @@ function showTypeStatList(key, label) {
     if (!db.assignedFC) return false;
     if (key === 'wait') return db.status === '배정대기';
     if (key === 'recall') return db.status === '재통화';
-    if (key === 'noTA') return !r;
+    if (key === 'noTA') return !r && db.status !== '재통화';
     if (db.status === '배정대기') return false;
-    if (key === 'ta') return !!r;
+    if (key === 'ta') return !!r || db.status === '재통화';
     if (key === 'ap') return r.indexOf('AP') >= 0;
     if (key === 'pc') return r.indexOf('PC') >= 0;
     if (key === 'contract') return r.indexOf('청약') >= 0;
