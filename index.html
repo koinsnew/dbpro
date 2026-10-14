@@ -2440,42 +2440,135 @@ function typeStatCard(t, m) {
     '</div>' +
   '</div>';
 }
+// ----- 캡처용 표 리포트 -----
+function buildReportData() {
+  var isAdmin = ME.role === '관리자', isPartner = ME.role === '파트너';
+  var list = DB_LIST.filter(function(db){ return (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)); });
+  var sc = myScopeType(); if (sc) list = list.filter(function(db){ return String(db.dbType || '').indexOf(sc) >= 0; });
+  if (!isAdmin && !isPartner) list = list.filter(function(db){ return db.assignedFC === ME.name; });
+  if (STAT_TYPE !== 'all') list = list.filter(function(db){ return (db.dbType || '(미지정)') === STAT_TYPE; });
+  function blank() { return { total: 0, noFC: 0, assigned: 0, ta: 0, ap: 0, pc: 0, contract: 0, recall: 0, fail: 0 }; }
+  function add(m, db) {
+    m.total++;
+    if (!db.assignedFC) { m.noFC++; return; }
+    m.assigned++;
+    var r = db.result || '';
+    if (db.status === '재통화') { m.recall++; m.ta++; return; }
+    if (db.status === '배정대기' || !r) return;
+    m.ta++;
+    if (r.indexOf('AP') >= 0) m.ap++;
+    else if (r.indexOf('PC') >= 0) m.pc++;
+    else if (r.indexOf('청약') >= 0) m.contract++;
+    else if (/부재|결번|거절|기타/.test(r)) m.fail++;
+  }
+  var types = {}, fcs = {}, sum = blank();
+  list.forEach(function(db){
+    var t = db.dbType || '(미지정)';
+    if (!types[t]) types[t] = blank();
+    add(types[t], db); add(sum, db);
+    if (db.assignedFC) { if (!fcs[db.assignedFC]) fcs[db.assignedFC] = blank(); add(fcs[db.assignedFC], db); }
+  });
+  var order = TYPE_LIST.map(function(t){ return t.type; });
+  var typeRows = Object.keys(types).sort(function(a, b){ var ia = order.indexOf(a), ib = order.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b, 'ko'); })
+    .map(function(t){ return { name: t, m: types[t] }; });
+  var fcRows = Object.keys(fcs).map(function(f){ return { name: f, m: fcs[f] }; })
+    .sort(function(a, b){ return (b.m.assigned - b.m.ta) - (a.m.assigned - a.m.ta) || a.name.localeCompare(b.name, 'ko'); });
+  return { typeRows: typeRows, fcRows: fcRows, sum: sum };
+}
+
+function buildReportEl() {
+  var d = buildReportData();
+  var now = new Date();
+  var wk = ['일', '월', '화', '수', '목', '금', '토'][now.getDay()];
+  var stamp = now.getFullYear() + '년 ' + (now.getMonth() + 1) + '월 ' + now.getDate() + '일(' + wk + ') ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  var NAVY = '#14213d', BLUE = '#1d4ed8', RED = '#dc2626', GREEN = '#16a34a', ORANGE = '#c2410c', LINE = '#e5e7eb';
+  var th = 'padding:10px 6px;font-size:13px;font-weight:800;color:#fff;background:' + NAVY + ';text-align:center;white-space:nowrap;';
+  var td = 'padding:9px 6px;font-size:14px;font-weight:700;text-align:center;border-bottom:1px solid ' + LINE + ';white-space:nowrap;';
+  function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+  function bar(p) {
+    var c = p >= 80 ? GREEN : (p >= 50 ? '#f59e0b' : RED);
+    return '<div style="display:flex;align-items:center;gap:6px;justify-content:center;"><div style="width:54px;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;"><div style="width:' + p + '%;height:100%;background:' + c + ';"></div></div><span style="font-size:13px;font-weight:800;color:' + c + ';min-width:34px;text-align:right;">' + p + '%</span></div>';
+  }
+  function row(name, m, i, isSum) {
+    var no = m.assigned - m.ta;
+    var bg = isSum ? '#eef4ff' : (i % 2 ? '#f8fafc' : '#ffffff');
+    var w = isSum ? 'font-weight:900;' : '';
+    return '<tr style="background:' + bg + ';">' +
+      '<td style="' + td + 'text-align:left;padding-left:12px;font-weight:900;color:' + NAVY + ';">' + esc(name) + '</td>' +
+      '<td style="' + td + w + '">' + m.assigned + '</td>' +
+      '<td style="' + td + w + 'color:' + BLUE + ';">' + m.ta + '</td>' +
+      '<td style="' + td + 'font-weight:900;color:' + (no > 0 ? RED : GREEN) + ';">' + no + '</td>' +
+      '<td style="' + td + '">' + bar(pct(m.ta, m.assigned)) + '</td>' +
+      '<td style="' + td + w + 'color:' + BLUE + ';">' + m.ap + '</td>' +
+      '<td style="' + td + w + 'color:#ea580c;">' + m.pc + '</td>' +
+      '<td style="' + td + w + 'color:' + GREEN + ';">' + m.contract + '</td>' +
+      '<td style="' + td + w + 'color:' + ORANGE + ';">' + m.recall + '</td>' +
+      '<td style="' + td + w + 'color:' + RED + ';">' + m.fail + '</td>' +
+    '</tr>';
+  }
+  function table(title, firstCol, rows, sum) {
+    if (!rows.length) return '';
+    return '<div style="margin-top:22px;">' +
+      '<div style="font-size:16px;font-weight:900;color:' + NAVY + ';margin-bottom:8px;padding-left:8px;border-left:4px solid ' + BLUE + ';">' + title + '</div>' +
+      '<table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid ' + LINE + ';">' +
+        '<thead><tr>' +
+          '<th style="' + th + 'text-align:left;padding-left:12px;">' + firstCol + '</th><th style="' + th + '">배정</th><th style="' + th + '">TA완료</th><th style="' + th + '">TA미입력</th><th style="' + th + '">TA율</th>' +
+          '<th style="' + th + '">AP</th><th style="' + th + '">PC</th><th style="' + th + '">청약</th><th style="' + th + '">재통화</th><th style="' + th + '">부재·결번<br>거절·기타</th>' +
+        '</tr></thead><tbody>' +
+        rows.map(function(r, i){ return row(r.name, r.m, i, false); }).join('') +
+        (sum ? row('합계', sum, 0, true) : '') +
+      '</tbody></table></div>';
+  }
+  var s = d.sum;
+  var kpi = function(label, val, color) { return '<div style="flex:1;background:#f8fafc;border:1px solid ' + LINE + ';border-radius:10px;padding:10px 6px;text-align:center;"><div style="font-size:12px;font-weight:700;color:#64748b;">' + label + '</div><div style="font-size:22px;font-weight:900;color:' + color + ';margin-top:2px;">' + val + '</div></div>'; };
+  var el = document.createElement('div');
+  el.id = 'reportCanvas';
+  el.style.cssText = 'position:absolute;left:0;top:0;width:760px;background:#ffffff;padding:28px 26px 22px;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#0f172a;z-index:-1;';
+  el.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid ' + NAVY + ';padding-bottom:12px;">' +
+      '<div><div style="font-size:24px;font-weight:900;color:' + NAVY + ';letter-spacing:-0.5px;">헤리티지 금융지사 DB영업 통계</div>' +
+      '<div style="font-size:13px;font-weight:700;color:#64748b;margin-top:4px;">집계 기간 ' + fmtMonth(curMonth) + ' · 대상 ' + esc(STAT_TYPE === 'all' ? '전체 DB' : STAT_TYPE) + '</div></div>' +
+      '<div style="text-align:right;font-size:13px;font-weight:800;color:' + NAVY + ';">' + stamp + '<div style="font-size:11px;font-weight:600;color:#94a3b8;">기준</div></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;margin-top:16px;">' +
+      kpi('총 DB', s.total, NAVY) + kpi('TA완료', s.ta, BLUE) + kpi('TA미입력', s.assigned - s.ta, (s.assigned - s.ta) > 0 ? RED : GREEN) +
+      kpi('TA율', pct(s.ta, s.assigned) + '%', BLUE) + kpi('AP', s.ap, BLUE) + kpi('청약', s.contract, GREEN) +
+    '</div>' +
+    table('DB종류별 현황', 'DB종류', d.typeRows, d.typeRows.length > 1 ? s : null) +
+    table('FC별 TA 현황 (미입력 많은 순)', 'FC', d.fcRows, d.fcRows.length > 1 ? s : null) +
+    (s.noFC ? '<div style="font-size:12px;font-weight:700;color:#64748b;margin-top:10px;">※ 미배정 DB ' + s.noFC + '건은 배정 수에서 제외 · TA율 = TA완료 ÷ 배정 · 재통화는 TA완료에 포함</div>'
+            : '<div style="font-size:12px;font-weight:700;color:#64748b;margin-top:10px;">※ TA율 = TA완료 ÷ 배정 · 재통화는 TA완료에 포함</div>') +
+    '<div style="text-align:right;font-size:11px;font-weight:700;color:#94a3b8;margin-top:14px;">Heritage DB System · 데이터 PRO</div>';
+  return el;
+}
+
 function captureStats() {
   if (typeof html2canvas === 'undefined') return Swal.fire('잠시 후 다시 시도', '이미지 도구를 불러오는 중입니다.', 'info');
-  var el = document.getElementById('capRegion');
-  var hd = document.getElementById('capHeader');
-  var now = new Date();
-  hd.innerHTML = '<div style="font-size:18px;font-weight:900;">헤리티지 데이터 PRO 통계</div>' +
-    '<div style="font-size:12px;font-weight:700;color:var(--tx-sub);margin-top:2px;">' + fmtMonth(curMonth) + ' · ' + esc(STAT_TYPE === 'all' ? '전체 DB' : STAT_TYPE) + ' · ' + (now.getMonth() + 1) + '/' + now.getDate() + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' 기준</div>';
-  hd.style.display = 'block';
+  var old = document.getElementById('reportCanvas'); if (old) old.remove();
+  var el = buildReportEl();
+  document.body.appendChild(el);
   showLoader('통계 이미지를 만드는 중...');
-  html2canvas(el, {
-    scale: Math.min(2, window.devicePixelRatio || 2), backgroundColor: '#f5f5f7', useCORS: true,
-    windowWidth: el.scrollWidth,
-    ignoreElements: function(n){ return n.classList && n.classList.contains('no-cap'); }
-  }).then(function(canvas){
-    hd.style.display = 'none';
+  html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true, scrollX: 0, scrollY: -window.scrollY, windowWidth: 820 })
+  .then(function(canvas){
+    el.remove();
     hideLoader();
-    var name = '데이터PRO_통계_' + curMonth + '.png';
+    var now = new Date();
+    var name = '헤리티지_DB영업통계_' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '_' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + '.png';
     canvas.toBlob(function(blob){
       var file = new File([blob], name, { type: 'image/png' });
       var canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
       var url = URL.createObjectURL(blob);
       Swal.fire({
-        title: '통계 이미지', imageUrl: url, imageAlt: '통계 이미지',
+        title: 'DB영업 통계 이미지', imageUrl: url, imageAlt: '통계 이미지', width: 600,
         showConfirmButton: canShare, confirmButtonText: '📤 공유하기', confirmButtonColor: '#007aff',
         showDenyButton: true, denyButtonText: '💾 저장하기', denyButtonColor: '#34c759',
         showCancelButton: true, cancelButtonText: '닫기'
       }).then(function(res){
-        if (res.isConfirmed) {
-          navigator.share({ files: [file], title: '데이터 PRO 통계 ' + fmtMonth(curMonth) }).catch(function(){});
-        } else if (res.isDenied) {
-          var a = document.createElement('a'); a.href = url; a.download = name;
-          document.body.appendChild(a); a.click(); a.remove();
-        }
+        if (res.isConfirmed) navigator.share({ files: [file], title: '헤리티지 금융지사 DB영업 통계' }).catch(function(){});
+        else if (res.isDenied) { var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
       });
     }, 'image/png');
-  }).catch(function(e){ hd.style.display = 'none'; hideLoader(); Swal.fire('캡처 실패', String(e), 'error'); });
+  }).catch(function(e){ el.remove(); hideLoader(); Swal.fire('캡처 실패', String(e), 'error'); });
 }
 
 function statDetailHtml(db) {
