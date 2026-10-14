@@ -1871,7 +1871,7 @@ function loadStats() {
     if(ME.role !== '관리자' && ME.role !== '파트너' && fc !== ME.name) continue;
     let d = fcMap[fc];
     
-    let meetingRate = d.total > 0 ? (((d.ap + d.pc) / d.total) * 100).toFixed(1) : 0;
+    let meetingRate = d.ta > 0 ? (((d.ap + d.pc) / d.ta) * 100).toFixed(1) : '0.0';
     let contractRate = d.total > 0 ? ((d.contract / d.total) * 100).toFixed(1) : 0;
 
     statsHtml += '<div class="card" style="border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.03);">' +
@@ -2414,7 +2414,7 @@ function typeStatCard(t, m) {
   var assigned = m.total - m.noFC;
   var noTA = assigned - m.ta;
   var taPct = assigned ? Math.round(m.ta / assigned * 100) : 0;
-  var meet = assigned ? ((m.ap + m.pc) / assigned * 100).toFixed(1) : '0.0';
+  var meet = m.ta ? ((m.ap + m.pc) / m.ta * 100).toFixed(1) : '0.0';
   var con = assigned ? (m.contract / assigned * 100).toFixed(1) : '0.0';
   function cell(label, val, color, key) {
     return '<div onclick="showTypeStatList(\'' + key + '\',\'' + label + '\')" style="cursor:pointer;background:#f5f5f7;border-radius:10px;padding:8px 2px;text-align:center;"><div style="font-size:10px;font-weight:700;color:var(--tx-sub);white-space:nowrap;">' + label + '</div><div class="stat-num" style="font-size:15px;font-weight:900;color:' + (color || 'var(--tx-main)') + ';">' + val + '</div></div>';
@@ -2487,7 +2487,7 @@ function buildReportEl() {
   function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
   function bar(p) {
     var c = p >= 80 ? GREEN : (p >= 50 ? '#f59e0b' : RED);
-    return '<div style="display:flex;align-items:center;gap:6px;justify-content:center;"><div style="width:54px;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;"><div style="width:' + p + '%;height:100%;background:' + c + ';"></div></div><span style="font-size:13px;font-weight:800;color:' + c + ';min-width:34px;text-align:right;">' + p + '%</span></div>';
+    return '<div style="display:flex;align-items:center;gap:6px;justify-content:center;"><div style="width:44px;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;"><div style="width:' + p + '%;height:100%;background:' + c + ';"></div></div><span style="font-size:13px;font-weight:800;color:' + c + ';min-width:34px;text-align:right;">' + p + '%</span></div>';
   }
   function row(name, m, i, isSum) {
     var no = m.assigned - m.ta;
@@ -2499,6 +2499,7 @@ function buildReportEl() {
       '<td style="' + td + w + 'color:' + BLUE + ';">' + m.ta + '</td>' +
       '<td style="' + td + 'font-weight:900;color:' + (no > 0 ? RED : GREEN) + ';">' + no + '</td>' +
       '<td style="' + td + '">' + bar(pct(m.ta, m.assigned)) + '</td>' +
+      '<td style="' + td + 'font-weight:900;color:' + BLUE + ';">' + pct(m.ap + m.pc, m.ta) + '%</td>' +
       '<td style="' + td + w + 'color:' + BLUE + ';">' + m.ap + '</td>' +
       '<td style="' + td + w + 'color:#ea580c;">' + m.pc + '</td>' +
       '<td style="' + td + w + 'color:' + GREEN + ';">' + m.contract + '</td>' +
@@ -2512,7 +2513,7 @@ function buildReportEl() {
       '<div style="font-size:16px;font-weight:900;color:' + NAVY + ';margin-bottom:8px;padding-left:8px;border-left:4px solid ' + BLUE + ';">' + title + '</div>' +
       '<table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid ' + LINE + ';">' +
         '<thead><tr>' +
-          '<th style="' + th + 'text-align:left;padding-left:12px;">' + firstCol + '</th><th style="' + th + '">배정</th><th style="' + th + '">TA완료</th><th style="' + th + '">TA미입력</th><th style="' + th + '">TA율</th>' +
+          '<th style="' + th + 'text-align:left;padding-left:12px;">' + firstCol + '</th><th style="' + th + '">배정</th><th style="' + th + '">TA완료</th><th style="' + th + '">TA미입력</th><th style="' + th + '">TA율</th><th style="' + th + '">미팅률</th>' +
           '<th style="' + th + '">AP</th><th style="' + th + '">PC</th><th style="' + th + '">청약</th><th style="' + th + '">재통화</th><th style="' + th + '">부재·결번<br>거절·기타</th>' +
         '</tr></thead><tbody>' +
         rows.map(function(r, i){ return row(r.name, r.m, i, false); }).join('') +
@@ -2532,12 +2533,12 @@ function buildReportEl() {
     '</div>' +
     '<div style="display:flex;gap:8px;margin-top:16px;">' +
       kpi('총 DB', s.total, NAVY) + kpi('TA완료', s.ta, BLUE) + kpi('TA미입력', s.assigned - s.ta, (s.assigned - s.ta) > 0 ? RED : GREEN) +
-      kpi('TA율', pct(s.ta, s.assigned) + '%', BLUE) + kpi('AP', s.ap, BLUE) + kpi('청약', s.contract, GREEN) +
+      kpi('TA율', pct(s.ta, s.assigned) + '%', BLUE) + kpi('미팅률', pct(s.ap + s.pc, s.ta) + '%', BLUE) + kpi('AP', s.ap, BLUE) + kpi('청약', s.contract, GREEN) +
     '</div>' +
     table('DB종류별 현황', 'DB종류', d.typeRows, d.typeRows.length > 1 ? s : null) +
     table('FC별 TA 현황 (미입력 많은 순)', 'FC', d.fcRows, d.fcRows.length > 1 ? s : null) +
-    (s.noFC ? '<div style="font-size:12px;font-weight:700;color:#64748b;margin-top:10px;">※ 미배정 DB ' + s.noFC + '건은 배정 수에서 제외 · TA율 = TA완료 ÷ 배정 · 재통화는 TA완료에 포함</div>'
-            : '<div style="font-size:12px;font-weight:700;color:#64748b;margin-top:10px;">※ TA율 = TA완료 ÷ 배정 · 재통화는 TA완료에 포함</div>') +
+    (s.noFC ? '<div style="font-size:12px;font-weight:700;color:#64748b;margin-top:10px;">※ 미배정 DB ' + s.noFC + '건은 배정 수에서 제외 · TA율 = TA완료 ÷ 배정 · 미팅률 = (AP+PC) ÷ TA완료 · 재통화는 TA완료에 포함</div>'
+            : '<div style="font-size:12px;font-weight:700;color:#64748b;margin-top:10px;">※ TA율 = TA완료 ÷ 배정 · 미팅률 = (AP+PC) ÷ TA완료 · 재통화는 TA완료에 포함</div>') +
     '<div style="text-align:right;font-size:11px;font-weight:700;color:#94a3b8;margin-top:14px;">Heritage DB System · 데이터 PRO</div>';
   return el;
 }
