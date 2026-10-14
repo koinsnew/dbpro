@@ -168,11 +168,18 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
           <span>P</span><span>R</span><span>O</span>
         </div>
       </div>
-      <div style="font-size:11px;font-weight:700;color:var(--tx-sub);margin-top:5px;line-height:1;" id="hdrInfo"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--tx-sub);margin-top:5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;" id="hdrInfo"></div>
     </div>
     
     <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-      <input type="month" id="hdr_month" class="inp" style="padding:4px 6px;font-size:13px;width:105px;" onchange="changeMonth()">
+      <div style="display:flex;align-items:center;background:#fbfbfd;border:1px solid var(--border);border-radius:10px;height:30px;">
+        <button onclick="shiftMonth(-1)" style="border:none;background:none;padding:0 5px;font-size:16px;font-weight:900;color:var(--tx-sub);cursor:pointer;">‹</button>
+        <span style="position:relative;display:inline-flex;align-items:center;">
+          <span id="hdr_month_lbl" style="font-size:12px;font-weight:800;white-space:nowrap;letter-spacing:-0.3px;"></span>
+          <input type="month" id="hdr_month" onchange="changeMonth()" onclick="try{this.showPicker()}catch(e){}" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;">
+        </span>
+        <button onclick="shiftMonth(1)" style="border:none;background:none;padding:0 5px;font-size:16px;font-weight:900;color:var(--tx-sub);cursor:pointer;">›</button>
+      </div>
       <button onclick="loadData('데이터를 최신화 중입니다...')" class="btn btn-ghost" style="padding:6px;font-size:11px;border-radius:8px;white-space:nowrap;">🔄 새로고침</button>
       <button onclick="window.handleLogout()" class="btn btn-ghost" style="padding:6px;font-size:11px;border-radius:8px;white-space:nowrap;">로그아웃</button>
     </div>
@@ -384,11 +391,18 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
       <label class="res-box"><input type="radio" name="resType" value="TA완료" style="display:none;" onchange="toggleResFields()"> TA완료</label>
       <label class="res-box"><input type="radio" name="resType" value="AP" style="display:none;" onchange="toggleResFields()"> AP</label>
       <label class="res-box"><input type="radio" name="resType" value="PC" style="display:none;" onchange="toggleResFields()"> PC</label>
-      <label class="res-box"><input type="radio" name="resType" value="청약" style="display:none;" onchange="toggleResFields()"> 청약</label>
       <label class="res-box"><input type="radio" name="resType" value="부재" style="display:none;" onchange="toggleResFields()"> 부재</label>
       <label class="res-box"><input type="radio" name="resType" value="결번" style="display:none;" onchange="toggleResFields()"> 결번</label>
       <label class="res-box"><input type="radio" name="resType" value="거절" style="display:none;" onchange="toggleResFields()"> 거절</label>
       <label class="res-box"><input type="radio" name="resType" value="기타" style="display:none;" onchange="toggleResFields()"> 기타</label>
+    </div>
+    <div style="margin-bottom:20px;">
+      <button type="button" id="cqBtn" onclick="toggleContractChoices()" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:16px;background:#fff;font-weight:900;font-size:14px;color:var(--tx-sub);cursor:pointer;">📝 청약여부 <span id="cqArrow">▾</span></button>
+      <div id="contractChoices" style="display:none;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;">
+        <label class="res-box" style="margin-bottom:0;"><input type="radio" name="resType" value="청약없음" style="display:none;" onchange="toggleResFields()"> 청약없음</label>
+        <label class="res-box" style="margin-bottom:0;"><input type="radio" name="resType" value="청약예정" style="display:none;" onchange="toggleResFields()"> 청약예정</label>
+        <label class="res-box" style="margin-bottom:0;"><input type="radio" name="resType" value="청약체결" style="display:none;" onchange="toggleResFields()"> 청약체결</label>
+      </div>
     </div>
 
     <div id="f_contract_container" style="display:none;">
@@ -604,6 +618,7 @@ window.onload = () => {
   const todayStr = new Date().toISOString().split('T')[0];
   
   document.getElementById('hdr_month').value = curMonth;
+  syncMonthLabel();
   document.getElementById('i_permDate').value = todayStr;
   document.getElementById('i_assignDate').value = todayStr; 
   document.getElementById('b_assignDate').value = todayStr; 
@@ -735,7 +750,8 @@ function handleLogout() {
 }
 
 function changeMonth() {
-  curMonth = document.getElementById('hdr_month').value;
+  curMonth = document.getElementById('hdr_month').value || curMonth;
+  syncMonthLabel();
   curDate = ''; 
   curResultFilter = 'all'; 
   renderDays();
@@ -1009,7 +1025,7 @@ function renderList() {
        if (curResultFilter === '배정대기') return db.status === '배정대기';
        if (db.status === '배정대기') return false; 
        
-       const r = db.result || '';
+       const r = rcat(db.result);
        if (curResultFilter === 'TA완료') return !!r; 
        if (curResultFilter === 'AP') return r.includes('AP');
        if (curResultFilter === 'PC') return r.includes('PC');
@@ -1028,7 +1044,7 @@ function renderList() {
         let badge = '<span class="badge b-wait">' + db.status + '</span>';
         if(db.status === '진행중') badge = '<span class="badge b-prog">진행중</span>';
         if(db.status === '재통화') badge = '<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;">📞 재통화</span>';
-        if(db.status === '결과완료') badge = '<span class="badge b-done">' + db.result + '</span>';
+        if(db.status === '결과완료') badge = resultBadge(db.result);
         if(admin) badge = '<span onclick="openStatusChange(\'' + db.id + '\')" title="진행상태 변경" style="cursor:pointer;white-space:nowrap;">' + badge + '<span style="font-size:10px;color:var(--tx-sub);margin-left:2px;">▼</span></span>';
 
         const stepHtml = cardSteps(db);
@@ -1081,18 +1097,22 @@ function renderList() {
         let safeAddr = db.address;
         if(!admin && db.assignedFC !== ME.name) safeAddr = safeAddr.replace(/[0-9]/g, '*');
 
-        let isContracted = db.result && db.result.includes('청약');
+        let isContracted = rcat(db.result) === '청약';
         let cardStyle = isContracted ? 'card card-contracted' : 'card';
         let manualTag = (db.details && db.details.isManual) ? `<span class="badge" style="background:#fefce8;color:#a16207;border:1px solid #fef08a;margin-left:4px;">수동배정</span>` : '';
 
-        return '<div class="' + cardStyle + '">' +
+        return '<div id="card_' + db.id + '" class="' + cardStyle + '">' +
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">' +
             '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
               '<span style="font-size:18px;font-weight:900;">' + db.customerName + '</span>' +
               (db.birth ? '<span style="font-size:13px;color:var(--tx-sub);font-weight:700;">' + db.birth + '</span>' : '') +
               '<span class="badge b-type">' + db.dbType + '</span>' +
               (shareNote(db.dbType) ? '<span class="badge share-badge">💰 ' + shareNote(db.dbType) + '</span>' : '') +
-            '</div>' + badge +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">' +
+              '<button class="no-cap" onclick="shareCard(\'' + db.id + '\')" title="사진으로 저장·공유" style="border:1px solid var(--border);background:#fff;border-radius:8px;width:30px;height:28px;font-size:15px;line-height:1;cursor:pointer;padding:0;">📷</button>' +
+              badge +
+            '</div>' +
           '</div>' +
           '<div style="font-size:13px;color:var(--tx-sub);margin-bottom:6px;font-weight:700;">퍼미션: ' + db.permDate + ' | 배분: ' + (db.assignDate || '-') + '</div>' +
           stepHtml +
@@ -1136,7 +1156,7 @@ function renderChart(dataList) {
     if (d.status === '배정대기') {
       t.unassigned++;
     } else {
-      const r = d.result || '';
+      const r = rcat(d.result);
       if (r || d.status === '재통화') t.ta_all++; 
       
       if (r.indexOf('AP') >= 0) t.ap++;
@@ -1610,6 +1630,7 @@ function openResult(id) {
   var _dbT = DB_LIST.find(function(x){ return x.id === id; });
   document.getElementById('resTitle').innerText = (_dbT && _dbT.result) ? '결과 수정' : '결과 입력';
   document.querySelectorAll('input[name="resType"]').forEach(el => el.checked = false);
+  document.getElementById('contractChoices').style.display = 'none';
   document.querySelectorAll('.res-box').forEach(el => {
     el.classList.remove('active');
     el.classList.remove('ta-fixed');
@@ -1624,7 +1645,7 @@ function openResult(id) {
     const taBox = document.querySelector('input[value="TA완료"]').closest('.res-box');
     taBox.classList.add('ta-fixed');
 
-    const radio = document.querySelector('input[name="resType"][value="' + db.result + '"]');
+    const radio = document.querySelector('input[name="resType"][value="' + (db.result === '청약' ? '청약체결' : db.result) + '"]');
     if (radio) {
       radio.checked = true;
       radio.closest('.res-box').classList.add('active');
@@ -1661,7 +1682,11 @@ function toggleResFields() {
   const checked = document.querySelector('input[name="resType"]:checked');
   const val = checked ? checked.value : null;
   const fCont = document.getElementById('f_contract_container');
-  fCont.style.display = (val === '청약') ? 'block' : 'none';
+  fCont.style.display = (val === '청약체결' || val === '청약') ? 'block' : 'none';
+  var isCQ = ['청약없음', '청약예정', '청약체결'].indexOf(val) >= 0;
+  if (isCQ) document.getElementById('contractChoices').style.display = 'grid';
+  var cqb = document.getElementById('cqBtn');
+  if (cqb) { cqb.style.borderColor = isCQ ? 'var(--blue)' : 'var(--border)'; cqb.style.color = isCQ ? 'var(--blue)' : 'var(--tx-sub)'; cqb.style.background = isCQ ? '#f0f7ff' : '#fff'; cqb.innerHTML = '📝 청약여부' + (isCQ ? ' · ' + val : '') + ' <span id="cqArrow">' + (document.getElementById('contractChoices').style.display === 'grid' ? '▴' : '▾') + '</span>'; }
 }
 
 async function submitResult() {
@@ -1674,7 +1699,7 @@ async function submitResult() {
   if (_prev.commission) details.commission = _prev.commission;
   if (_prev.isManual) details.isManual = _prev.isManual;
   
-  if (type === '청약') {
+  if (type === '청약체결' || type === '청약') {
     const items = document.querySelectorAll('.contract-item');
     items.forEach(el => {
        details.contracts.push({
@@ -1759,7 +1784,7 @@ function showStatList(fcName, key, label) {
     if (db.status === '배정대기') return false;
     if (key === 'total') return true;
 
-    const r = db.result || '';
+    const r = rcat(db.result);
     if (key === 'ta') return !!r || db.status === '재통화';
     if (key === 'ap') return r.indexOf('AP') >= 0;
     if (key === 'pc') return r.indexOf('PC') >= 0;
@@ -1783,7 +1808,7 @@ function loadStats() {
   var isFC = (!isAdmin && !isPartner);
   var commFactor = isAdmin ? 1 : (isPartner ? 0.15 : 0.7);
 
-  var contractList = monthList.filter(function (db) { return db.result && db.result.indexOf('청약') >= 0; });
+  var contractList = monthList.filter(function (db) { return rcat(db.result) === '청약'; });
   if (isFC) contractList = contractList.filter(function (db) { return db.assignedFC === ME.name; });
   var totalCommission = 0;
   var contractListHtml = '';
@@ -1849,7 +1874,7 @@ function loadStats() {
       if (db.status === '배정대기') {
         fcMap[db.assignedFC].unassigned++;
       } else {
-        const r = db.result || '';
+        const r = rcat(db.result);
         if (db.status === '재통화') fcMap[db.assignedFC].recall++;
         if(r || db.status === '재통화') fcMap[db.assignedFC].ta++;
 
@@ -2382,7 +2407,7 @@ function renderStatsExtras(monthList, fcMap) {
     if (!db.assignedFC) { m.noFC++; return; }
     if (db.status === '배정대기') { m.wait++; return; }
     if (db.status === '재통화') m.recall++;
-    var r = db.result || '';
+    var r = rcat(db.result);
     if (r || db.status === '재통화') m.ta++;
     if (r.indexOf('AP') >= 0) m.ap++;
     else if (r.indexOf('PC') >= 0) m.pc++;
@@ -2452,7 +2477,7 @@ function buildReportData() {
     m.total++;
     if (!db.assignedFC) { m.noFC++; return; }
     m.assigned++;
-    var r = db.result || '';
+    var r = rcat(db.result);
     if (db.status === '재통화') { m.recall++; m.ta++; return; }
     if (db.status === '배정대기' || !r) return;
     m.ta++;
@@ -2626,7 +2651,7 @@ function showTypeStatList(key, label) {
   if (ME.role !== '관리자' && ME.role !== '파트너') list = list.filter(function(db){ return db.assignedFC === ME.name; });
   if (t !== 'all') list = list.filter(function(db){ return (db.dbType || '(미지정)') === t; });
   list = list.filter(function(db){
-    var r = db.result || '';
+    var r = rcat(db.result);
     if (key === 'total') return true;
     if (key === 'noFC') return !db.assignedFC;
     if (!db.assignedFC) return false;
@@ -2645,23 +2670,23 @@ function showTypeStatList(key, label) {
 }
 
 // ===== 관리자: 카드 상태 뱃지로 진행상태 변경 =====
-var STATUS_RESULTS = ['TA완료', 'AP', 'PC', '청약', '부재', '결번', '거절', '기타'];
-var STATUS_OPTIONS = ['TA완료', 'AP', 'PC', '청약', '부재', '재통화', '결번', '거절', '기타'];
+var STATUS_RESULTS = ['TA완료', 'AP', 'PC', '청약', '청약없음', '청약예정', '청약체결', '부재', '결번', '거절', '기타'];
+var STATUS_OPTIONS = ['TA완료', 'AP', 'PC', '부재', '재통화', '결번', '거절', '기타', '청약없음', '청약예정', '청약체결'];
 function openStatusChange(id) {
   var db = DB_LIST.find(function(x){ return x.id === id; });
   if (!db) return;
-  var cur = db.status === '결과완료' ? db.result : db.status;
+  var cur = db.status === '결과완료' ? (db.result === '청약' ? '청약체결' : db.result) : db.status;
   var opts = (db.assignedFC ? ['배정대기'] : []).concat(STATUS_OPTIONS.filter(function(v){ return db.assignedFC || v !== '재통화'; }));
   function btn(v) {
     var on = v === cur;
-    var color = /부재|결번|거절/.test(v) ? 'var(--red)' : (v === '청약' ? 'var(--green)' : 'var(--blue)');
+    var color = /부재|결번|거절|청약없음/.test(v) ? 'var(--red)' : (v === '청약체결' ? 'var(--green)' : (v === '청약예정' ? '#ea580c' : 'var(--blue)'));
     return '<button type="button" onclick="applyStatusChange(\'' + id + '\',\'' + v + '\')" style="outline:none;padding:12px 4px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;border:2px solid ' + (on ? color : 'rgba(0,0,0,0.12)') + ';background:' + (on ? '#f0f7ff' : '#fff') + ';color:' + (on ? color : 'var(--tx-main)') + ';">' + v + (on ? ' ✓' : '') + '</button>';
   }
   Swal.fire({
     title: '진행상태 변경',
     html: '<div style="font-size:13px;font-weight:700;color:var(--tx-sub);margin-bottom:12px;">' + esc(db.assignedFC || '미배정') + ' · ' + esc(db.dbType) + ' · <strong style="color:var(--tx-main);">' + esc(db.customerName) + '</strong><br>현재: <strong style="color:var(--blue);">' + esc(cur || '-') + '</strong></div>' +
           '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' + opts.map(btn).join('') + '</div>' +
-          '<div style="font-size:11px;color:var(--tx-sub);font-weight:600;margin-top:10px;">청약을 고르면 계약 정보 입력 창이 열립니다. FC가 입력한 상세내용은 그대로 유지됩니다.</div>',
+          '<div style="font-size:11px;color:var(--tx-sub);font-weight:600;margin-top:10px;">청약체결을 고르면 계약 정보 입력 창이 열립니다. FC가 입력한 상세내용은 그대로 유지됩니다.</div>',
     showConfirmButton: false, showCancelButton: true, cancelButtonText: '닫기'
   });
 }
@@ -2669,12 +2694,12 @@ function openStatusChange(id) {
 function applyStatusChange(id, val) {
   var db = DB_LIST.find(function(x){ return x.id === id; });
   if (!db) return;
-  var cur = db.status === '결과완료' ? db.result : db.status;
+  var cur = db.status === '결과완료' ? (db.result === '청약' ? '청약체결' : db.result) : db.status;
   if (val === cur) { Swal.close(); return; }
   Swal.close();
-  if (val === '청약') {
+  if (val === '청약체결') {
     openResult(id);
-    var radio = document.querySelector('input[name="resType"][value="청약"]');
+    var radio = document.querySelector('input[name="resType"][value="청약체결"]');
     if (radio) { radio.checked = true; toggleResFields(); }
     return;
   }
@@ -2720,6 +2745,74 @@ function refreshKeepPage() {
     })
     .withFailureHandler(function(){ hideLoader(); loadData('갱신 중...'); })
     .getAllData();
+}
+
+// ===== 결과값 → 통계 분류 =====
+function rcat(result) {
+  var r = String(result || '');
+  if (r === '청약없음') return '거절';
+  if (r === '청약예정') return 'PC';
+  if (r.indexOf('청약') >= 0) return '청약';
+  return r;
+}
+function resultBadge(result) {
+  var r = String(result || '');
+  if (r === '청약체결' || r === '청약') return '<span class="badge" style="background:#e8f8ec;color:#15803d;border:1px solid #bbf7d0;">🎉 ' + esc(r === '청약' ? '청약체결' : r) + '</span>';
+  if (r === '청약예정') return '<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;">' + esc(r) + '</span>';
+  if (r === '청약없음') return '<span class="badge" style="background:#fff2f2;color:var(--red);border:1px solid #ffcccc;">' + esc(r) + '</span>';
+  return '<span class="badge b-done">' + esc(r) + '</span>';
+}
+function toggleContractChoices() {
+  var box = document.getElementById('contractChoices');
+  box.style.display = box.style.display === 'grid' ? 'none' : 'grid';
+  var a = document.getElementById('cqArrow'); if (a) a.innerText = box.style.display === 'grid' ? '▴' : '▾';
+}
+
+// ===== 상단 월 표시 =====
+function syncMonthLabel() {
+  var el = document.getElementById('hdr_month_lbl');
+  if (el) el.innerText = fmtMonth(curMonth);
+}
+function shiftMonth(delta) {
+  var p = String(curMonth).split('-');
+  var d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1 + delta, 1);
+  document.getElementById('hdr_month').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  changeMonth();
+}
+
+// ===== 이미지 공유 공통 =====
+function shareCanvas(canvas, name, title) {
+  canvas.toBlob(function(blob){
+    var file = new File([blob], name, { type: 'image/png' });
+    var canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+    var url = URL.createObjectURL(blob);
+    Swal.fire({
+      title: title, imageUrl: url, imageAlt: title, width: 600,
+      showConfirmButton: canShare, confirmButtonText: '📤 카톡 등으로 공유', confirmButtonColor: '#007aff',
+      showDenyButton: true, denyButtonText: '💾 사진 저장', denyButtonColor: '#34c759',
+      showCancelButton: true, cancelButtonText: '닫기'
+    }).then(function(res){
+      if (res.isConfirmed) navigator.share({ files: [file], title: title }).catch(function(){});
+      else if (res.isDenied) { var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+    });
+  }, 'image/png');
+}
+
+// ===== DB 카드 사진 저장·공유 =====
+function shareCard(id) {
+  if (typeof html2canvas === 'undefined') return Swal.fire('잠시 후 다시 시도', '이미지 도구를 불러오는 중입니다.', 'info');
+  var card = document.getElementById('card_' + id);
+  var db = DB_LIST.find(function(x){ return x.id === id; });
+  if (!card || !db) return;
+  showLoader('사진을 만드는 중...');
+  html2canvas(card, {
+    scale: 2, backgroundColor: '#f5f5f7', useCORS: true, scrollX: 0, scrollY: -window.scrollY,
+    ignoreElements: function(n){ return (n.classList && n.classList.contains('no-cap')) || n.tagName === 'BUTTON'; }
+  }).then(function(canvas){
+    hideLoader();
+    var safe = String(db.customerName || 'DB').replace(/[\\/:*?"<>|\s]/g, '');
+    shareCanvas(canvas, 'DB_' + safe + '_' + (db.assignDate || '') + '.png', db.customerName + ' 고객 DB');
+  }).catch(function(e){ hideLoader(); Swal.fire('사진 만들기 실패', String(e), 'error'); });
 }
 </script>
 </body>
