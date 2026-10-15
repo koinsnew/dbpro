@@ -412,7 +412,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
       <button type="button" onclick="addMeetingField()" class="btn btn-ghost btn-full" style="border-color:var(--blue);color:var(--blue);background:#fff;">➕ 다음 미팅 추가 (2차·3차)</button>
     </div>
     <div style="margin-bottom:20px;">
-      <button type="button" id="cqBtn" onclick="toggleContractChoices()" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:16px;background:#fff;font-weight:900;font-size:14px;color:var(--tx-sub);cursor:pointer;">📝 상담결과 <span id="cqArrow">▾</span></button>
+      <button type="button" id="cqBtn" onclick="toggleContractChoices()" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:16px;background:#fff;font-weight:900;font-size:14px;color:var(--tx-sub);cursor:pointer;">📝 청약결과 <span id="cqArrow">▾</span></button>
       <div id="contractChoices" style="display:none;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;">
         <label class="res-box" style="margin-bottom:0;"><input type="radio" name="resType" value="청약없음" style="display:none;" onchange="toggleResFields()"> 청약없음</label>
         <label class="res-box" style="margin-bottom:0;"><input type="radio" name="resType" value="청약예정" style="display:none;" onchange="toggleResFields()"> 청약예정</label>
@@ -1715,7 +1715,7 @@ function toggleResFields() {
   var isCQ = ['청약없음', '청약예정', '청약체결'].indexOf(val) >= 0;
   if (isCQ) document.getElementById('contractChoices').style.display = 'grid';
   var cqb = document.getElementById('cqBtn');
-  if (cqb) { cqb.style.borderColor = isCQ ? 'var(--blue)' : 'var(--border)'; cqb.style.color = isCQ ? 'var(--blue)' : 'var(--tx-sub)'; cqb.style.background = isCQ ? '#f0f7ff' : '#fff'; cqb.innerHTML = '📝 상담결과' + (isCQ ? ' · ' + val : '') + ' <span id="cqArrow">' + (document.getElementById('contractChoices').style.display === 'grid' ? '▴' : '▾') + '</span>'; }
+  if (cqb) { cqb.style.borderColor = isCQ ? 'var(--blue)' : 'var(--border)'; cqb.style.color = isCQ ? 'var(--blue)' : 'var(--tx-sub)'; cqb.style.background = isCQ ? '#f0f7ff' : '#fff'; cqb.innerHTML = '📝 청약결과' + (isCQ ? ' · ' + val : '') + ' <span id="cqArrow">' + (document.getElementById('contractChoices').style.display === 'grid' ? '▴' : '▾') + '</span>'; }
 }
 
 async function submitResult() {
