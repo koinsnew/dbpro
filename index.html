@@ -1665,7 +1665,7 @@ function openResult(id) {
   if(fInp) { fInp.value = ''; updateFileCount(fInp, 'msg_result'); }
 
   const db = DB_LIST.find(d => d.id === id);
-  if (db && db.result) {
+  if (db && (db.result || db.status === '재통화')) {
     const taBox = document.querySelector('input[value="TA완료"]').closest('.res-box');
     taBox.classList.add('ta-fixed');
 
@@ -1706,6 +1706,7 @@ function toggleResFields() {
 
   const checked = document.querySelector('input[name="resType"]:checked');
   const val = checked ? checked.value : null;
+  if (val === '재통화') document.querySelector('input[value="TA완료"]').closest('.res-box').classList.add('ta-fixed');
   const fCont = document.getElementById('f_contract_container');
   fCont.style.display = (val === '청약체결' || val === '청약') ? 'block' : 'none';
   var mWrap = document.getElementById('f_meetings_wrap');
