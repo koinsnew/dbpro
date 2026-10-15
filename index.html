@@ -430,7 +430,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     </div>
     
     <div style="margin-bottom:24px;">
-      <div class="fl">상세내용</div>
+      <div class="fl">TA 내용</div>
       <textarea id="r_otherNote" class="inp" rows="3" placeholder="내용을 기재해주세요"></textarea>
     </div>
 
@@ -934,7 +934,7 @@ function downloadExcel() {
   if(filtered.length === 0) return Swal.fire('데이터 없음', '다운로드할 데이터가 없습니다.', 'warning');
 
   let csvContent = "\uFEFF"; 
-  csvContent += "DB종류,상태,배정FC,퍼미션날짜,배분날짜,고객명,생년월일,전화번호,주소,납입보험료,고객요청,결과,상세내용\n";
+  csvContent += "DB종류,상태,배정FC,퍼미션날짜,배분날짜,고객명,생년월일,전화번호,주소,납입보험료,고객요청,결과,TA내용\n";
 
   filtered.forEach(db => {
     let safeName = db.customerName.replace(/,/g, '');
@@ -1105,7 +1105,7 @@ function renderList() {
               detailHtml += '<div style="margin-bottom:6px;">🤝 ' + (mi + 1) + '차 미팅: <strong>' + esc(fmtMeetWhen(m)) + '</strong>' + (m.note ? ' · ' + esc(m.note) : '') + '</div>';
               if (m.result) detailHtml += '<div style="margin:-2px 0 6px 18px;color:var(--blue);">↳ 상담 결과: ' + esc(m.result) + '</div>';
             });
-            if(d.otherNote) detailHtml += '<div>📝 상세: ' + d.otherNote + '</div>';
+            if(d.otherNote) detailHtml += '<div>📝 TA 내용: ' + d.otherNote + '</div>';
             if(db.files && db.files.length > 0) {
               detailHtml += '<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">' + 
                 db.files.map(f => `<a href="${f.url}" target="_blank" style="background:#e5f0ff;color:var(--blue);padding:4px 8px;border-radius:6px;text-decoration:none;font-size:12px;">📎 첨부파일</a>`).join('') +
@@ -2647,7 +2647,7 @@ function statDetailHtml(db) {
     row('🎉', '청약' + (cs.length > 1 ? ' ' + (i + 1) : ''), esc(c.date || '') + ' · ' + esc(c.name || '') + ' · ' + esc((c.comp || '') + ' ' + (c.prod || '')) + (p ? ' · <strong style="color:var(--blue);">' + p.toLocaleString() + '원</strong>' : ''));
   });
   (d.meetings || []).forEach(function(m, i){ row('🤝', (i + 1) + '차 미팅', '<strong>' + esc(fmtMeetWhen(m)) + '</strong>' + (m.note ? ' · ' + esc(m.note) : '') + (m.result ? '<br><span style="color:var(--blue);">↳ ' + esc(m.result) + '</span>' : '')); });
-  row('📝', '상세내용', esc(d.otherNote));
+  row('📝', 'TA 내용', esc(d.otherNote));
   if (db.files && db.files.length) rows.push('<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">' + db.files.map(function(f){ return '<a href="' + f.url + '" target="_blank" style="background:#e5f0ff;color:var(--blue);padding:4px 8px;border-radius:6px;text-decoration:none;font-size:12px;">📎 ' + esc(f.name || '첨부파일') + '</a>'; }).join('') + '</div>');
   return '<div style="background:#f5f5f7;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;font-weight:600;color:var(--tx-main);line-height:1.45;">' + rows.join('') + '</div>';
 }
@@ -2719,7 +2719,7 @@ function openStatusChange(id) {
     title: '진행상태 변경',
     html: '<div style="font-size:13px;font-weight:700;color:var(--tx-sub);margin-bottom:12px;">' + esc(db.assignedFC || '미배정') + ' · ' + esc(db.dbType) + ' · <strong style="color:var(--tx-main);">' + esc(db.customerName) + '</strong><br>현재: <strong style="color:var(--blue);">' + esc(rlabel(cur || '-')) + '</strong></div>' +
           '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' + opts.map(btn).join('') + '</div>' +
-          '<div style="font-size:11px;color:var(--tx-sub);font-weight:600;margin-top:10px;">청약체결을 고르면 계약 정보 입력 창이 열립니다. FC가 입력한 상세내용은 그대로 유지됩니다.</div>',
+          '<div style="font-size:11px;color:var(--tx-sub);font-weight:600;margin-top:10px;">청약체결을 고르면 계약 정보 입력 창이 열립니다. FC가 입력한 TA 내용은 그대로 유지됩니다.</div>',
     showConfirmButton: false, showCancelButton: true, cancelButtonText: '닫기'
   });
 }
@@ -2865,7 +2865,7 @@ function addMeetingField(m) {
     '</div>' +
     '<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:8px;margin-bottom:8px;">' +
       '<div><div class="fl" style="font-size:11px;">미팅 날짜</div><input type="date" class="inp m-date" value="' + esc(m.date) + '" style="padding:8px;font-size:13px;"></div>' +
-      '<div><div class="fl" style="font-size:11px;">시간</div><input type="time" class="inp m-time" value="' + esc(m.time) + '" style="padding:8px;font-size:13px;"></div>' +
+      '<div><div class="fl" style="font-size:11px;">시간</div><input type="text" readonly class="inp m-time" value="' + esc(m.time) + '" placeholder="시간 선택" onclick="pickMeetTime(this)" style="padding:8px;font-size:13px;cursor:pointer;background:#fff;"></div>' +
     '</div>' +
     '<div style="margin-bottom:8px;"><div class="fl" style="font-size:11px;">미팅 내용</div><textarea class="inp m-note" rows="2" placeholder="장소·준비사항·상담 주제 등" style="padding:8px;font-size:13px;">' + esc(m.note) + '</textarea></div>' +
     '<div><div class="fl" style="font-size:11px;color:var(--blue);">상담 후 결과</div><textarea class="inp m-result" rows="2" placeholder="미팅 후 결과를 입력하세요" style="padding:8px;font-size:13px;">' + esc(m.result) + '</textarea></div>';
@@ -2970,6 +2970,29 @@ function showMeetingDetail(dbId, idx) {
     didOpen: function(){ if (document.activeElement) document.activeElement.blur(); },
     showCancelButton: true, cancelButtonText: '닫기'
   }).then(function(r){ if (r.isConfirmed) openResult(dbId); });
+}
+
+function pickMeetTime(input) {
+  var cur = String(input.value || '10:00').split(':');
+  var ch = parseInt(cur[0], 10); if (isNaN(ch)) ch = 10;
+  var cm = cur[1] === '30' ? '30' : '00';
+  var hOpts = '';
+  for (var h = 7; h <= 22; h++) {
+    var label = (h < 12 ? '오전 ' : '오후 ') + (h % 12 === 0 ? 12 : h % 12) + '시';
+    hOpts += '<option value="' + String(h).padStart(2, '0') + '"' + (h === ch ? ' selected' : '') + '>' + label + '</option>';
+  }
+  Swal.fire({
+    title: '미팅 시간 선택',
+    html: '<div style="display:flex;gap:8px;justify-content:center;align-items:center;">' +
+            '<select id="mt_h" class="inp inp-arrow" style="width:140px;padding:12px;font-size:16px;font-weight:800;">' + hOpts + '</select>' +
+            '<select id="mt_m" class="inp inp-arrow" style="width:100px;padding:12px;font-size:16px;font-weight:800;">' +
+              '<option value="00"' + (cm === '00' ? ' selected' : '') + '>00분</option>' +
+              '<option value="30"' + (cm === '30' ? ' selected' : '') + '>30분</option>' +
+            '</select>' +
+          '</div>',
+    showCancelButton: true, confirmButtonText: '확인', cancelButtonText: '취소', confirmButtonColor: '#007aff',
+    preConfirm: function(){ return document.getElementById('mt_h').value + ':' + document.getElementById('mt_m').value; }
+  }).then(function(r){ if (r.isConfirmed) { input.value = r.value; input.style.borderColor = 'var(--blue)'; input.style.color = 'var(--blue)'; } });
 }
 </script>
 </body>
