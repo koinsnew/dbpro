@@ -401,6 +401,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
       <label class="res-box"><input type="radio" name="resType" value="TA완료" style="display:none;" onchange="toggleResFields()"> TA완료</label>
       <label class="res-box"><input type="radio" name="resType" value="AP" style="display:none;" onchange="toggleResFields()"> 🤝 미팅</label>
       <label class="res-box"><input type="radio" name="resType" value="부재" style="display:none;" onchange="toggleResFields()"> 부재</label>
+      <label class="res-box"><input type="radio" name="resType" value="재통화" style="display:none;" onchange="toggleResFields()"> 📞 재통화</label>
       <label class="res-box"><input type="radio" name="resType" value="결번" style="display:none;" onchange="toggleResFields()"> 결번</label>
       <label class="res-box"><input type="radio" name="resType" value="거절" style="display:none;" onchange="toggleResFields()"> 거절</label>
       <label class="res-box"><input type="radio" name="resType" value="기타" style="display:none;" onchange="toggleResFields()"> 기타</label>
@@ -1693,6 +1694,7 @@ function openResult(id) {
     addContractField();
   }
   if (db && db.details && db.details.otherNote && !document.getElementById('r_otherNote').value) document.getElementById('r_otherNote').value = db.details.otherNote;
+  if (db && db.status === '재통화') { var _rr = document.querySelector('input[name="resType"][value="재통화"]'); if (_rr) _rr.checked = true; }
   toggleResFields();
 }
 
@@ -1753,9 +1755,17 @@ async function submitResult() {
       .withSuccessHandler(function(res) {
         const r = JSON.parse(res);
         if(r.success) {
-          document.getElementById('mResult').style.display = 'none';
-          Swal.fire({icon:'success', title:'결과가 잘 저장되었습니다.', timer:1500, showConfirmButton:false});
-          loadData('목록을 갱신 중입니다...');
+          var _done = function(){
+            document.getElementById('mResult').style.display = 'none';
+            Swal.fire({icon:'success', title:'결과가 잘 저장되었습니다.', timer:1500, showConfirmButton:false});
+            loadData('목록을 갱신 중입니다...');
+          };
+          if (type === '재통화') {
+            google.script.run
+              .withSuccessHandler(function(r2){ var j; try { j = JSON.parse(r2); } catch(e) { j = {}; } if (j.success) _done(); else { hideLoader(); Swal.fire({icon:'error', title:'재통화 저장 실패', text: (j.error || '') + ' (Apps Script 최신 버전 배포 필요)', confirmButtonColor:'#007aff'}); } })
+              .withFailureHandler(function(e){ hideLoader(); Swal.fire({icon:'error', title:'재통화 저장 실패', text: e.message, confirmButtonColor:'#007aff'}); })
+              .setDBStatus(curDBId, '재통화');
+          } else _done();
         } else {
           hideLoader();
           Swal.fire({icon:'error', title:'저장 실패', text: r.error, confirmButtonColor:'#007aff'});
@@ -1765,7 +1775,7 @@ async function submitResult() {
         hideLoader();
         Swal.fire({icon:'error', title:'서버 연결 실패', text: '파일 용량이 너무 크거나 연결이 불안정합니다.', confirmButtonColor:'#007aff'});
       })
-      .saveResultWithFiles(curDBId, { result: type, details: details }, base64Files);
+      .saveResultWithFiles(curDBId, { result: (type === '재통화' ? 'TA완료' : type), details: details }, base64Files);
 
   } catch (e) {
     hideLoader();
