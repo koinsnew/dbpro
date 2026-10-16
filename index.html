@@ -813,40 +813,123 @@ function toggleInputMode(mode) {
   }
 }
 
+// ============================================================
+//  데이터 로딩: 캐시로 즉시 표시 + 최신 데이터 확인 + 자동 재시도 + 지연 안내
+//  (DB가 많아 서버 응답이 수십 초 걸리거나 가끔 비어 와도 "무한 로딩"이 되지 않게)
+// ============================================================
+var DATA_LOADED = false;
+function cacheDB() { return new Promise(function (ok, no) { try { var q = indexedDB.open('dbpro-cache', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); }; q.onsuccess = function () { ok(q.result); }; q.onerror = function () { no(q.error); }; } catch (e) { no(e); } }); }
+function cacheGet(k) { return cacheDB().then(function (db) { return new Promise(function (ok) { var r = db.transaction('kv').objectStore('kv').get(k); r.onsuccess = function () { ok(r.result || null); }; r.onerror = function () { ok(null); }; }); }).catch(function () { return null; }); }
+function cacheSet(k, v) { return cacheDB().then(function (db) { return new Promise(function (ok) { var tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = ok; tx.onerror = ok; }); }).catch(function () {}); }
+
+function fetchAllData(onStatus) {
+  var tries = 0, MAX = 3;
+  function once() {
+    tries++;
+    var timer, timeout = new Promise(function (_, rej) { timer = setTimeout(function () { rej(new Error('서버 응답 시간이 너무 오래 걸립니다.')); }, 100000); });
+    return Promise.race([callApi('getAllData', {}), timeout]).then(function (res) {
+      clearTimeout(timer);
+      if (typeof res !== 'string' || !res) throw new Error('서버가 빈 응답을 보냈습니다.');
+      var d = JSON.parse(res);
+      if (!d || !Array.isArray(d.dbList)) throw new Error('데이터 형식이 올바르지 않습니다.');
+      return { data: d, raw: res };
+    }).catch(function (err) {
+      clearTimeout(timer);
+      if (tries >= MAX) throw err;
+      if (onStatus) onStatus('서버 응답이 불안정해 다시 시도 중... (' + tries + '/' + (MAX - 1) + ')');
+      return new Promise(function (r) { setTimeout(r, 1500); }).then(once);
+    });
+  }
+  return once();
+}
+
+function applyAllData(data) {
+  DB_LIST = data.dbList;
+  TYPE_LIST = data.typeList || [];
+  FC_LIST = (data.fcList || []).slice().sort(function (a, b) { return String(a).localeCompare(String(b), 'ko'); });
+  var manualOpt = '<option value="">FC를 선택하세요</option>';
+  var editOpt = '<option value="current">변경하지 않음 (기존 유지)</option><option value="auto">시스템 자동 배정 (Round-Robin)</option>';
+  FC_LIST.forEach(function (fc) {
+    manualOpt += '<option value="' + fc + '">' + fc + '</option>';
+    editOpt += '<option value="' + fc + '">수동 배정 - ' + fc + '</option>';
+  });
+  document.getElementById('i_manualFC').innerHTML = manualOpt;
+  document.getElementById('e_assignedFC').innerHTML = editOpt;
+  var typeOpt = '';
+  TYPE_LIST.forEach(function (t) { typeOpt += '<option value="' + t.type + '">' + t.type + '</option>'; });
+  if (typeOpt) {
+    document.getElementById('i_dbType').innerHTML = typeOpt;
+    document.getElementById('b_dbType').innerHTML = typeOpt;
+    document.getElementById('e_dbType').innerHTML = typeOpt;
+  }
+  DATA_LOADED = true;
+}
+
+// 지금 보던 화면/목록을 유지한 채 다시 그리기
+function rerenderCurrent() {
+  var page = ['list', 'sched', 'apply', 'input', 'stats'].filter(function (p) { var el = document.getElementById('pg-' + p); return el && el.style.display !== 'none'; })[0] || 'list';
+  if (page === 'list') { renderDays(); renderList(); }
+  if (page === 'stats') loadStats();
+  if (page === 'sched') renderSchedule();
+  var modal = document.getElementById('mStatList');
+  if (modal && modal.style.display !== 'none' && LAST_STAT) LAST_STAT();
+}
+
+function syncChip(msg) {
+  var el = document.getElementById('syncChip');
+  if (!msg) { if (el) el.style.display = 'none'; return; }
+  if (!el) {
+    el = document.createElement('div'); el.id = 'syncChip';
+    el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:90px;z-index:950;background:rgba(29,29,31,.92);color:#fff;border-radius:999px;padding:8px 16px;font-size:12px;font-weight:800;white-space:nowrap;pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg; el.style.display = 'block';
+}
+
 function loadData(loadingMsg) {
-  showLoader(loadingMsg || '데이터를 최신화 중입니다...');
-  google.script.run
-    .withSuccessHandler(function(res) {
-      const data = JSON.parse(res);
-      DB_LIST = data.dbList;
-      TYPE_LIST = data.typeList || [];
-      FC_LIST = (data.fcList || []).slice().sort(function(a, b){ return String(a).localeCompare(String(b), 'ko'); }); 
-      
-      let manualOpt = '<option value="">FC를 선택하세요</option>';
-      let editOpt = '<option value="current">변경하지 않음 (기존 유지)</option><option value="auto">시스템 자동 배정 (Round-Robin)</option>';
-      FC_LIST.forEach(fc => { 
-        manualOpt += '<option value="'+fc+'">'+fc+'</option>'; 
-        editOpt += '<option value="'+fc+'">수동 배정 - '+fc+'</option>'; 
-      });
-      document.getElementById('i_manualFC').innerHTML = manualOpt;
-      document.getElementById('e_assignedFC').innerHTML = editOpt;
+  var baseMsg = loadingMsg || '데이터를 최신화 중입니다...';
+  var slowTimer = null;
+  function setMsg(m) { var t = document.getElementById('loaderText'); if (t) t.innerText = m; }
+  function fail(error) {
+    clearTimeout(slowTimer); hideLoader(); syncChip('');
+    Swal.fire({ icon: 'error', title: '데이터 로드 실패', text: (error && error.message) || '', showCancelButton: true, confirmButtonText: '다시 시도', cancelButtonText: '닫기', confirmButtonColor: '#007aff' })
+      .then(function (r) { if (r.isConfirmed) loadData(baseMsg); });
+  }
+  function startFetch(background) {
+    return fetchAllData(function (m) { if (background) syncChip(m); else setMsg(m); }).then(function (r) {
+      clearTimeout(slowTimer);
+      cacheSet('all', r.raw);
+      applyAllData(r.data);
+      hideLoader(); syncChip('');
+      if (background) rerenderCurrent(); else goPage('list');
+    });
+  }
+  function slowNotice(background) {
+    slowTimer = setTimeout(function () {
+      if (background) syncChip('🔄 최신 데이터 확인 중… (데이터가 많아 최대 1분 걸려요)');
+      else setMsg(baseMsg + ' (데이터가 많아 최대 1분 걸려요)');
+    }, 8000);
+  }
 
-      var typeOpt = '';
-      TYPE_LIST.forEach(function(t){ typeOpt += '<option value="' + t.type + '">' + t.type + '</option>'; });
-      if (typeOpt) {
-        document.getElementById('i_dbType').innerHTML = typeOpt;
-        document.getElementById('b_dbType').innerHTML = typeOpt;
-        document.getElementById('e_dbType').innerHTML = typeOpt;
-      }
-
-      hideLoader();
-      goPage('list');
-    })
-    .withFailureHandler(function(error) {
-      hideLoader();
-      Swal.fire({icon:'error', title:'데이터 로드 실패', text: error.message, confirmButtonColor:'#007aff'});
-    })
-    .getAllData();
+  if (DATA_LOADED) {                       // 새로고침/저장 후 갱신 — 최신본을 기다렸다가 표시
+    showLoader(baseMsg); slowNotice(false);
+    startFetch(false).catch(fail);
+    return;
+  }
+  // 첫 로딩: 저장된 이전 데이터가 있으면 먼저 보여주고, 뒤에서 최신으로 갱신
+  showLoader(baseMsg);
+  cacheGet('all').then(function (raw) {
+    var cached = null;
+    try { cached = raw ? JSON.parse(raw) : null; } catch (e) { cached = null; }
+    if (cached && Array.isArray(cached.dbList)) {
+      applyAllData(cached); hideLoader(); goPage('list');
+      syncChip('🔄 최신 데이터 확인 중…'); slowNotice(true);
+      startFetch(true).catch(function (err) { clearTimeout(slowTimer); syncChip('⚠️ 최신 데이터를 못 불러왔어요 (이전 데이터 표시 중)'); setTimeout(function () { syncChip(''); }, 4000); });
+    } else {
+      slowNotice(false);
+      startFetch(false).catch(fail);
+    }
+  });
 }
 
 function sendReminder() {
@@ -2878,21 +2961,13 @@ function applyStatusChange(id, val) {
 
 // 데이터만 새로고침하고 지금 보던 화면/목록 유지
 function refreshKeepPage() {
-  google.script.run
-    .withSuccessHandler(function(res){
-      hideLoader();
-      var data = JSON.parse(res);
-      DB_LIST = data.dbList;
-      TYPE_LIST = data.typeList || TYPE_LIST;
-      var page = ['list', 'sched', 'apply', 'input', 'stats'].filter(function(p){ var el = document.getElementById('pg-' + p); return el && el.style.display !== 'none'; })[0] || 'list';
-      if (page === 'list') { renderDays(); renderList(); }
-      if (page === 'stats') loadStats();
-      if (page === 'sched') renderSchedule();
-      var modal = document.getElementById('mStatList');
-      if (modal && modal.style.display !== 'none' && LAST_STAT) LAST_STAT();
-    })
-    .withFailureHandler(function(){ hideLoader(); loadData('갱신 중...'); })
-    .getAllData();
+  fetchAllData(function (m) { syncChip(m); }).then(function (r) {
+    cacheSet('all', r.raw);
+    hideLoader(); syncChip('');
+    DB_LIST = r.data.dbList;
+    TYPE_LIST = r.data.typeList || TYPE_LIST;
+    rerenderCurrent();
+  }).catch(function () { hideLoader(); syncChip(''); loadData('갱신 중...'); });
 }
 
 // ===== MY: 럽맘 프로필·명함 제작기 + 고객에게 보내기 =====
