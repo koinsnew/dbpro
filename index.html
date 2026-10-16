@@ -2816,7 +2816,7 @@ function refreshKeepPage() {
 var CARD_TARGET = null, CARD_FILES = null, CARD_TEXT = '';
 function openCardTool() {
   var f = document.getElementById('cardFrame');
-  if (!f.getAttribute('src')) f.setAttribute('src', 'luvmom-card.html');
+  if (f.getAttribute('data-user') !== ME.name) { f.setAttribute('data-user', ME.name); f.setAttribute('src', 'luvmom-card.html?u=' + encodeURIComponent(ME.name)); }
   document.getElementById('mCard').style.display = 'flex';
 }
 function closeCardTool() { document.getElementById('mCard').style.display = 'none'; }
@@ -2824,7 +2824,19 @@ window.addEventListener('message', function (e) {
   var f = document.getElementById('cardFrame');
   if (!f || e.source !== f.contentWindow) return;
   var d = e.data || {};
-  if (d.type === 'card-send-request') cardPickCustomer();
+  var fw = f.contentWindow;
+  if (d.type === 'card-ready') {
+    callApi('getMyCard', { name: ME.name })
+      .then(function (r) { fw.postMessage({ type: 'card-load', data: (r && r.data) || '', photo: (r && r.photo) || '' }, '*'); })
+      .catch(function (err) { fw.postMessage({ type: 'card-load', error: String(err && err.message || err) }, '*'); });
+  } else if (d.type === 'card-save') {
+    var pl = { name: ME.name, data: d.data };
+    if (d.hasPhoto) pl.photo = d.photo || '';
+    callApi('saveMyCard', pl)
+      .then(function () { fw.postMessage({ type: 'card-saved', ok: true }, '*'); })
+      .catch(function () { fw.postMessage({ type: 'card-saved', ok: false }, '*'); });
+  }
+  else if (d.type === 'card-send-request') cardPickCustomer();
   else if (d.type === 'card-files') cardFilesReady(d);
 });
 function cardPickCustomer() {
