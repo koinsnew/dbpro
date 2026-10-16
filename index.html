@@ -188,6 +188,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 
   <div id="pg-list" style="display:none;padding:20px;">
     <div id="birthAlert"></div>
+    <div id="acceptAllBar"></div>
     <div id="filterGrid" style="display:grid; gap:8px; margin-bottom:16px;">
       <select id="dateSelect" class="inp inp-no-arrow" style="padding:16px; font-size:16px; font-weight:800; border-color:var(--blue); color:var(--blue); box-shadow:0 2px 8px rgba(0,122,255,0.15);" onchange="selectDate(this.value)"></select>
       <select id="fcSelect" class="inp inp-no-arrow" style="display:none; padding:16px; font-size:16px; font-weight:800; border-color:var(--tx-main); color:var(--tx-main); box-shadow:0 2px 8px rgba(0,0,0,0.05);" onchange="selectFC(this.value)"></select>
@@ -994,6 +995,8 @@ function cardSteps(db) {
 function renderList() {
   const admin = (ME.role === '관리자');
   updateBirthAlert();
+  updateAcceptAll();
+  updateStageBar();
   
   let monthList = DB_LIST.filter(db => db.assignDate && db.assignDate.startsWith(curMonth));
   var _sc = myScopeType(); if (_sc) monthList = monthList.filter(function(db){ return String(db.dbType||'').indexOf(_sc) >= 0; });
@@ -1094,7 +1097,7 @@ function renderList() {
         let adminBtns = '';
         if(admin) {
            adminBtns = '<div style="display:flex;gap:8px;margin-top:12px;border-top:1px dashed var(--border);padding-top:12px;">' +
-             (!db.assignedFC ? '<button onclick="quickAssign(\'' + db.id + '\')" class="btn btn-primary" style="flex:1;padding:8px;font-size:13px;">👤 FC 배정</button>' : '') +
+             (!db.assignedFC ? stagedBtnHtml(db) : '') +
              '<button onclick="openEditDB(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;padding:8px;font-size:13px;">✏️ 수정/재배정</button>' +
              '<button onclick="deleteDB(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;padding:8px;font-size:13px;color:var(--red);background:#fff2f2;">🗑️ 삭제</button>' +
            '</div>';
@@ -2375,22 +2378,100 @@ function applyBulkAlloc() {
 }
 
 // 카드에서 미배정 DB에 FC 배정
+// ===== 수동 배정: 선택만 모아두었다가 한꺼번에 저장 =====
+var STAGED = {};   // { dbId: fcName }  (저장 전 배정 예정)
+function stagedBtnHtml(db) {
+  if (STAGED[db.id]) return '<button onclick="quickAssign(\'' + db.id + '\')" class="btn" style="flex:1;padding:8px;font-size:13px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-weight:800;">📌 ' + esc(STAGED[db.id]) + ' 배정 예정 (변경)</button>';
+  return '<button onclick="quickAssign(\'' + db.id + '\')" class="btn btn-primary" style="flex:1;padding:8px;font-size:13px;">👤 FC 배정</button>';
+}
 function quickAssign(dbId) {
   var opts = {};
-  FC_LIST.forEach(function(f){ opts[f] = f; });
-  Swal.fire({ title: 'FC 배정', input: 'select', inputOptions: opts, inputPlaceholder: 'FC를 선택하세요', showCancelButton: true, confirmButtonText: '배정', cancelButtonText: '취소', confirmButtonColor: '#007aff',
-    inputValidator: function(v){ return v ? undefined : 'FC를 선택하세요'; } }).then(function(res){
-    if (!res.isConfirmed) return;
-    showLoader('배정 중...');
-    google.script.run
-      .withSuccessHandler(function(r){
+  bulkAssignees().forEach(function (f) { opts[f] = f; });
+  var staged = STAGED[dbId];
+  Swal.fire({ title: 'FC 배정', text: '선택만 해 두고, 모두 고른 뒤 한꺼번에 저장돼요.', input: 'select', inputOptions: opts, inputValue: staged || '', inputPlaceholder: 'FC를 선택하세요',
+    showCancelButton: true, showDenyButton: !!staged, denyButtonText: '배정 예정 취소', confirmButtonText: '선택', cancelButtonText: '닫기', confirmButtonColor: '#007aff',
+    inputValidator: function (v) { return v ? undefined : 'FC를 선택하세요'; } }).then(function (res) {
+    if (res.isDenied) delete STAGED[dbId];
+    else if (res.isConfirmed) STAGED[dbId] = res.value;
+    else return;
+    renderList();
+  });
+}
+function updateStageBar() {
+  var n = Object.keys(STAGED).length;
+  var bar = document.getElementById('stageBar');
+  if (!n || ME.role !== '관리자') { if (bar) bar.style.display = 'none'; return; }
+  if (!bar) {
+    bar = document.createElement('div'); bar.id = 'stageBar';
+    bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:84px;width:calc(100% - 32px);max-width:468px;z-index:900;background:#1d1d1f;color:#fff;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,0.25);';
+    document.body.appendChild(bar);
+  }
+  bar.style.display = 'flex';
+  bar.innerHTML = '<div style="flex:1;font-size:13px;font-weight:800;">📌 배정 예정 ' + n + '건 <span style="font-weight:600;opacity:.7;">(아직 저장 전)</span></div>' +
+    '<button onclick="clearStaged()" style="border:1px solid rgba(255,255,255,.4);background:none;color:#fff;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:800;cursor:pointer;">취소</button>' +
+    '<button onclick="saveStaged()" style="border:none;background:#007aff;color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:900;cursor:pointer;">💾 한꺼번에 저장</button>';
+}
+function clearStaged() { STAGED = {}; renderList(); }
+function saveStaged() {
+  var byFC = {};
+  Object.keys(STAGED).forEach(function (id) { (byFC[STAGED[id]] = byFC[STAGED[id]] || []).push(id); });
+  var fcs = Object.keys(byFC);
+  if (!fcs.length) return;
+  var summary = fcs.map(function (f) { return f + ' ' + byFC[f].length + '건'; }).join(', ');
+  Swal.fire({ title: '배정 저장', text: summary + ' — 저장할까요?', icon: 'question', showCancelButton: true, confirmButtonText: '저장', cancelButtonText: '취소', confirmButtonColor: '#007aff' }).then(function (r) {
+    if (!r.isConfirmed) return;
+    showLoader('배정 저장 중...');
+    var total = 0, fail = [];
+    (function next(i) {
+      if (i >= fcs.length) {
         hideLoader();
-        var j; try { j = JSON.parse(r); } catch(e){ Swal.fire('오류', '응답 오류', 'error'); return; }
-        if (j.success) { Swal.fire({ icon:'success', title: res.value + ' FC에게 배정했습니다.', timer:1300, showConfirmButton:false }); loadData('갱신 중...'); }
-        else Swal.fire('배정 실패', j.error || '', 'error');
-      })
-      .withFailureHandler(function(e){ hideLoader(); Swal.fire('오류', e.message, 'error'); })
-      .assignDBsTo([dbId], res.value);
+        if (fail.length) Swal.fire({ icon: 'warning', title: total + '건 저장, 일부 실패', text: fail.join(' / ') + ' (실패한 건은 배정 예정으로 남아 있어요)', confirmButtonColor: '#007aff' });
+        else Swal.fire({ icon: 'success', title: total + '건 배정을 저장했어요', timer: 1600, showConfirmButton: false });
+        loadData('갱신 중...');
+        return;
+      }
+      var fc = fcs[i];
+      callApi('assignDBsTo', { ids: byFC[fc], fcName: fc }).then(function (res) {
+        var j = {}; try { j = JSON.parse(res); } catch (e) {}
+        if (j.success) { byFC[fc].forEach(function (id) { delete STAGED[id]; }); total += (j.count || 0); }
+        else fail.push(fc + ': ' + (j.error || '실패'));
+        next(i + 1);
+      }).catch(function (e) { fail.push(fc + ': ' + e.message); next(i + 1); });
+    })(0);
+  });
+}
+
+// ===== FC 일괄 수락 =====
+function pendingForMe() { return DB_LIST.filter(function (db) { return db.status === '배정대기' && db.assignedFC === ME.name; }); }
+function updateAcceptAll() {
+  var el = document.getElementById('acceptAllBar'); if (!el) return;
+  var list = pendingForMe();
+  if (!list.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div style="background:#eef6ff;border:1px solid #cce0ff;border-radius:16px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">' +
+    '<div style="flex:1;"><div style="font-size:14px;font-weight:900;color:var(--blue);">📥 수락 대기 ' + list.length + '건</div><div style="font-size:12px;font-weight:700;color:var(--tx-sub);margin-top:2px;">배정받은 DB를 한 번에 수락할 수 있어요.</div></div>' +
+    '<button onclick="acceptAllMine()" class="btn btn-primary" style="padding:10px 14px;font-size:13px;white-space:nowrap;">✅ 일괄 수락</button></div>';
+}
+function acceptAllMine() {
+  var list = pendingForMe();
+  if (!list.length) return;
+  Swal.fire({ title: '일괄 수락', text: '수락 대기 중인 DB ' + list.length + '건을 모두 수락할까요?', icon: 'question', showCancelButton: true, confirmButtonText: '모두 수락', cancelButtonText: '취소', confirmButtonColor: '#007aff' }).then(function (r) {
+    if (!r.isConfirmed) return;
+    showLoader('일괄 수락 중입니다...');
+    function done(n) { hideLoader(); Swal.fire({ icon: 'success', title: n + '건을 수락했어요', timer: 1500, showConfirmButton: false }); loadData('데이터를 최신화 중입니다...'); }
+    callApi('acceptAllPending', { fcName: ME.name }).then(function (res) {
+      var j = {}; try { j = JSON.parse(res); } catch (e) {}
+      if (j.success) done(j.count || 0);
+      else { hideLoader(); Swal.fire('수락 실패', j.error || '', 'error'); }
+    }).catch(function (err) {
+      if (!/알 수 없는 요청/.test(String(err && err.message))) { hideLoader(); return Swal.fire('오류', err.message, 'error'); }
+      // 서버가 아직 구버전이면 한 건씩 수락 (호환)
+      var ok = 0;
+      (function next(i) {
+        if (i >= list.length) return done(ok);
+        showLoader('수락 중... (' + (i + 1) + '/' + list.length + ')');
+        callApi('respondToAssignment', { dbId: list[i].id, fcName: ME.name, isAccept: true, dbType: list[i].dbType }).then(function () { ok++; next(i + 1); }).catch(function () { next(i + 1); });
+      })(0);
+    });
   });
 }
 
