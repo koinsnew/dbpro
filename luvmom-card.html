@@ -150,6 +150,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .bc-rows .small{font-size:11.5px;color:var(--ink)}
 .bc-photo{position:absolute;right:34px;bottom:28px;width:104px;height:130px;border-radius:16px;background-color:var(--pink-soft);background-repeat:no-repeat;border:3px solid var(--pink-soft)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.busy{position:fixed;inset:0;background:rgba(30,20,26,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.busy-box{background:var(--panel);border-radius:20px;padding:28px 26px;width:100%;max-width:320px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.spin{width:52px;height:52px;border-radius:50%;border:5px solid var(--line);border-top-color:var(--accent);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.busy-t{font-size:16px;font-weight:800}
+.busy-s{font-size:13px;color:var(--muted);min-height:20px}
+.busy-bar{width:100%;height:6px;background:var(--line);border-radius:6px;overflow:hidden}
+.busy-bar i{display:block;height:100%;width:40%;background:var(--accent);border-radius:6px;animation:slide 1.2s ease-in-out infinite}
+@keyframes slide{0%{margin-left:-40%}100%{margin-left:100%}}
 /* 모바일: 편집 / 미리보기 전환 (겹침 방지) */
 .mtoggle{display:none}
 @media (max-width:960px){
@@ -441,23 +450,38 @@ async function capture(id){
       });
     }});
 }
+function busy(on,msg,sub){
+  let o=$("busy");
+  if(!on){ if(o) o.hidden=true; return; }
+  if(!o){ o=document.createElement("div"); o.id="busy"; o.className="busy"; o.innerHTML='<div class="busy-box"><div class="spin" aria-hidden="true"></div><div class="busy-t" id="busyT"></div><div class="busy-s" id="busyS"></div><div class="busy-bar"><i></i></div></div>'; document.body.appendChild(o); }
+  $("busyT").textContent=msg; $("busyS").textContent=sub||""; o.hidden=false;
+}
+function saveFile(f){ const a=document.createElement("a"); a.href=f.url; a.download=f.filename; document.body.appendChild(a); a.click(); a.remove(); }
 async function exportAll(ids,btn){
   btn.disabled=true; const old=btn.textContent; btn.textContent="만드는 중…";
+  busy(true,"이미지를 만드는 중이에요","잠시만 기다려 주세요 (약 3~10초)");
+  await new Promise(r=>setTimeout(r,80));
   try{
-    const nm=(S.name||"프로필").replace(/\s+/g,""), files=[];
+    const nm=(S.name||"프로필").replace(/\s+/g,""), files=[]; let n=0;
     for(const id of ids){
+      n++; $("busyS").textContent=(id==="mp"?"모바일 프로필":"명함")+" 이미지 만드는 중 ("+n+"/"+ids.length+")";
+      await new Promise(r=>setTimeout(r,30));
       const p=$("pane-"+id), was=p.hidden; p.hidden=false;
       const cv=await capture(id); p.hidden=was;
       const blob=await new Promise(r=>cv.toBlob(r,"image/png"));
-      files.push({blob,url:cv.toDataURL("image/png"),filename:`${nm}_${id==="mp"?"모바일프로필":"명함"}.png`});
+      files.push({blob,url:URL.createObjectURL(blob),filename:`${nm}_${id==="mp"?"모바일프로필":"명함"}.png`});
     }
     fit();
-    const dl=await downloadsP;
-    if(dl){ for(const f of files){ try{await dl.save({filename:f.filename,data:f.blob}); toast("이미지를 저장했어요.");}
-      catch(e){ if(e&&e.code==="declined"){toast("저장을 취소했어요.");break;} showModal(files); break; } } }
-    else showModal(files);
-  }catch(e){ toast("이미지를 만들지 못했어요. 사진을 다시 올린 뒤 시도해 주세요."); }
+    busy(false);
+    for(let k=0;k<files.length;k++){ saveFile(files[k]); if(k<files.length-1) await new Promise(r=>setTimeout(r,600)); }
+    toast(files.length>1?"이미지 "+files.length+"장을 저장했어요.":"이미지를 저장했어요.");
+    showSaved(files);
+  }catch(e){ busy(false); toast("이미지를 만들지 못했어요. 사진을 다시 올린 뒤 시도해 주세요."); }
   btn.disabled=false; btn.textContent=old;
+}
+function showSaved(files){
+  $("modalImgs").innerHTML=`<div style="text-align:center;font-weight:700;font-size:16px">✅ 이미지를 저장했어요</div><div style="text-align:center;color:var(--muted);font-size:13px;line-height:1.6">다운로드(저장) 폴더나 사진첩을 확인해 주세요.<br>저장이 안 됐다면 아래 이미지를 길게 눌러 저장하세요.</div>`+files.map(f=>`<img src="${f.url}" alt="${esc(f.filename)}">`).join("");
+  $("modal").hidden=false;
 }
 document.querySelectorAll("[data-export]").forEach(b=>b.addEventListener("click",()=>{const v=b.dataset.export; exportAll(v==="both"?["mp","bc"]:[v],b);}));
 function showModal(files){ $("modalImgs").innerHTML=files.map(f=>`<img src="${f.url}" alt="${esc(f.filename)}">`).join(""); $("modal").hidden=false; }
