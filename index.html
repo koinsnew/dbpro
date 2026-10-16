@@ -180,7 +180,8 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
         </span>
         <button onclick="shiftMonth(1)" style="border:none;background:none;padding:0 5px;font-size:16px;font-weight:900;color:var(--tx-sub);cursor:pointer;">›</button>
       </div>
-      <button onclick="loadData('데이터를 최신화 중입니다...')" class="btn btn-ghost" style="padding:6px;font-size:11px;border-radius:8px;white-space:nowrap;">🔄 새로고침</button>
+      <button onclick="loadData('데이터를 최신화 중입니다...')" aria-label="새로고침" title="새로고침" class="btn btn-ghost" style="padding:2px 6px;font-size:22px;line-height:1;border:none;background:none;">🔄</button>
+      <button onclick="openCardTool()" class="btn btn-ghost" style="padding:6px 8px;font-size:11px;font-weight:900;border-radius:8px;white-space:nowrap;color:var(--blue);border-color:#cce0ff;background:#f0f7ff;">MY</button>
       <button onclick="window.handleLogout()" class="btn btn-ghost" style="padding:6px;font-size:11px;border-radius:8px;white-space:nowrap;">로그아웃</button>
     </div>
   </div>
@@ -387,6 +388,14 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     <div class="bni" id="ni-input" style="display:none;" onclick="goPage('input')"><span style="font-size:20px;margin-bottom:2px;">➕</span>DB입력</div>
     <div class="bni" id="ni-stats" onclick="goPage('stats')"><span style="font-size:20px;margin-bottom:2px;">📊</span>통계</div>
   </nav>
+</div>
+
+<div id="mCard" style="display:none;position:fixed;inset:0;z-index:998;background:#fff;flex-direction:column;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);background:#fff;">
+    <div style="font-size:15px;font-weight:900;">💗 MY · 럽맘 프로필·명함</div>
+    <button onclick="closeCardTool()" class="btn btn-ghost" style="padding:6px 12px;font-size:13px;font-weight:800;border-radius:10px;">✕ 닫기</button>
+  </div>
+  <iframe id="cardFrame" title="럽맘 프로필·명함 제작기" style="flex:1;border:0;width:100%;background:#faf3f7;"></iframe>
 </div>
 
 <div id="mResult" class="modal-overlay" style="display:none;">
@@ -2801,6 +2810,98 @@ function refreshKeepPage() {
     })
     .withFailureHandler(function(){ hideLoader(); loadData('갱신 중...'); })
     .getAllData();
+}
+
+// ===== MY: 럽맘 프로필·명함 제작기 + 고객에게 보내기 =====
+var CARD_TARGET = null, CARD_FILES = null, CARD_TEXT = '';
+function openCardTool() {
+  var f = document.getElementById('cardFrame');
+  if (!f.getAttribute('src')) f.setAttribute('src', 'luvmom-card.html');
+  document.getElementById('mCard').style.display = 'flex';
+}
+function closeCardTool() { document.getElementById('mCard').style.display = 'none'; }
+window.addEventListener('message', function (e) {
+  var f = document.getElementById('cardFrame');
+  if (!f || e.source !== f.contentWindow) return;
+  var d = e.data || {};
+  if (d.type === 'card-send-request') cardPickCustomer();
+  else if (d.type === 'card-files') cardFilesReady(d);
+});
+function cardPickCustomer() {
+  var admin = ME.role === '관리자' || ME.role === '파트너';
+  var list = DB_LIST.filter(function (db) {
+    return String(db.dbType || '').indexOf('럽맘') >= 0 && db.phone && (admin || db.assignedFC === ME.name);
+  }).sort(function (a, b) { return String(b.assignDate || '').localeCompare(String(a.assignDate || '')) || String(a.customerName || '').localeCompare(String(b.customerName || ''), 'ko'); });
+  if (!list.length) return Swal.fire({ icon: 'info', title: '보낼 고객이 없어요', text: '연락처가 있는 럽맘 DB가 없습니다.', confirmButtonColor: '#007aff' });
+  Swal.fire({
+    title: '📤 보낼 고객 선택',
+    html: '<input id="cardQ" class="inp" placeholder="이름·번호 검색" style="margin-bottom:10px;">' +
+          '<div id="cardList" style="max-height:48vh;overflow-y:auto;text-align:left;"></div>',
+    showConfirmButton: false, showCancelButton: true, cancelButtonText: '닫기',
+    didOpen: function () {
+      var box = document.getElementById('cardList'), q = document.getElementById('cardQ');
+      function draw() {
+        var k = q.value.trim().toLowerCase().replace(/-/g, '');
+        var rows = list.filter(function (db) {
+          return !k || String(db.customerName || '').toLowerCase().indexOf(k) >= 0 || String(db.phone || '').replace(/-/g, '').indexOf(k) >= 0;
+        }).slice(0, 150);
+        box.innerHTML = rows.map(function (db) {
+          return '<div data-id="' + esc(db.id) + '" style="padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+            '<div><div style="font-weight:900;font-size:15px;">' + esc(db.customerName) + '</div><div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + esc(db.phone) + (admin && db.assignedFC ? ' · ' + esc(db.assignedFC) : '') + '</div></div>' +
+            '<div style="font-size:11px;font-weight:800;color:var(--tx-sub);white-space:nowrap;">' + esc(db.assignDate || '') + '</div></div>';
+        }).join('') || '<div style="text-align:center;color:var(--tx-sub);padding:20px;font-weight:700;">검색 결과가 없습니다.</div>';
+      }
+      draw();
+      q.addEventListener('input', draw);
+      box.addEventListener('click', function (ev) {
+        var it = ev.target.closest('[data-id]'); if (!it) return;
+        var id = it.getAttribute('data-id');
+        CARD_TARGET = DB_LIST.find(function (d) { return d.id === id; });
+        Swal.close();
+        showLoader('프로필·명함 이미지를 만드는 중...');
+        document.getElementById('cardFrame').contentWindow.postMessage({ type: 'card-make-files' }, '*');
+      });
+    }
+  });
+}
+function cardFilesReady(d) {
+  hideLoader();
+  if (d.error || !d.files) return Swal.fire({ icon: 'error', title: '이미지 생성 실패', text: d.error || '다시 시도해 주세요.', confirmButtonColor: '#007aff' });
+  var t = CARD_TARGET || {}, nm = t.customerName || '';
+  CARD_FILES = d.files.map(function (f) { return new File([f.blob], f.filename, { type: 'image/png' }); });
+  CARD_TEXT = String(d.text || '').replace('안녕하세요, 고객님.', '안녕하세요, ' + nm + ' 고객님.');
+  Swal.fire({
+    title: esc(nm) + ' 고객님께 보내기',
+    html: '<div style="font-size:13px;color:var(--tx-sub);font-weight:700;line-height:1.6;">📱 ' + esc(t.phone || '') + '<br>프로필·명함 이미지 2장과 안내 문구가 준비됐어요.<br>' +
+          '<b style="color:var(--blue);">공유하기</b>에서 카카오톡/문자를 고르면 이미지와 문구가 함께 담깁니다. (문구는 자동 복사돼요)</div>',
+    showDenyButton: true, showCancelButton: true,
+    confirmButtonText: '📤 이미지+문구 공유 (카톡·문자)', denyButtonText: '💬 문자 앱으로 문구만', cancelButtonText: '닫기',
+    confirmButtonColor: '#007aff', denyButtonColor: '#34c759',
+    preConfirm: function () { cardShare(); return false; },
+    preDeny: function () { cardSms(); return false; }
+  });
+}
+function cardCopy() { try { navigator.clipboard.writeText(CARD_TEXT); } catch (e) {} }
+function cardShare() {
+  cardCopy();
+  if (navigator.canShare && navigator.canShare({ files: CARD_FILES })) {
+    navigator.share({ files: CARD_FILES, text: CARD_TEXT, title: '럽맘 프로필·명함' }).catch(function (e) { if (e && e.name !== 'AbortError') cardSaveFiles(); });
+  } else cardSaveFiles();
+}
+function cardSaveFiles() {
+  CARD_FILES.forEach(function (f, i) {
+    setTimeout(function () {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name;
+      document.body.appendChild(a); a.click(); a.remove();
+    }, i * 400);
+  });
+  Swal.fire({ icon: 'info', title: '이미지를 저장했어요', text: '이 기기에서는 바로 공유가 안 돼요. 저장된 이미지를 카카오톡/문자에 첨부하고, 복사된 문구를 붙여넣어 보내 주세요.', confirmButtonColor: '#007aff' });
+}
+function cardSms() {
+  cardCopy();
+  var ph = String((CARD_TARGET || {}).phone || '').replace(/[^0-9]/g, '');
+  var sep = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? '&' : '?';
+  location.href = 'sms:' + ph + sep + 'body=' + encodeURIComponent(CARD_TEXT);
 }
 
 // ===== 결과값 → 통계 분류 =====
