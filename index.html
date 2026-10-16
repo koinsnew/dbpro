@@ -2919,11 +2919,15 @@ function cardSms() {
 }
 
 // ===== 럽맘: 임신주수 기재 고객 = 출산 후 접촉 알림 =====
-function pregWeekOf(db) { var m = String(db.note || '').match(/임신주수:\s*([^\/]+)/); return m ? m[1].trim() : ''; }
+function dueDateOf(db) {
+  var m = String(db.note || '').match(/출산예정일:\s*(\d{4})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})/);
+  return m ? m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2) : '';
+}
+function todayYMD() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function birthTargets() {
   var admin = ME.role === '관리자';
   return DB_LIST.filter(function (db) {
-    return String(db.dbType || '').indexOf('럽맘') >= 0 && pregWeekOf(db) && db.assignedFC &&
+    return String(db.dbType || '').indexOf('럽맘') >= 0 && dueDateOf(db) && dueDateOf(db) <= todayYMD() && db.assignedFC &&
       ['배정대기', '미배정', '배정불가'].indexOf(db.status) < 0 && !db.result && (admin || db.assignedFC === ME.name);
   });
 }
@@ -2935,7 +2939,7 @@ function updateBirthAlert() {
   el.innerHTML = '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:14px 16px;margin-bottom:14px;">' +
     '<div onclick="showBirthTargets()" style="cursor:pointer;">' +
       '<div style="font-size:15px;font-weight:900;color:#c2410c;">🍼 출산 후 고객 접촉 알림 · ' + list.length + '건</div>' +
-      '<div style="font-size:12px;font-weight:700;color:#9a3412;margin-top:4px;line-height:1.5;">임신주수가 기재된 럽맘 고객은 이미 출산하셨을 시점이에요.<br>' + (admin ? '담당 FC가 아직 접촉(TA)하지 않은 고객입니다.' : '출산 축하 인사와 함께 태아보험 → 어린이보험 전환을 제안해 주세요.') + ' (눌러서 목록 보기)</div>' +
+      '<div style="font-size:12px;font-weight:700;color:#9a3412;margin-top:4px;line-height:1.5;">출산예정일이 지난 럽맘 고객은 출산하셨을 시점이에요.<br>' + (admin ? '담당 FC가 아직 접촉(TA)하지 않은 고객입니다.' : '출산 축하 인사와 함께 태아보험 → 어린이보험 전환을 제안해 주세요.') + ' (눌러서 목록 보기)</div>' +
     '</div>' +
     (admin ? '<button onclick="sendBirthMail()" class="btn btn-ghost" style="margin-top:10px;padding:8px 12px;font-size:12px;font-weight:800;color:#c2410c;border-color:#fed7aa;background:#fff;">📧 담당 FC에게 알림 메일 발송</button>' : '') +
   '</div>';
