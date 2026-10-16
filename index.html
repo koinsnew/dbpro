@@ -187,6 +187,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
   </div>
 
   <div id="pg-list" style="display:none;padding:20px;">
+    <div id="birthAlert"></div>
     <div id="filterGrid" style="display:grid; gap:8px; margin-bottom:16px;">
       <select id="dateSelect" class="inp inp-no-arrow" style="padding:16px; font-size:16px; font-weight:800; border-color:var(--blue); color:var(--blue); box-shadow:0 2px 8px rgba(0,122,255,0.15);" onchange="selectDate(this.value)"></select>
       <select id="fcSelect" class="inp inp-no-arrow" style="display:none; padding:16px; font-size:16px; font-weight:800; border-color:var(--tx-main); color:var(--tx-main); box-shadow:0 2px 8px rgba(0,0,0,0.05);" onchange="selectFC(this.value)"></select>
@@ -992,6 +993,7 @@ function cardSteps(db) {
 
 function renderList() {
   const admin = (ME.role === '관리자');
+  updateBirthAlert();
   
   let monthList = DB_LIST.filter(db => db.assignDate && db.assignDate.startsWith(curMonth));
   var _sc = myScopeType(); if (_sc) monthList = monthList.filter(function(db){ return String(db.dbType||'').indexOf(_sc) >= 0; });
@@ -2914,6 +2916,45 @@ function cardSms() {
   var ph = String((CARD_TARGET || {}).phone || '').replace(/[^0-9]/g, '');
   var sep = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? '&' : '?';
   location.href = 'sms:' + ph + sep + 'body=' + encodeURIComponent(CARD_TEXT);
+}
+
+// ===== 럽맘: 임신주수 기재 고객 = 출산 후 접촉 알림 =====
+function pregWeekOf(db) { var m = String(db.note || '').match(/임신주수:\s*([^\/]+)/); return m ? m[1].trim() : ''; }
+function birthTargets() {
+  var admin = ME.role === '관리자';
+  return DB_LIST.filter(function (db) {
+    return String(db.dbType || '').indexOf('럽맘') >= 0 && pregWeekOf(db) && db.assignedFC &&
+      ['배정대기', '미배정', '배정불가'].indexOf(db.status) < 0 && !db.result && (admin || db.assignedFC === ME.name);
+  });
+}
+function updateBirthAlert() {
+  var el = document.getElementById('birthAlert'); if (!el) return;
+  var list = birthTargets();
+  if (!list.length) { el.innerHTML = ''; return; }
+  var admin = ME.role === '관리자';
+  el.innerHTML = '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:14px 16px;margin-bottom:14px;">' +
+    '<div onclick="showBirthTargets()" style="cursor:pointer;">' +
+      '<div style="font-size:15px;font-weight:900;color:#c2410c;">🍼 출산 후 고객 접촉 알림 · ' + list.length + '건</div>' +
+      '<div style="font-size:12px;font-weight:700;color:#9a3412;margin-top:4px;line-height:1.5;">임신주수가 기재된 럽맘 고객은 이미 출산하셨을 시점이에요.<br>' + (admin ? '담당 FC가 아직 접촉(TA)하지 않은 고객입니다.' : '출산 축하 인사와 함께 접촉해 주세요.') + ' (눌러서 목록 보기)</div>' +
+    '</div>' +
+    (admin ? '<button onclick="sendBirthMail()" class="btn btn-ghost" style="margin-top:10px;padding:8px 12px;font-size:12px;font-weight:800;color:#c2410c;border-color:#fed7aa;background:#fff;">📧 담당 FC에게 알림 메일 발송</button>' : '') +
+  '</div>';
+}
+function showBirthTargets() {
+  LAST_STAT = function () { showBirthTargets(); };
+  openStatListModal('🍼 출산 후 접촉 대상', birthTargets());
+}
+function sendBirthMail() {
+  Swal.fire({ title: '알림 메일 발송', text: '아직 알림을 보내지 않은 대상의 담당 FC에게 메일을 보낼까요?', icon: 'question', showCancelButton: true, confirmButtonText: '발송', cancelButtonText: '취소', confirmButtonColor: '#007aff' }).then(function (r) {
+    if (!r.isConfirmed) return;
+    showLoader('발송 중...');
+    callApi('sendBirthReminders', {}).then(function (res) {
+      hideLoader();
+      var j = {}; try { j = JSON.parse(res); } catch (e) {}
+      if (j.success) Swal.fire({ icon: 'success', title: j.dbCount ? (j.count + '명의 FC에게 ' + j.dbCount + '건 알림 발송') : '새로 보낼 알림이 없어요', text: j.dbCount ? '' : '이미 발송했거나 이메일이 등록되지 않은 FC입니다.', confirmButtonColor: '#007aff' });
+      else Swal.fire({ icon: 'error', title: '발송 실패', text: j.error || '', confirmButtonColor: '#007aff' });
+    }).catch(function (err) { hideLoader(); Swal.fire({ icon: 'error', title: '발송 실패', text: 'Apps Script(code.gs) 최신 버전 배포가 필요합니다. ' + err.message, confirmButtonColor: '#007aff' }); });
+  });
 }
 
 // ===== 결과값 → 통계 분류 =====
