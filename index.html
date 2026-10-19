@@ -1181,7 +1181,8 @@ function renderList() {
         if(admin) {
            adminBtns = '<div style="display:flex;gap:8px;margin-top:12px;border-top:1px dashed var(--border);padding-top:12px;">' +
              (!db.assignedFC ? stagedBtnHtml(db) : '') +
-             '<button onclick="openEditDB(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;padding:8px;font-size:13px;">✏️ 수정/재배정</button>' +
+             '<button onclick="openEditDB(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;padding:8px;font-size:13px;">✏️ 재배정</button>' +
+             ((db.assignedFC && ['배정대기','미배정','배정불가'].indexOf(db.status) < 0) ? '<button onclick="openResult(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;padding:8px;font-size:13px;color:var(--blue);border-color:var(--blue);">📝 결과수정</button>' : '') +
              '<button onclick="deleteDB(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;padding:8px;font-size:13px;color:var(--red);background:#fff2f2;">🗑️ 삭제</button>' +
            '</div>';
         }
