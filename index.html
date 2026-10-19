@@ -208,7 +208,10 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
   <div id="pg-sched" style="display:none;padding:20px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div style="font-size:22px;font-weight:900;">미팅 일정</div>
-      <div id="schedScope" style="font-size:12px;font-weight:800;color:var(--tx-sub);"></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div id="schedScope" style="font-size:12px;font-weight:800;color:var(--tx-sub);"></div>
+        <button onclick="captureSchedule()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;font-weight:800;color:var(--blue);border-color:var(--blue);white-space:nowrap;">📸 캡처</button>
+      </div>
     </div>
     <div id="schedCal" class="card" style="padding:12px;"></div>
     <div id="schedList"></div>
@@ -3283,6 +3286,75 @@ function renderSchedule() {
     '</div>';
   }).join('');
   document.getElementById('schedList').innerHTML = html;
+}
+
+// ===== 미팅 일정 표 캡처 =====
+function schedCurrentItems() {
+  var all = collectMeetings();
+  var inMonth = all.filter(function(e){ return e.m.date.slice(0, 7) === curMonth; });
+  var isAll = SCHED_DAY === 'all';
+  return { isAll: isAll, items: isAll ? inMonth : inMonth.filter(function(e){ return e.m.date === SCHED_DAY; }) };
+}
+function captureSchedule() {
+  if (typeof html2canvas === 'undefined') return Swal.fire('잠시 후 다시 시도', '이미지 도구를 불러오는 중입니다.', 'info');
+  var cur = schedCurrentItems(), items = cur.items, isAll = cur.isAll;
+  if (!items.length) return Swal.fire('캡처할 미팅이 없어요', '선택한 날짜(또는 이번 달)에 예정된 미팅이 없습니다.', 'info');
+  var types = []; items.forEach(function(e){ var t = String(e.db.dbType || '').trim(); if (t && types.indexOf(t) < 0) types.push(t); });
+  var dbName = types.join('·') || '전체';
+  var wk = ['일','월','화','수','목','금','토'];
+  var dateTxt;
+  if (isAll) { dateTxt = fmtMonth(curMonth) + ' 전체'; }
+  else { var d = new Date(SCHED_DAY + 'T00:00:00'); dateTxt = SCHED_DAY.slice(5, 7) + '/' + SCHED_DAY.slice(8, 10) + '(' + wk[d.getDay()] + ')'; }
+  var title = dateTxt + ' ' + dbName + ' 미팅일정';
+  var th = 'padding:10px 8px;background:#007aff;color:#fff;font-size:14px;font-weight:800;text-align:center;border:1px solid #0066d6;white-space:nowrap;';
+  var td = 'padding:10px 8px;font-size:14px;font-weight:600;color:#1d1d1f;border:1px solid #e1e4ea;vertical-align:middle;';
+  var rows = items.map(function(e, i){
+    var dd = new Date(e.m.date + 'T00:00:00');
+    var when = e.m.date.slice(5).replace('-', '/') + '(' + wk[dd.getDay()] + ')';
+    var bg = i % 2 ? '#f6f9ff' : '#fff';
+    return '<tr style="background:' + bg + ';">' +
+      '<td style="' + td + 'text-align:center;color:#86868b;">' + (i + 1) + '</td>' +
+      (isAll ? '<td style="' + td + 'text-align:center;white-space:nowrap;">' + when + '</td>' : '') +
+      '<td style="' + td + 'text-align:center;font-weight:900;color:#007aff;white-space:nowrap;">' + esc(e.m.time || '--:--') + '</td>' +
+      '<td style="' + td + 'text-align:center;font-weight:900;white-space:nowrap;">' + esc(e.db.customerName) + '</td>' +
+      '<td style="' + td + 'text-align:center;white-space:nowrap;">' + e.n + '차</td>' +
+      '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(e.db.assignedFC || '-') + '</td>' +
+      (types.length > 1 ? '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(e.db.dbType || '') + '</td>' : '') +
+      '<td style="' + td + 'word-break:keep-all;">' + esc(e.m.note || '') + '</td>' +
+      '<td style="' + td + 'word-break:keep-all;color:#1a9e3f;">' + esc(e.m.result || '') + '</td></tr>';
+  }).join('');
+  var el = document.createElement('div'); el.id = 'schedCanvas';
+  el.style.cssText = 'position:fixed;left:-10000px;top:0;width:' + (isAll || types.length > 1 ? 960 : 820) + 'px;background:#fff;padding:28px;font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#1d1d1f;';
+  el.innerHTML =
+    '<div style="border-bottom:3px solid #007aff;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;">' +
+      '<div><div style="font-size:26px;font-weight:900;letter-spacing:-.5px;">📅 ' + esc(title) + '</div>' +
+      '<div style="font-size:13px;font-weight:700;color:#86868b;margin-top:4px;">' + (ME.role === '관리자' || ME.role === '파트너' ? '전체 FC' : esc(ME.name) + ' FC') + ' · 총 ' + items.length + '건</div></div>' +
+      '<div style="font-size:13px;font-weight:800;color:#007aff;">헤리티지 금융지사</div></div>' +
+    '<table style="width:100%;border-collapse:collapse;table-layout:auto;"><thead><tr>' +
+      '<th style="' + th + '">No</th>' + (isAll ? '<th style="' + th + '">날짜</th>' : '') + '<th style="' + th + '">시간</th><th style="' + th + '">고객명</th><th style="' + th + '">차수</th><th style="' + th + '">담당 FC</th>' +
+      (types.length > 1 ? '<th style="' + th + '">DB종류</th>' : '') + '<th style="' + th + 'width:30%;">미팅 내용</th><th style="' + th + 'width:22%;">상담 결과</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div style="text-align:right;font-size:11px;font-weight:700;color:#aeaeb2;margin-top:14px;">Heritage DB System · 데이터 PRO</div>';
+  document.body.appendChild(el);
+  showLoader('미팅일정 이미지를 만드는 중...');
+  html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true, scrollX: 0, scrollY: 0 })
+  .then(function(canvas){
+    el.remove(); hideLoader();
+    var fn = '미팅일정_' + dbName + '_' + (isAll ? curMonth.replace('-', '') : SCHED_DAY.replace(/-/g, '')) + '.png';
+    canvas.toBlob(function(blob){
+      var file = new File([blob], fn, { type: 'image/png' });
+      var canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+      var url = URL.createObjectURL(blob);
+      Swal.fire({
+        title: '미팅일정 이미지', imageUrl: url, imageAlt: title, width: 700,
+        showConfirmButton: canShare, confirmButtonText: '📤 공유하기', confirmButtonColor: '#007aff',
+        showDenyButton: true, denyButtonText: '💾 저장하기', denyButtonColor: '#34c759',
+        showCancelButton: true, cancelButtonText: '닫기'
+      }).then(function(res){
+        if (res.isConfirmed) navigator.share({ files: [file], title: title }).catch(function(){});
+        else if (res.isDenied) { var a = document.createElement('a'); a.href = url; a.download = fn; document.body.appendChild(a); a.click(); a.remove(); }
+      });
+    }, 'image/png');
+  }).catch(function(e){ el.remove(); hideLoader(); Swal.fire('캡처 실패', String(e), 'error'); });
 }
 function showMeetingDetail(dbId, idx) {
   var db = DB_LIST.find(function(x){ return x.id === dbId; }); if (!db) return;
