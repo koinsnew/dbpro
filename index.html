@@ -213,6 +213,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
         <button onclick="captureSchedule()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;font-weight:800;color:var(--blue);border-color:var(--blue);white-space:nowrap;">📸 캡처</button>
       </div>
     </div>
+    <div id="schedFilters" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;"></div>
     <div id="schedCal" class="card" style="padding:12px;"></div>
     <div id="schedList"></div>
   </div>
@@ -417,7 +418,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
       <label class="res-box"><input type="radio" name="resType" value="부재" style="display:none;" onchange="toggleResFields()"> 부재</label>
       <label class="res-box"><input type="radio" name="resType" value="재통화" style="display:none;" onchange="toggleResFields()"> 📞 재통화</label>
       <label class="res-box"><input type="radio" name="resType" value="결번" style="display:none;" onchange="toggleResFields()"> 결번</label>
-      <label class="res-box"><input type="radio" name="resType" value="거절" style="display:none;" onchange="toggleResFields()"> 거절</label>
+      <label class="res-box"><input type="radio" name="resType" value="거절" style="display:none;" onchange="toggleResFields()"> 미팅거절</label>
       <label class="res-box"><input type="radio" name="resType" value="기타" style="display:none;" onchange="toggleResFields()"> 기타</label>
     </div>
     <div id="f_meeting_container" style="display:none;margin-bottom:16px;background:#f0f7ff;border:1px solid #cce0ff;border-radius:12px;padding:12px;">
@@ -1148,10 +1149,11 @@ function renderList() {
        if (curResultFilter === 'TA완료') return !!r || isRecall;
        if (isRecall) return false;
        if (curResultFilter === '미팅') return r.includes('AP');
-       if (curResultFilter === '청약') return r.includes('청약');
+       if (curResultFilter === '청약') return r === '청약';
        if (curResultFilter === '부재') return r.includes('부재');
        if (curResultFilter === '결번') return r.includes('결번');
-       if (curResultFilter === '거절') return r.includes('거절');
+       if (curResultFilter === '미팅거절') return r === '거절';
+       if (curResultFilter === '청약거절') return r === '청약거절';
        if (curResultFilter === '기타') return r.includes('기타');
        return true;
     });
@@ -1275,7 +1277,7 @@ function renderChart(dataList) {
   c.style.display = 'block';
   c.style.height = 'auto';
 
-  let t = { assign: dataList.length, ta_all: 0, ap: 0, pc: 0, contract: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, unassigned: 0, recall: 0 };
+  let t = { assign: dataList.length, ta_all: 0, ap: 0, pc: 0, contract: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, unassigned: 0, recall: 0, cr: 0 };
   dataList.forEach(d => {
     if (d.status === '배정대기') {
       t.unassigned++;
@@ -1285,10 +1287,11 @@ function renderChart(dataList) {
       
       if (d.status === '재통화') t.recall++;
       else if (r.indexOf('AP') >= 0) t.ap++;
-      else if (r.indexOf('청약') >= 0) t.contract++;
+      else if (r === '청약') t.contract++;
+      else if (r === '청약거절') t.cr++;
       else if (r.indexOf('부재') >= 0) t.absent++;
       else if (r.indexOf('결번') >= 0) t.wrongNum++;
-      else if (r.indexOf('거절') >= 0) t.reject++;
+      else if (r === '거절') t.reject++;
       else if (r.indexOf('기타') >= 0) t.other++;
     }
   });
@@ -1326,7 +1329,8 @@ function renderChart(dataList) {
     { label:'부재', val:t.absent, color:'#ffb300' },
     { label:'재통화', val:t.recall, color:'#c2410c' },
     { label:'결번', val:t.wrongNum, color:'#fd7e14' },
-    { label:'거절', val:t.reject, color:'#dc3545' },
+    { label:'미팅거절', val:t.reject, color:'#dc3545' },
+    { label:'청약거절', val:t.cr, color:'#b91c1c' },
     { label:'기타', val:t.other, color:'#6c757d' },
     { label:'배정대기', val:t.unassigned, color:'#9aa0a6' }
   ];
@@ -1933,10 +1937,11 @@ function showStatList(fcName, key, label) {
     const r = rcat(db.result);
     if (key === 'ta') return !!r || db.status === '재통화';
     if (key === 'ap') return r.indexOf('AP') >= 0;
-    if (key === 'contract') return r.indexOf('청약') >= 0;
+    if (key === 'contract') return r === '청약';
+    if (key === 'cr') return r === '청약거절';
     if (key === 'absent') return r.indexOf('부재') >= 0;
     if (key === 'wrongNum') return r.indexOf('결번') >= 0;
-    if (key === 'reject') return r.indexOf('거절') >= 0;
+    if (key === 'reject') return r === '거절';
     if (key === 'other') return r.indexOf('기타') >= 0;
     return false;
   });
@@ -2012,7 +2017,7 @@ function loadStats() {
   statList.forEach(db => {
     if(db.assignedFC) {
       if(!fcMap[db.assignedFC]) {
-        fcMap[db.assignedFC] = { total: 0, ta: 0, ap: 0, pc: 0, contract: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, unassigned: 0, recall: 0 };
+        fcMap[db.assignedFC] = { total: 0, ta: 0, ap: 0, pc: 0, contract: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, unassigned: 0, recall: 0, cr: 0 };
       }
       fcMap[db.assignedFC].total++;
       
@@ -2025,10 +2030,11 @@ function loadStats() {
 
         if(r.includes('AP')) fcMap[db.assignedFC].ap++;
         else if(r.includes('PC')) fcMap[db.assignedFC].pc++;
+        else if(r === '청약거절') fcMap[db.assignedFC].cr++;
         else if(r.includes('청약')) fcMap[db.assignedFC].contract++;
         else if(r.includes('부재')) fcMap[db.assignedFC].absent++;
         else if(r.includes('결번')) fcMap[db.assignedFC].wrongNum++;
-        else if(r.includes('거절')) fcMap[db.assignedFC].reject++;
+        else if(r === '거절') fcMap[db.assignedFC].reject++;
         else if(r.includes('기타')) fcMap[db.assignedFC].other++;
       }
     }
@@ -2041,7 +2047,7 @@ function loadStats() {
     if(ME.role !== '관리자' && ME.role !== '파트너' && fc !== ME.name) continue;
     let d = fcMap[fc];
     
-    let meetingRate = d.ta > 0 ? ((d.ap / d.ta) * 100).toFixed(1) : '0.0';
+    let meetingRate = meetRateOf(d, STAT_TYPE).pct.toFixed(1);
     let contractRate = d.total > 0 ? ((d.contract / d.total) * 100).toFixed(1) : 0;
 
     statsHtml += '<div class="card" style="border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.03);">' +
@@ -2056,11 +2062,12 @@ function loadStats() {
           '<div onclick="showStatList(\'' + fc + '\',\'ap\',\'미팅\')" style="cursor:pointer; background:#e5f0ff; padding:10px; border-radius:12px;"><div style="font-size:11px; font-weight:700; color:var(--blue);">미팅</div><div class="stat-num" style="font-size:16px; font-weight:900; color:var(--blue);">' + d.ap + '</div></div>' +
           '<div onclick="showStatList(\'' + fc + '\',\'contract\',\'청약\')" style="cursor:pointer; background:#e8f8ec; padding:10px; border-radius:12px;"><div style="font-size:11px; font-weight:700; color:var(--green);">청약</div><div class="stat-num" style="font-size:16px; font-weight:900; color:var(--green);">' + d.contract + '</div></div>' +
         '</div>' +
-        '<div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; text-align:center;">' +
+        '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; text-align:center;">' +
           '<div onclick="showStatList(\'' + fc + '\',\'absent\',\'부재\')" style="cursor:pointer; background:#fff2f2; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:var(--red); white-space:nowrap;">부재</div><div class="stat-num" style="font-size:14px; font-weight:800; color:var(--red);">' + d.absent + '</div></div>' +
           '<div onclick="showStatList(\'' + fc + '\',\'recall\',\'재통화\')" style="cursor:pointer; background:#fff7ed; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:#c2410c; white-space:nowrap;">재통화</div><div class="stat-num" style="font-size:14px; font-weight:800; color:#c2410c;">' + d.recall + '</div></div>' +
           '<div onclick="showStatList(\'' + fc + '\',\'wrongNum\',\'결번\')" style="cursor:pointer; background:#fff2f2; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:var(--red); white-space:nowrap;">결번</div><div class="stat-num" style="font-size:14px; font-weight:800; color:var(--red);">' + d.wrongNum + '</div></div>' +
-          '<div onclick="showStatList(\'' + fc + '\',\'reject\',\'거절\')" style="cursor:pointer; background:#fff2f2; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:var(--red); white-space:nowrap;">거절</div><div class="stat-num" style="font-size:14px; font-weight:800; color:var(--red);">' + d.reject + '</div></div>' +
+          '<div onclick="showStatList(\'' + fc + '\',\'reject\',\'미팅거절\')" style="cursor:pointer; background:#fff2f2; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:var(--red); white-space:nowrap;">미팅거절</div><div class="stat-num" style="font-size:14px; font-weight:800; color:var(--red);">' + d.reject + '</div></div>' +
+          '<div onclick="showStatList(\'' + fc + '\',\'cr\',\'청약거절\')" style="cursor:pointer; background:#fff2f2; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:#b91c1c; white-space:nowrap;">청약거절</div><div class="stat-num" style="font-size:14px; font-weight:800; color:#b91c1c;">' + d.cr + '</div></div>' +
           '<div onclick="showStatList(\'' + fc + '\',\'other\',\'기타\')" style="cursor:pointer; background:#f5f5f7; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:var(--tx-sub); white-space:nowrap;">기타</div><div class="stat-num" style="font-size:14px; font-weight:800; color:var(--tx-main);">' + d.other + '</div></div>' +
         '</div>' +
         '<div style="display:flex; justify-content:space-evenly; gap:20px; margin-top:16px; padding-top:12px; border-top:1px dashed var(--border);">' +
@@ -2624,7 +2631,7 @@ function renderStatsExtras(monthList, fcMap) {
   var map = {};
   list.forEach(function(db){
     var t = db.dbType || '(미지정)';
-    if (!map[t]) map[t] = { total: 0, noFC: 0, wait: 0, ta: 0, ap: 0, pc: 0, contract: 0, fail: 0, recall: 0, absent: 0, wrongNum: 0, reject: 0, other: 0 };
+    if (!map[t]) map[t] = { total: 0, noFC: 0, wait: 0, ta: 0, ap: 0, pc: 0, contract: 0, fail: 0, recall: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, cr: 0 };
     var m = map[t]; m.total++;
     if (!db.assignedFC) { m.noFC++; return; }
     if (db.status === '배정대기') { m.wait++; return; }
@@ -2633,10 +2640,11 @@ function renderStatsExtras(monthList, fcMap) {
     if (r || db.status === '재통화') m.ta++;
     if (db.status === '재통화') { /* 재통화는 별도 집계 */ }
     else if (r.indexOf('AP') >= 0) m.ap++;
+    else if (r === '청약거절') m.cr++;
     else if (r.indexOf('청약') >= 0) m.contract++;
     else if (r.indexOf('부재') >= 0) { m.fail++; m.absent++; }
     else if (r.indexOf('결번') >= 0) { m.fail++; m.wrongNum++; }
-    else if (r.indexOf('거절') >= 0) { m.fail++; m.reject++; }
+    else if (r === '거절') { m.fail++; m.reject++; }
     else if (r.indexOf('기타') >= 0) { m.fail++; m.other++; }
   });
   var types = Object.keys(map).sort(function(a, b){
@@ -2644,7 +2652,7 @@ function renderStatsExtras(monthList, fcMap) {
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b, 'ko');
   });
   if (!types.length) { area.innerHTML = ''; return; }
-  var allSum = { total: 0, noFC: 0, wait: 0, ta: 0, ap: 0, pc: 0, contract: 0, fail: 0, recall: 0, absent: 0, wrongNum: 0, reject: 0, other: 0 };
+  var allSum = { total: 0, noFC: 0, wait: 0, ta: 0, ap: 0, pc: 0, contract: 0, fail: 0, recall: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, cr: 0 };
   types.forEach(function(t){ Object.keys(allSum).forEach(function(k){ allSum[k] += map[t][k]; }); });
   if (STAT_TYPE !== 'all' && types.indexOf(STAT_TYPE) < 0) STAT_TYPE = 'all';
   var sel = '<select id="statTypeSel" class="inp inp-arrow no-cap" style="padding:10px 12px;font-size:14px;font-weight:800;margin-bottom:12px;border-color:var(--blue);color:var(--blue);" onchange="STAT_TYPE=this.value; loadStats();">' +
@@ -2664,7 +2672,7 @@ function typeStatCard(t, m) {
   var assigned = m.total - m.noFC;
   var noTA = assigned - m.ta;
   var taPct = assigned ? Math.round(m.ta / assigned * 100) : 0;
-  var meet = m.ta ? (m.ap / m.ta * 100).toFixed(1) : '0.0';
+  var mr = meetRateOf(m, t), meet = mr.pct.toFixed(1);
   var con = assigned ? (m.contract / assigned * 100).toFixed(1) : '0.0';
   function cell(label, val, color, key) {
     return '<div onclick="showTypeStatList(\'' + key + '\',\'' + label + '\')" style="cursor:pointer;background:#f5f5f7;border-radius:10px;padding:8px 2px;text-align:center;"><div style="font-size:10px;font-weight:700;color:var(--tx-sub);white-space:nowrap;">' + label + '</div><div class="stat-num" style="font-size:15px;font-weight:900;color:' + (color || 'var(--tx-main)') + ';">' + val + '</div></div>';
@@ -2681,13 +2689,14 @@ function typeStatCard(t, m) {
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px;">' +
       cell('TA완료', m.ta, 'var(--blue)', 'ta') + cell('TA미입력', noTA, noTA > 0 ? 'var(--red)' : 'var(--green)', 'noTA') + cell('미팅', m.ap, 'var(--blue)', 'ap') + cell('청약', m.contract, 'var(--green)', 'contract') +
     '</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;">' + cell('부재', m.absent || 0, 'var(--red)', 'absent') + cell('재통화', m.recall || 0, '#c2410c', 'recall') + cell('결번', m.wrongNum || 0, 'var(--red)', 'wrongNum') + cell('거절', m.reject || 0, 'var(--red)', 'reject') + cell('기타', m.other || 0, 'var(--tx-main)', 'other') + '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:10px;">' + cell('부재', m.absent || 0, 'var(--red)', 'absent') + cell('재통화', m.recall || 0, '#c2410c', 'recall') + cell('결번', m.wrongNum || 0, 'var(--red)', 'wrongNum') + cell('미팅거절', m.reject || 0, 'var(--red)', 'reject') + cell('청약거절', m.cr || 0, '#b91c1c', 'cr') + cell('기타', m.other || 0, 'var(--tx-main)', 'other') + '</div>' +
     '<div style="height:8px;background:#ffe1e1;border-radius:6px;overflow:hidden;margin-bottom:8px;"><div style="height:100%;width:' + taPct + '%;background:var(--green);"></div></div>' +
     '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;">' +
       '<span style="color:var(--tx-sub);">TA율 ' + taPct + '%</span>' +
       '<span style="color:var(--blue);">미팅률 ' + meet + '%</span>' +
       '<span style="color:var(--green);">청약률 ' + con + '%</span>' +
     '</div>' +
+    (mr.adj ? '<div class="no-cap" style="font-size:11px;font-weight:700;color:var(--tx-sub);margin-top:8px;">※ 미팅률 = (미팅+청약+청약거절) ÷ (TA완료 − 부재·결번·미팅거절·기타) = ' + mr.hit + ' ÷ ' + mr.base + '</div>' : '') +
   '</div>';
 }
 // ----- 캡처용 표 리포트 -----
@@ -2697,7 +2706,7 @@ function buildReportData() {
   var sc = myScopeType(); if (sc) list = list.filter(function(db){ return String(db.dbType || '').indexOf(sc) >= 0; });
   if (!isAdmin && !isPartner) list = list.filter(function(db){ return db.assignedFC === ME.name; });
   if (STAT_TYPE !== 'all') list = list.filter(function(db){ return (db.dbType || '(미지정)') === STAT_TYPE; });
-  function blank() { return { total: 0, noFC: 0, assigned: 0, ta: 0, ap: 0, pc: 0, contract: 0, recall: 0, fail: 0, absent: 0, wrongNum: 0, reject: 0, other: 0 }; }
+  function blank() { return { total: 0, noFC: 0, assigned: 0, ta: 0, ap: 0, pc: 0, contract: 0, recall: 0, fail: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, cr: 0 }; }
   function add(m, db) {
     m.total++;
     if (!db.assignedFC) { m.noFC++; return; }
@@ -2707,10 +2716,11 @@ function buildReportData() {
     if (db.status === '배정대기' || !r) return;
     m.ta++;
     if (r.indexOf('AP') >= 0) m.ap++;
+    else if (r === '청약거절') m.cr++;
     else if (r.indexOf('청약') >= 0) m.contract++;
     else if (r.indexOf('부재') >= 0) { m.fail++; m.absent++; }
     else if (r.indexOf('결번') >= 0) { m.fail++; m.wrongNum++; }
-    else if (r.indexOf('거절') >= 0) { m.fail++; m.reject++; }
+    else if (r === '거절') { m.fail++; m.reject++; }
     else if (r.indexOf('기타') >= 0) { m.fail++; m.other++; }
   }
   var types = {}, fcs = {}, sum = blank();
@@ -2741,7 +2751,7 @@ function buildReportEl() {
     var c = p >= 80 ? GREEN : (p >= 50 ? '#f59e0b' : RED);
     return '<div style="display:flex;align-items:center;gap:6px;justify-content:center;"><div style="width:44px;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;"><div style="width:' + p + '%;height:100%;background:' + c + ';"></div></div><span style="font-size:13px;font-weight:800;color:' + c + ';min-width:34px;text-align:right;">' + p + '%</span></div>';
   }
-  function row(name, m, i, isSum) {
+  function row(name, m, i, isSum, rtype) {
     var no = m.assigned - m.ta;
     var bg = isSum ? '#eef4ff' : (i % 2 ? '#f8fafc' : '#ffffff');
     var w = isSum ? 'font-weight:900;' : '';
@@ -2751,13 +2761,14 @@ function buildReportEl() {
       '<td style="' + td + w + 'color:' + BLUE + ';">' + m.ta + '</td>' +
       '<td style="' + td + 'font-weight:900;color:' + (no > 0 ? RED : GREEN) + ';">' + no + '</td>' +
       '<td style="' + td + '">' + bar(pct(m.ta, m.assigned)) + '</td>' +
-      '<td style="' + td + 'font-weight:900;color:' + BLUE + ';">' + pct(m.ap, m.ta) + '%</td>' +
+      '<td style="' + td + 'font-weight:900;color:' + BLUE + ';">' + Math.round(meetRateOf(m, rtype).pct) + '%</td>' +
       '<td style="' + td + w + 'color:' + BLUE + ';">' + m.ap + '</td>' +
       '<td style="' + td + w + 'color:' + GREEN + ';">' + m.contract + '</td>' +
       '<td style="' + td + w + 'color:' + ORANGE + ';">' + m.recall + '</td>' +
       '<td style="' + td + w + 'color:' + RED + ';">' + m.absent + '</td>' +
       '<td style="' + td + w + 'color:' + RED + ';">' + m.wrongNum + '</td>' +
       '<td style="' + td + w + 'color:' + RED + ';">' + m.reject + '</td>' +
+      '<td style="' + td + w + 'color:' + RED + ';">' + m.cr + '</td>' +
       '<td style="' + td + w + 'color:#64748b;">' + m.other + '</td>' +
     '</tr>';
   }
@@ -2768,10 +2779,10 @@ function buildReportEl() {
       '<table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid ' + LINE + ';">' +
         '<thead><tr>' +
           '<th style="' + th + 'text-align:left;padding-left:12px;">' + firstCol + '</th><th style="' + th + '">배정</th><th style="' + th + '">TA완료</th><th style="' + th + '">TA미입력</th><th style="' + th + '">TA율</th><th style="' + th + '">미팅률</th>' +
-          '<th style="' + th + '">미팅</th><th style="' + th + '">청약</th><th style="' + th + '">재통화</th><th style="' + th + '">부재</th><th style="' + th + '">결번</th><th style="' + th + '">거절</th><th style="' + th + '">기타</th>' +
+          '<th style="' + th + '">미팅</th><th style="' + th + '">청약</th><th style="' + th + '">재통화</th><th style="' + th + '">부재</th><th style="' + th + '">결번</th><th style="' + th + '">미팅거절</th><th style="' + th + '">청약거절</th><th style="' + th + '">기타</th>' +
         '</tr></thead><tbody>' +
-        rows.map(function(r, i){ return row(r.name, r.m, i, false); }).join('') +
-        (sum ? row('합계', sum, 0, true) : '') +
+        rows.map(function(r, i){ return row(r.name, r.m, i, false, firstCol === 'DB종류' ? r.name : STAT_TYPE); }).join('') +
+        (sum ? row('합계', sum, 0, true, STAT_TYPE) : '') +
       '</tbody></table></div>';
   }
   var s = d.sum;
@@ -2787,7 +2798,7 @@ function buildReportEl() {
     '</div>' +
     '<div style="display:flex;gap:8px;margin-top:16px;">' +
       kpi('총 DB', s.total, NAVY) + kpi('TA완료', s.ta, BLUE) + kpi('TA미입력', s.assigned - s.ta, (s.assigned - s.ta) > 0 ? RED : GREEN) +
-      kpi('TA율', pct(s.ta, s.assigned) + '%', BLUE) + kpi('미팅률', pct(s.ap, s.ta) + '%', BLUE) + kpi('미팅', s.ap, BLUE) + kpi('청약', s.contract, GREEN) +
+      kpi('TA율', pct(s.ta, s.assigned) + '%', BLUE) + kpi('미팅률', Math.round(meetRateOf(s, STAT_TYPE).pct) + '%', BLUE) + kpi('미팅', s.ap, BLUE) + kpi('청약', s.contract, GREEN) +
     '</div>' +
     table('DB종류별 현황', 'DB종류', d.typeRows, d.typeRows.length > 1 ? s : null) +
     table('FC별 TA 현황 (미입력 많은 순)', 'FC', d.fcRows, d.fcRows.length > 1 ? s : null) +
@@ -2891,13 +2902,14 @@ function showTypeStatList(key, label) {
     if (db.status === '배정대기') return false;
     if (key === 'ta') return !!r || db.status === '재통화';
     if (key === 'ap') return r.indexOf('AP') >= 0;
-    if (key === 'contract') return r.indexOf('청약') >= 0;
+    if (key === 'contract') return r === '청약';
+    if (key === 'cr') return r === '청약거절';
     var _rc = db.status === '재통화';
     if (key === 'absent') return !_rc && r.indexOf('부재') >= 0;
     if (key === 'wrongNum') return !_rc && r.indexOf('결번') >= 0;
-    if (key === 'reject') return !_rc && r.indexOf('거절') >= 0;
+    if (key === 'reject') return !_rc && r === '거절';
     if (key === 'other') return !_rc && r.indexOf('기타') >= 0;
-    if (key === 'fail') return /부재|결번|거절|기타/.test(r) && !/AP|PC|청약/.test(r);
+    if (key === 'fail') return /부재|결번|거절|기타/.test(r) && !/AP|PC|청약/.test(r) && r !== '청약거절';
     return false;
   });
   openStatListModal((t === 'all' ? '전체 DB' : t) + ' · ' + label, list);
@@ -3121,10 +3133,22 @@ function sendBirthMail() {
   });
 }
 
+// ===== 미팅률 계산 =====
+// 럽맘 DB: 부재·결번·미팅거절·기타를 뺀 TA완료 수 대비 (미팅+청약+청약거절)
+function isLuvmomType(t) { return String(t || '').indexOf('럽맘') >= 0; }
+function meetRateOf(m, typeName) {
+  if (isLuvmomType(typeName)) {
+    var base = (m.ta || 0) - (m.absent || 0) - (m.wrongNum || 0) - (m.reject || 0) - (m.other || 0);
+    var hit = (m.ap || 0) + (m.contract || 0) + (m.cr || 0);
+    return { pct: base > 0 ? hit / base * 100 : 0, base: base, hit: hit, adj: true };
+  }
+  return { pct: m.ta ? (m.ap || 0) / m.ta * 100 : 0, base: m.ta || 0, hit: m.ap || 0, adj: false };
+}
+
 // ===== 결과값 → 통계 분류 =====
 function rcat(result) {
   var r = String(result || '');
-  if (r === '청약없음') return '거절';
+  if (r === '청약없음') return '청약거절';
   if (r === '청약예정' || r === 'PC') return 'AP';
   if (r.indexOf('청약') >= 0) return '청약';
   return r;
@@ -3133,11 +3157,12 @@ function resultBadge(result) {
   var r = String(result || '');
   if (r === '청약체결' || r === '청약') return '<span class="badge" style="background:#e8f8ec;color:#15803d;border:1px solid #bbf7d0;">🎉 ' + esc(r === '청약' ? '청약체결' : r) + '</span>';
   if (r === '청약예정') return '<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;">' + esc(r) + '</span>';
-  if (r === '청약없음') return '<span class="badge" style="background:#fff2f2;color:var(--red);border:1px solid #ffcccc;">' + esc(r) + '</span>';
+  if (r === '청약없음') return '<span class="badge" style="background:#fff2f2;color:var(--red);border:1px solid #ffcccc;">청약거절</span>';
+  if (r === '거절') return '<span class="badge b-done">미팅거절</span>';
   if (r === 'AP') return '<span class="badge" style="background:#e5f0ff;color:var(--blue);border:1px solid #cce0ff;">🤝 미팅</span>';
   return '<span class="badge b-done">' + esc(r) + '</span>';
 }
-function rlabel(r) { return r === 'AP' ? '미팅' : (r === '청약' ? '청약체결' : r); }
+function rlabel(r) { return r === 'AP' ? '미팅' : (r === '청약' ? '청약체결' : (r === '거절' ? '미팅거절' : (r === '청약없음' ? '청약거절' : r))); }
 function toggleContractChoices() {
   var box = document.getElementById('contractChoices');
   box.style.display = box.style.display === 'grid' ? 'none' : 'grid';
@@ -3237,19 +3262,55 @@ function collectMeetings() {
   out.sort(function(a, b){ return (a.m.date + (a.m.time || '')).localeCompare(b.m.date + (b.m.time || '')); });
   return out;
 }
-function schedPick(day) { SCHED_DAY = day; renderSchedule(); }
+var SCHED_END = '', SCHED_FC = '', SCHED_NORES = false, SCHED_ARMED = false;
+function schedPick(day) {
+  if (day === 'all') { SCHED_DAY = 'all'; SCHED_END = ''; SCHED_ARMED = false; }
+  else if (SCHED_ARMED && SCHED_DAY && SCHED_DAY !== 'all' && !SCHED_END && day !== SCHED_DAY) {   // 두 번째 클릭 → 기간 선택
+    if (day < SCHED_DAY) { SCHED_END = SCHED_DAY; SCHED_DAY = day; } else SCHED_END = day;
+    SCHED_ARMED = false;
+  } else { SCHED_DAY = day; SCHED_END = ''; SCHED_ARMED = true; }
+  renderSchedule();
+}
+function schedFcChange(v) { SCHED_FC = v; renderSchedule(); }
+function schedNoResChange(on) { SCHED_NORES = !!on; renderSchedule(); }
+function schedIsAdmin() { return ME.role === '관리자' || ME.role === '파트너'; }
+// 현재 필터(FC·결과미입력)와 선택한 날짜/기간에 해당하는 일정
+function schedFiltered(inMonthAll) {
+  var base = inMonthAll.filter(function(e){
+    if (schedIsAdmin() && SCHED_FC && e.db.assignedFC !== SCHED_FC) return false;
+    if (SCHED_NORES && String(e.m.result || '').trim()) return false;
+    return true;
+  });
+  var isAll = SCHED_DAY === 'all', isRange = !isAll && !!SCHED_END;
+  var items = isAll ? base : base.filter(function(e){ return isRange ? (e.m.date >= SCHED_DAY && e.m.date <= SCHED_END) : e.m.date === SCHED_DAY; });
+  return { base: base, items: items, isAll: isAll, isRange: isRange };
+}
+function schedInRange(ds) { return SCHED_END ? (ds >= SCHED_DAY && ds <= SCHED_END) : ds === SCHED_DAY; }
 function renderSchedule() {
   var all = collectMeetings();
   var y = parseInt(curMonth.slice(0, 4), 10), mo = parseInt(curMonth.slice(5, 7), 10);
-  var inMonth = all.filter(function(e){ return e.m.date.slice(0, 7) === curMonth; });
+  var inMonthAll = all.filter(function(e){ return e.m.date.slice(0, 7) === curMonth; });
+  var F = schedFiltered(inMonthAll);
+  var inMonth = F.base;
   var byDay = {};
   inMonth.forEach(function(e){ (byDay[e.m.date] = byDay[e.m.date] || []).push(e); });
   var t = new Date(); var todayStr = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
-  if (SCHED_DAY !== 'all' && (!SCHED_DAY || SCHED_DAY.slice(0, 7) !== curMonth)) SCHED_DAY = todayStr.slice(0, 7) === curMonth ? todayStr : 'all';
-  document.getElementById('schedScope').innerText = (ME.role === '관리자' || ME.role === '파트너' ? '전체 FC' : ME.name + ' FC') + ' · 이번 달 ' + inMonth.length + '건';
+  if (SCHED_DAY !== 'all' && (!SCHED_DAY || SCHED_DAY.slice(0, 7) !== curMonth)) { SCHED_DAY = todayStr.slice(0, 7) === curMonth ? todayStr : 'all'; SCHED_END = ''; SCHED_ARMED = false; }
+  if (SCHED_END && SCHED_END.slice(0, 7) !== curMonth) SCHED_END = '';
+  F = schedFiltered(inMonthAll);
+  // 필터 영역 (관리자: FC 선택 / 공통: 결과미입력만)
+  var fcNames = []; inMonthAll.forEach(function(e){ var f = e.db.assignedFC; if (f && fcNames.indexOf(f) < 0) fcNames.push(f); });
+  fcNames.sort(function(a, b){ return a.localeCompare(b, 'ko'); });
+  if (SCHED_FC && fcNames.indexOf(SCHED_FC) < 0) SCHED_FC = '';
+  var fh = '';
+  if (schedIsAdmin()) fh += '<select class="inp inp-arrow no-cap" onchange="schedFcChange(this.value)" style="flex:1;min-width:140px;padding:9px 12px;font-size:13px;font-weight:800;margin:0;"><option value="">👥 전체 FC</option>' +
+    fcNames.map(function(f){ return '<option value="' + esc(f) + '"' + (f === SCHED_FC ? ' selected' : '') + '>' + esc(f) + ' FC</option>'; }).join('') + '</select>';
+  fh += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;cursor:pointer;background:#fff;border:1px solid ' + (SCHED_NORES ? 'var(--blue)' : 'var(--border)') + ';border-radius:10px;padding:9px 12px;white-space:nowrap;' + (SCHED_NORES ? 'color:var(--blue);' : '') + '"><input type="checkbox" ' + (SCHED_NORES ? 'checked ' : '') + 'onchange="schedNoResChange(this.checked)" style="width:16px;height:16px;"> 결과 미입력만</label>';
+  document.getElementById('schedFilters').innerHTML = fh;
+  document.getElementById('schedScope').innerText = (ME.role === '관리자' || ME.role === '파트너' ? '전체 FC' : ME.name + ' FC') + ' · 이번 달 ' + inMonth.length + '건' + ((SCHED_FC || SCHED_NORES) ? ' (필터)' : '');
 
   var first = new Date(y, mo - 1, 1).getDay(), days = new Date(y, mo, 0).getDate();
-  var h = '<div style="text-align:center;font-size:16px;font-weight:900;margin-bottom:10px;">' + fmtMonth(curMonth) + '</div>';
+  var h = '<div style="text-align:center;font-size:16px;font-weight:900;margin-bottom:10px;">' + fmtMonth(curMonth) + '</div><div class="no-cap" style="text-align:center;font-size:11px;font-weight:700;color:var(--tx-sub);margin:-4px 0 8px;">시작일을 누르고 종료일을 누르면 기간 일정이 나와요</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px;font-weight:800;margin-bottom:4px;">' +
        ['일','월','화','수','목','금','토'].map(function(w, i){ return '<div style="color:' + (i === 0 ? 'var(--red)' : (i === 6 ? 'var(--blue)' : 'var(--tx-sub)')) + ';">' + w + '</div>'; }).join('') + '</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">';
@@ -3257,7 +3318,7 @@ function renderSchedule() {
   for (var d = 1; d <= days; d++) {
     var ds = curMonth + '-' + String(d).padStart(2, '0');
     var cnt = (byDay[ds] || []).length;
-    var sel = ds === SCHED_DAY, isToday = ds === todayStr;
+    var sel = SCHED_DAY !== 'all' && schedInRange(ds), isToday = ds === todayStr;
     var dow = (first + d - 1) % 7;
     h += '<div onclick="schedPick(\'' + ds + '\')" style="cursor:pointer;min-height:52px;border-radius:10px;padding:5px 2px;text-align:center;' +
          'background:' + (sel ? 'var(--blue)' : (cnt ? '#f0f7ff' : '#fafafa')) + ';border:1px solid ' + (isToday && !sel ? 'var(--blue)' : 'transparent') + ';">' +
@@ -3268,9 +3329,9 @@ function renderSchedule() {
   h += '</div>';
   document.getElementById('schedCal').innerHTML = h;
 
-  var isAll = SCHED_DAY === 'all';
-  var items = isAll ? inMonth : (byDay[SCHED_DAY] || []);
-  var head = isAll ? fmtMonth(curMonth) + ' 전체 미팅' : fmtMeetWhen({ date: SCHED_DAY }) + ' 미팅';
+  var isAll = F.isAll;
+  var items = F.items;
+  var head = isAll ? fmtMonth(curMonth) + ' 전체 미팅' : (F.isRange ? fmtMeetWhen({ date: SCHED_DAY }) + ' ~ ' + fmtMeetWhen({ date: SCHED_END }) + ' 미팅' : fmtMeetWhen({ date: SCHED_DAY }) + ' 미팅');
   var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin:6px 0 10px;">' +
              '<div style="font-size:16px;font-weight:900;">' + head + ' <span style="color:var(--blue);">' + items.length + '건</span></div>' +
              (isAll ? '' : '<span onclick="schedPick(\'all\')" style="cursor:pointer;font-size:12px;font-weight:800;color:var(--tx-sub);text-decoration:underline;">이번 달 전체 보기</span>') + '</div>';
@@ -3292,20 +3353,24 @@ function renderSchedule() {
 function schedCurrentItems() {
   var all = collectMeetings();
   var inMonth = all.filter(function(e){ return e.m.date.slice(0, 7) === curMonth; });
-  var isAll = SCHED_DAY === 'all';
-  return { isAll: isAll, items: isAll ? inMonth : inMonth.filter(function(e){ return e.m.date === SCHED_DAY; }) };
+  var F = schedFiltered(inMonth);
+  return { isAll: F.isAll, isRange: F.isRange, items: F.items };
 }
 function captureSchedule() {
   if (typeof html2canvas === 'undefined') return Swal.fire('잠시 후 다시 시도', '이미지 도구를 불러오는 중입니다.', 'info');
-  var cur = schedCurrentItems(), items = cur.items, isAll = cur.isAll;
+  var cur = schedCurrentItems(), items = cur.items, isAll = cur.isAll, isRange = cur.isRange;
   if (!items.length) return Swal.fire('캡처할 미팅이 없어요', '선택한 날짜(또는 이번 달)에 예정된 미팅이 없습니다.', 'info');
   var types = []; items.forEach(function(e){ var t = String(e.db.dbType || '').trim(); if (t && types.indexOf(t) < 0) types.push(t); });
   var dbName = types.join('·') || '전체';
   var wk = ['일','월','화','수','목','금','토'];
   var dateTxt;
   if (isAll) { dateTxt = fmtMonth(curMonth) + ' 전체'; }
-  else { var d = new Date(SCHED_DAY + 'T00:00:00'); dateTxt = SCHED_DAY.slice(5, 7) + '/' + SCHED_DAY.slice(8, 10) + '(' + wk[d.getDay()] + ')'; }
-  var title = dateTxt + ' ' + dbName + ' 미팅일정';
+  else {
+    var fd = function(ds) { var d = new Date(ds + 'T00:00:00'); return ds.slice(5, 7) + '/' + ds.slice(8, 10) + '(' + wk[d.getDay()] + ')'; };
+    dateTxt = isRange ? fd(SCHED_DAY) + '~' + fd(SCHED_END) : fd(SCHED_DAY);
+  }
+  var fcTxt = (schedIsAdmin() && SCHED_FC) ? SCHED_FC + ' FC ' : '';
+  var title = dateTxt + ' ' + fcTxt + dbName + ' 미팅일정' + (SCHED_NORES ? ' (결과 미입력)' : '');
   var th = 'padding:10px 8px;background:#007aff;color:#fff;font-size:14px;font-weight:800;text-align:center;border:1px solid #0066d6;white-space:nowrap;';
   var td = 'padding:10px 8px;font-size:14px;font-weight:600;color:#1d1d1f;border:1px solid #e1e4ea;vertical-align:middle;';
   var rows = items.map(function(e, i){
@@ -3314,7 +3379,7 @@ function captureSchedule() {
     var bg = i % 2 ? '#f6f9ff' : '#fff';
     return '<tr style="background:' + bg + ';">' +
       '<td style="' + td + 'text-align:center;color:#86868b;">' + (i + 1) + '</td>' +
-      (isAll ? '<td style="' + td + 'text-align:center;white-space:nowrap;">' + when + '</td>' : '') +
+      ((isAll || isRange) ? '<td style="' + td + 'text-align:center;white-space:nowrap;">' + when + '</td>' : '') +
       '<td style="' + td + 'text-align:center;font-weight:900;color:#007aff;white-space:nowrap;">' + esc(e.m.time || '--:--') + '</td>' +
       '<td style="' + td + 'text-align:center;font-weight:900;white-space:nowrap;">' + esc(e.db.customerName) + '</td>' +
       '<td style="' + td + 'text-align:center;white-space:nowrap;">' + e.n + '차</td>' +
@@ -3324,14 +3389,14 @@ function captureSchedule() {
       '<td style="' + td + 'word-break:keep-all;color:#1a9e3f;">' + esc(e.m.result || '') + '</td></tr>';
   }).join('');
   var el = document.createElement('div'); el.id = 'schedCanvas';
-  el.style.cssText = 'position:fixed;left:-10000px;top:0;width:' + (isAll || types.length > 1 ? 960 : 820) + 'px;background:#fff;padding:28px;font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#1d1d1f;';
+  el.style.cssText = 'position:fixed;left:-10000px;top:0;width:' + (isAll || isRange || types.length > 1 ? 960 : 820) + 'px;background:#fff;padding:28px;font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#1d1d1f;';
   el.innerHTML =
     '<div style="border-bottom:3px solid #007aff;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;">' +
       '<div><div style="font-size:26px;font-weight:900;letter-spacing:-.5px;">📅 ' + esc(title) + '</div>' +
       '<div style="font-size:13px;font-weight:700;color:#86868b;margin-top:4px;">' + (ME.role === '관리자' || ME.role === '파트너' ? '전체 FC' : esc(ME.name) + ' FC') + ' · 총 ' + items.length + '건</div></div>' +
       '<div style="font-size:13px;font-weight:800;color:#007aff;">헤리티지 금융지사</div></div>' +
     '<table style="width:100%;border-collapse:collapse;table-layout:auto;"><thead><tr>' +
-      '<th style="' + th + '">No</th>' + (isAll ? '<th style="' + th + '">날짜</th>' : '') + '<th style="' + th + '">시간</th><th style="' + th + '">고객명</th><th style="' + th + '">차수</th><th style="' + th + '">담당 FC</th>' +
+      '<th style="' + th + '">No</th>' + ((isAll || isRange) ? '<th style="' + th + '">날짜</th>' : '') + '<th style="' + th + '">시간</th><th style="' + th + '">고객명</th><th style="' + th + '">차수</th><th style="' + th + '">담당 FC</th>' +
       (types.length > 1 ? '<th style="' + th + '">DB종류</th>' : '') + '<th style="' + th + 'width:30%;">미팅 내용</th><th style="' + th + 'width:22%;">상담 결과</th></tr></thead><tbody>' + rows + '</tbody></table>' +
     '<div style="text-align:right;font-size:11px;font-weight:700;color:#aeaeb2;margin-top:14px;">Heritage DB System · 데이터 PRO</div>';
   document.body.appendChild(el);
@@ -3339,7 +3404,7 @@ function captureSchedule() {
   html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true, scrollX: 0, scrollY: 0 })
   .then(function(canvas){
     el.remove(); hideLoader();
-    var fn = '미팅일정_' + dbName + '_' + (isAll ? curMonth.replace('-', '') : SCHED_DAY.replace(/-/g, '')) + '.png';
+    var fn = '미팅일정_' + dbName + '_' + (isAll ? curMonth.replace('-', '') : SCHED_DAY.replace(/-/g, '') + (isRange ? '-' + SCHED_END.replace(/-/g, '') : '')) + '.png';
     canvas.toBlob(function(blob){
       var file = new File([blob], fn, { type: 'image/png' });
       var canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
