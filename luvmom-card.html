@@ -231,7 +231,6 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         </div>
         <label>담당 서비스 태그 <small>(쉼표로 구분)</small><input type="text" id="svc"></label>
         <label>하단 문구 <input type="text" id="footer"></label>
-        <label class="check"><input type="checkbox" id="showHF"> 지사 로고(Heritage Finance) 넣기</label>
       </fieldset>
 
       <div class="row"><button type="button" id="reset">예시로 되돌리기</button></div>
@@ -348,7 +347,7 @@ function render(){
   const info=[S.hours?`<div><div class="t">상담 시간</div><div class="v">${esc(S.hours)}</div></div>`:"",
               S.career?`<div><div class="t">경력</div><div class="v">${esc(S.career)}</div></div>`:""].filter(Boolean);
   $("mp").innerHTML=`
-    <div class="mp-head">${S.showHF?`<div class="co"><img src="${LOGO_PINK}" alt=""><span class="x"></span><img class="hf" src="${HF_DARK}" alt=""></div><span class="pill">공식 파트너</span>`:`<img src="${LOGO_PINK}" alt=""><span class="pill">공식 파트너</span>`}</div>
+    <div class="mp-head"><img src="${HF_DARK}" alt="헤리티지 파이낸스"><span class="pill">공식 파트너</span></div>
     <div class="mp-hero" data-photo>${S.branch?`<span class="pill">${esc(S.branch)}</span>`:""}</div>
     <div class="mp-intro">
       <div class="mp-hello">안녕하세요</div>
@@ -362,7 +361,7 @@ function render(){
     </div>
     ${info.length?`<div class="mp-info" style="grid-template-columns:repeat(${info.length},1fr)">${info.join("")}</div>`:""}
 
-    <div class="mp-foot ${S.showHF?"hfon":""}"><div class="co"><img src="${LOGO_WHITE}" alt="">${S.showHF?`<span class="x"></span><img class="hf" src="${HF_WHITE}" alt="">`:""}</div><span class="r">${esc(S.footer)}</span></div>`;
+    <div class="mp-foot"><div class="co"><img src="${HF_WHITE}" alt="헤리티지 파이낸스"></div><span class="r">${esc(S.footer)}</span></div>`;
 
   const br=[];
   if(S.tel) br.push(`<div><b>T</b><span>${esc(S.tel)}</span></div>`);
@@ -374,8 +373,7 @@ function render(){
     <div class="bc-name"><strong>${esc(S.name)}</strong><em>${esc(S.title)}</em></div>
     ${S.nameEn?`<div class="bc-en">${esc(S.nameEn)}</div>`:""}
     ${S.branch?`<div class="bc-branch" style="top:${S.nameEn?104:84}px">${esc(S.branch)}</div>`:""}
-    <div class="bc-logo"><img src="${LOGO_PINK}" alt=""><span>럽맘</span></div>
-    ${S.showHF?`<img class="bc-hf ${S.cardPhoto?"up":""}" src="${HF_DARK}" alt="">`:""}
+    <div class="bc-logo"><img src="${HF_DARK}" alt="헤리티지 파이낸스"></div>
     ${S.cardPhoto?`<div class="bc-photo" data-photo></div>`:""}
     <div class="bc-rows">${br.join("")}</div>`;
   $("exampleNote").hidden=!!S.touched;
@@ -401,12 +399,12 @@ const FIELDS=["name","title","nameEn","branch","tel","hp","fax","kakao","email",
 function fillForm(){
   FIELDS.forEach(k=>$(k).value=S[k]||"");
   $("zoom").value=S.zoom;$("px").value=S.px;$("py").value=S.py;
-  $("showHF").checked=!!S.showHF;$("cardPhoto").checked=!!S.cardPhoto;
+$("cardPhoto").checked=!!S.cardPhoto;
   $("sms").value=smsText();
 }
 FIELDS.forEach(k=>$(k).addEventListener("input",e=>{S[k]=e.target.value;S.touched=true;save();render();}));
 ["zoom","px","py"].forEach(k=>$(k).addEventListener("input",e=>{S[k]=+e.target.value;save();render();}));
-["showHF","cardPhoto"].forEach(k=>$(k).addEventListener("change",e=>{S[k]=e.target.checked;save();render();}));
+["cardPhoto"].forEach(k=>$(k).addEventListener("change",e=>{S[k]=e.target.checked;save();render();}));
 function readImage(file,max,cb){
   const r=new FileReader(); r.onload=()=>{const im=new Image(); im.onload=()=>{
     if(Math.max(im.width,im.height)<=max){ cb(r.result); return; } /* 충분히 작으면 원본 그대로 */
