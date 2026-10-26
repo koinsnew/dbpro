@@ -368,6 +368,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
       <div style="font-size:22px;font-weight:900;">월간 통계 현황</div>
       <div id="statsMonthLabel" style="font-size:13px;font-weight:700;color:var(--tx-sub);margin-top:4px;"></div>
     </div>
+    <div id="statPeriod" data-html2canvas-ignore="true"></div>
     <div id="commissionArea" class="card" style="display:none; background:#f0f7ff; border-color:#cce0ff;">
       <div style="font-size:15px;font-weight:900;color:var(--blue);margin-bottom:10px;">💰 당월 총 수수료</div>
       <div style="font-size:28px; font-weight:900; color:var(--blue);"><span id="s_totalComm">0원</span></div>
@@ -1209,7 +1210,7 @@ function renderList() {
             
             (d.meetings || []).forEach(function(m, mi){
               detailHtml += '<div style="margin-bottom:6px;">🤝 ' + (mi + 1) + '차 미팅: <strong>' + esc(fmtMeetWhen(m)) + '</strong>' + (m.note ? ' · ' + esc(m.note) : '') + '</div>';
-              if (m.result) detailHtml += '<div style="margin:-2px 0 6px 18px;color:var(--blue);">↳ 상담 결과: ' + esc(m.result) + '</div>';
+              if (m.result) detailHtml += '<div style="margin:-2px 0 6px 18px;color:var(--blue);">↳ 상담내용 및 결과: ' + esc(m.result) + '</div>';
             });
             if(d.otherNote) detailHtml += '<div>📝 TA 내용: ' + d.otherNote + '</div>';
             if(db.files && db.files.length > 0) {
@@ -1922,7 +1923,7 @@ function shareNote(dbType) {
 
 function showStatList(fcName, key, label) {
   LAST_STAT = function(){ showStatList(fcName, key, label); };
-  let monthList = DB_LIST.filter(db => (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)));
+  let monthList = DB_LIST.filter(statInPeriod);
   var _sc = myScopeType(); if (_sc) monthList = monthList.filter(function(db){ return String(db.dbType||'').indexOf(_sc) >= 0; });
   let list = monthList.filter(db => db.assignedFC === fcName);
   if (STAT_TYPE !== 'all') list = list.filter(db => (db.dbType || '(미지정)') === STAT_TYPE);
@@ -1949,8 +1950,38 @@ function showStatList(fcName, key, label) {
   openStatListModal(fcName + ' · ' + (STAT_TYPE !== 'all' ? STAT_TYPE + ' · ' : '') + label, list);
 }
 
+// ===== 통계 기간: 기본은 선택한 달, 배분일 기간을 지정하면 그 기간에 배분받은 DB만 =====
+var STAT_FROM = '', STAT_TO = '';
+function statInPeriod(db) {
+  if (STAT_FROM || STAT_TO) {
+    var d = String(db.assignDate || ''); if (!d) return false;
+    if (STAT_FROM && d < STAT_FROM) return false;
+    if (STAT_TO && d > STAT_TO) return false;
+    return true;
+  }
+  return (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth));
+}
+function statPeriodChange() {
+  STAT_FROM = document.getElementById('statFrom').value || '';
+  STAT_TO = document.getElementById('statTo').value || '';
+  if (STAT_FROM && STAT_TO && STAT_FROM > STAT_TO) { var t = STAT_FROM; STAT_FROM = STAT_TO; STAT_TO = t; }
+  loadStats();
+}
+function statPeriodReset() { STAT_FROM = ''; STAT_TO = ''; loadStats(); }
+function renderStatPeriod() {
+  var el = document.getElementById('statPeriod'); if (!el) return;
+  var on = !!(STAT_FROM || STAT_TO);
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#fff;border:1px solid ' + (on ? 'var(--blue)' : 'var(--border)') + ';border-radius:12px;padding:8px 10px;margin-bottom:12px;">' +
+    '<span style="font-size:12px;font-weight:800;color:' + (on ? 'var(--blue)' : 'var(--tx-sub)') + ';white-space:nowrap;">📅 배분일 기간</span>' +
+    '<input type="date" id="statFrom" class="inp" value="' + STAT_FROM + '" onchange="statPeriodChange()" style="flex:1;min-width:120px;padding:6px 8px;font-size:13px;margin:0;">' +
+    '<span style="font-weight:800;">~</span>' +
+    '<input type="date" id="statTo" class="inp" value="' + STAT_TO + '" onchange="statPeriodChange()" style="flex:1;min-width:120px;padding:6px 8px;font-size:13px;margin:0;">' +
+    (on ? '<button onclick="statPeriodReset()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;font-weight:800;white-space:nowrap;">초기화</button>' : '') +
+    '</div>' + (on ? '<div class="no-cap" style="font-size:11px;font-weight:700;color:var(--blue);margin:-6px 0 10px 4px;">선택한 기간에 배분받은 DB만 집계 중 (월 선택보다 우선)</div>' : '');
+}
 function loadStats() {
-  let monthList = DB_LIST.filter(db => (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)));
+  renderStatPeriod();
+  let monthList = DB_LIST.filter(statInPeriod);
   var _sc = myScopeType(); if (_sc) monthList = monthList.filter(function(db){ return String(db.dbType||'').indexOf(_sc) >= 0; });
   
   var isAdmin = (ME.role === '관리자');
@@ -2592,7 +2623,7 @@ function renderStatsExtras(monthList, fcMap) {
   var lbl = document.getElementById('statsMonthLabel');
   if (lbl) {
     var now = new Date();
-    lbl.innerText = fmtMonth(curMonth) + ' 기준 · ' + ME.name + ' · ' + (now.getMonth() + 1) + '/' + now.getDate() + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' 조회';
+    lbl.innerText = ((STAT_FROM || STAT_TO) ? '배분일 ' + (STAT_FROM || '처음') + ' ~ ' + (STAT_TO || '현재') : fmtMonth(curMonth)) + ' 기준 · ' + ME.name + ' · ' + (now.getMonth() + 1) + '/' + now.getDate() + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' 조회';
   }
 
   // FC별 TA 미입력 현황 (관리자·파트너)
@@ -2702,7 +2733,7 @@ function typeStatCard(t, m) {
 // ----- 캡처용 표 리포트 -----
 function buildReportData() {
   var isAdmin = ME.role === '관리자', isPartner = ME.role === '파트너';
-  var list = DB_LIST.filter(function(db){ return (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)); });
+  var list = DB_LIST.filter(statInPeriod);
   var sc = myScopeType(); if (sc) list = list.filter(function(db){ return String(db.dbType || '').indexOf(sc) >= 0; });
   if (!isAdmin && !isPartner) list = list.filter(function(db){ return db.assignedFC === ME.name; });
   if (STAT_TYPE !== 'all') list = list.filter(function(db){ return (db.dbType || '(미지정)') === STAT_TYPE; });
@@ -2887,7 +2918,7 @@ function openStatListModal(title, list) {
 function showTypeStatList(key, label) {
   LAST_STAT = function(){ showTypeStatList(key, label); };
   var t = STAT_TYPE;
-  var list = DB_LIST.filter(function(db){ return (db.assignDate && db.assignDate.startsWith(curMonth)) || (db.permDate && db.permDate.startsWith(curMonth)); });
+  var list = DB_LIST.filter(statInPeriod);
   var sc = myScopeType(); if (sc) list = list.filter(function(db){ return String(db.dbType || '').indexOf(sc) >= 0; });
   if (ME.role !== '관리자' && ME.role !== '파트너') list = list.filter(function(db){ return db.assignedFC === ME.name; });
   if (t !== 'all') list = list.filter(function(db){ return (db.dbType || '(미지정)') === t; });
@@ -3232,8 +3263,8 @@ function addMeetingField(m) {
       '<div><div class="fl" style="font-size:11px;">미팅 날짜</div><input type="date" class="inp m-date" value="' + esc(m.date) + '" style="padding:8px;font-size:13px;"></div>' +
       '<div><div class="fl" style="font-size:11px;">시간</div><input type="text" readonly class="inp m-time" value="' + esc(m.time) + '" placeholder="시간 선택" onclick="pickMeetTime(this)" style="padding:8px;font-size:13px;cursor:pointer;background:#fff;"></div>' +
     '</div>' +
-    '<div style="margin-bottom:8px;"><div class="fl" style="font-size:11px;">미팅 내용</div><textarea class="inp m-note" rows="2" placeholder="장소·준비사항·상담 주제 등" style="padding:8px;font-size:13px;">' + esc(m.note) + '</textarea></div>' +
-    '<div><div class="fl" style="font-size:11px;color:var(--blue);">상담 후 결과</div><textarea class="inp m-result" rows="2" placeholder="미팅 후 결과를 입력하세요" style="padding:8px;font-size:13px;">' + esc(m.result) + '</textarea></div>';
+    '<div style="margin-bottom:8px;"><div class="fl" style="font-size:11px;">미팅 관련 메모</div><textarea class="inp m-note" rows="2" placeholder="장소·준비사항·상담 주제 등" style="padding:8px;font-size:13px;">' + esc(m.note) + '</textarea></div>' +
+    '<div><div class="fl" style="font-size:11px;color:var(--blue);">상담내용 및 결과</div><textarea class="inp m-result" rows="2" placeholder="미팅 후 결과를 입력하세요" style="padding:8px;font-size:13px;">' + esc(m.result) + '</textarea></div>';
   wrap.appendChild(div);
   renumberMeetings();
 }
@@ -3358,92 +3389,138 @@ function schedCurrentItems() {
 }
 function captureSchedule() {
   if (typeof html2canvas === 'undefined') return Swal.fire('잠시 후 다시 시도', '이미지 도구를 불러오는 중입니다.', 'info');
-  var cur = schedCurrentItems(), items = cur.items, isAll = cur.isAll, isRange = cur.isRange;
+  var cur = schedCurrentItems(), isAll = cur.isAll, isRange = cur.isRange;
+  // 배분일 → FC → 미팅일시 순으로 정리
+  var items = cur.items.slice().sort(function(a, b){
+    return String(a.db.assignDate || '').localeCompare(String(b.db.assignDate || '')) ||
+           String(a.db.assignedFC || '').localeCompare(String(b.db.assignedFC || ''), 'ko') ||
+           (a.m.date + (a.m.time || '')).localeCompare(b.m.date + (b.m.time || ''));
+  });
   if (!items.length) return Swal.fire('캡처할 미팅이 없어요', '선택한 날짜(또는 이번 달)에 예정된 미팅이 없습니다.', 'info');
+  var PER = 10, pages = [];
+  for (var p0 = 0; p0 < items.length; p0 += PER) pages.push(items.slice(p0, p0 + PER));
   var types = []; items.forEach(function(e){ var t = String(e.db.dbType || '').trim(); if (t && types.indexOf(t) < 0) types.push(t); });
   var dbName = types.join('·') || '전체';
   var wk = ['일','월','화','수','목','금','토'];
-  var dateTxt;
-  if (isAll) { dateTxt = fmtMonth(curMonth) + ' 전체'; }
-  else {
-    var fd = function(ds) { var d = new Date(ds + 'T00:00:00'); return ds.slice(5, 7) + '/' + ds.slice(8, 10) + '(' + wk[d.getDay()] + ')'; };
-    dateTxt = isRange ? fd(SCHED_DAY) + '~' + fd(SCHED_END) : fd(SCHED_DAY);
-  }
+  var fd = function(ds) { var d = new Date(ds + 'T00:00:00'); return ds.slice(5, 7) + '/' + ds.slice(8, 10) + '(' + wk[d.getDay()] + ')'; };
+  var dateTxt = isAll ? fmtMonth(curMonth) + ' 전체' : (isRange ? fd(SCHED_DAY) + '~' + fd(SCHED_END) : fd(SCHED_DAY));
   var fcTxt = (schedIsAdmin() && SCHED_FC) ? SCHED_FC + ' FC ' : '';
-  var title = dateTxt + ' ' + fcTxt + dbName + ' 미팅일정' + (SCHED_NORES ? ' (결과 미입력)' : '');
+  var title = dateTxt + ' ' + fcTxt + dbName + ' 미팅 상세내용' + (SCHED_NORES ? ' (결과 미입력)' : '');
+  var multiDay = isAll || isRange;
   var th = 'padding:10px 8px;background:#007aff;color:#fff;font-size:14px;font-weight:800;text-align:center;border:1px solid #0066d6;white-space:nowrap;';
   var td = 'padding:10px 8px;font-size:14px;font-weight:600;color:#1d1d1f;border:1px solid #e1e4ea;vertical-align:middle;';
-  var rows = items.map(function(e, i){
-    var dd = new Date(e.m.date + 'T00:00:00');
-    var when = e.m.date.slice(5).replace('-', '/') + '(' + wk[dd.getDay()] + ')';
-    var bg = i % 2 ? '#f6f9ff' : '#fff';
-    return '<tr style="background:' + bg + ';">' +
-      '<td style="' + td + 'text-align:center;color:#86868b;">' + (i + 1) + '</td>' +
-      ((isAll || isRange) ? '<td style="' + td + 'text-align:center;white-space:nowrap;">' + when + '</td>' : '') +
-      '<td style="' + td + 'text-align:center;font-weight:900;color:#007aff;white-space:nowrap;">' + esc(e.m.time || '--:--') + '</td>' +
-      '<td style="' + td + 'text-align:center;font-weight:900;white-space:nowrap;">' + esc(e.db.customerName) + '</td>' +
-      '<td style="' + td + 'text-align:center;white-space:nowrap;">' + e.n + '차</td>' +
-      '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(e.db.assignedFC || '-') + '</td>' +
-      (types.length > 1 ? '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(e.db.dbType || '') + '</td>' : '') +
-      '<td style="' + td + 'word-break:keep-all;">' + esc(e.m.note || '') + '</td>' +
-      '<td style="' + td + 'word-break:keep-all;color:#1a9e3f;">' + esc(e.m.result || '') + '</td></tr>';
-  }).join('');
-  var el = document.createElement('div'); el.id = 'schedCanvas';
-  el.style.cssText = 'position:fixed;left:-10000px;top:0;width:' + (isAll || isRange || types.length > 1 ? 960 : 820) + 'px;background:#fff;padding:28px;font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#1d1d1f;';
-  el.innerHTML =
-    '<div style="border-bottom:3px solid #007aff;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;">' +
-      '<div><div style="font-size:26px;font-weight:900;letter-spacing:-.5px;">📅 ' + esc(title) + '</div>' +
-      '<div style="font-size:13px;font-weight:700;color:#86868b;margin-top:4px;">' + (ME.role === '관리자' || ME.role === '파트너' ? '전체 FC' : esc(ME.name) + ' FC') + ' · 총 ' + items.length + '건</div></div>' +
-      '<div style="font-size:13px;font-weight:800;color:#007aff;">헤리티지 금융지사</div></div>' +
-    '<table style="width:100%;border-collapse:collapse;table-layout:auto;"><thead><tr>' +
-      '<th style="' + th + '">No</th>' + ((isAll || isRange) ? '<th style="' + th + '">날짜</th>' : '') + '<th style="' + th + '">시간</th><th style="' + th + '">고객명</th><th style="' + th + '">차수</th><th style="' + th + '">담당 FC</th>' +
-      (types.length > 1 ? '<th style="' + th + '">DB종류</th>' : '') + '<th style="' + th + 'width:30%;">미팅 내용</th><th style="' + th + 'width:22%;">상담 결과</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-    '<div style="text-align:right;font-size:11px;font-weight:700;color:#aeaeb2;margin-top:14px;">Heritage DB System · 데이터 PRO</div>';
-  document.body.appendChild(el);
-  showLoader('미팅일정 이미지를 만드는 중...');
-  html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true, scrollX: 0, scrollY: 0 })
-  .then(function(canvas){
-    el.remove(); hideLoader();
-    var fn = '미팅일정_' + dbName + '_' + (isAll ? curMonth.replace('-', '') : SCHED_DAY.replace(/-/g, '') + (isRange ? '-' + SCHED_END.replace(/-/g, '') : '')) + '.png';
-    canvas.toBlob(function(blob){
-      var file = new File([blob], fn, { type: 'image/png' });
-      var canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
-      var url = URL.createObjectURL(blob);
-      Swal.fire({
-        title: '미팅일정 이미지', imageUrl: url, imageAlt: title, width: 700,
-        showConfirmButton: canShare, confirmButtonText: '📤 공유하기', confirmButtonColor: '#007aff',
-        showDenyButton: true, denyButtonText: '💾 저장하기', denyButtonColor: '#34c759',
-        showCancelButton: true, cancelButtonText: '닫기'
-      }).then(function(res){
-        if (res.isConfirmed) navigator.share({ files: [file], title: title }).catch(function(){});
-        else if (res.isDenied) { var a = document.createElement('a'); a.href = url; a.download = fn; document.body.appendChild(a); a.click(); a.remove(); }
+  var mdd = function(ds) { return ds ? String(ds).slice(5).replace('-', '/') : '-'; };
+
+  function pageEl(list, pi) {
+    var startNo = pi * PER;
+    var rows = list.map(function(e, i){
+      var bg = i % 2 ? '#f6f9ff' : '#fff';
+      return '<tr style="background:' + bg + ';">' +
+        '<td style="' + td + 'text-align:center;color:#86868b;">' + (startNo + i + 1) + '</td>' +
+        (multiDay ? '<td style="' + td + 'text-align:center;white-space:nowrap;">' + fd(e.m.date) + '</td>' : '') +
+        '<td style="' + td + 'text-align:center;font-weight:900;color:#007aff;white-space:nowrap;">' + esc(e.m.time || '--:--') + '</td>' +
+        '<td style="' + td + 'text-align:center;font-weight:900;white-space:nowrap;">' + esc(e.db.customerName) + '</td>' +
+        '<td style="' + td + 'text-align:center;white-space:nowrap;">' + mdd(e.db.assignDate) + '</td>' +
+        '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(e.db.assignedFC || '-') + '</td>' +
+        (types.length > 1 ? '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(e.db.dbType || '') + '</td>' : '') +
+        '<td style="' + td + 'word-break:keep-all;">' + esc(e.m.note || '') + '</td>' +
+        '<td style="' + td + 'word-break:keep-all;color:#1a9e3f;">' + esc(e.m.result || '') + '</td></tr>';
+    }).join('');
+    var el = document.createElement('div'); el.className = 'schedCanvas';
+    el.style.cssText = 'position:fixed;left:-10000px;top:0;width:' + (multiDay || types.length > 1 ? 1040 : 920) + 'px;background:#fff;padding:28px;font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#1d1d1f;';
+    el.innerHTML =
+      '<div style="border-bottom:3px solid #007aff;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;">' +
+        '<div><div style="font-size:26px;font-weight:900;letter-spacing:-.5px;">📅 ' + esc(title) + '</div>' +
+        '<div style="font-size:13px;font-weight:700;color:#86868b;margin-top:4px;">' + (schedIsAdmin() ? (SCHED_FC ? esc(SCHED_FC) + ' FC' : '전체 FC') : esc(ME.name) + ' FC') + ' · 총 ' + items.length + '건' + (pages.length > 1 ? ' · ' + (pi + 1) + '/' + pages.length + ' 페이지' : '') + ' · 배분일·FC 순 정리</div></div>' +
+        '<div style="font-size:13px;font-weight:800;color:#007aff;">헤리티지 금융지사</div></div>' +
+      '<table style="width:100%;border-collapse:collapse;table-layout:auto;"><thead><tr>' +
+        '<th style="' + th + '">No</th>' + (multiDay ? '<th style="' + th + '">미팅일</th>' : '') + '<th style="' + th + '">시간</th><th style="' + th + '">고객명</th><th style="' + th + '">배분일</th><th style="' + th + '">담당 FC</th>' +
+        (types.length > 1 ? '<th style="' + th + '">DB종류</th>' : '') + '<th style="' + th + 'width:28%;">미팅 관련 메모</th><th style="' + th + 'width:28%;">상담내용 및 결과</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div style="text-align:right;font-size:11px;font-weight:700;color:#aeaeb2;margin-top:14px;">Heritage DB System · 데이터 PRO</div>';
+    document.body.appendChild(el);
+    return el;
+  }
+
+  showLoader('미팅 상세내용 이미지를 만드는 중...' + (pages.length > 1 ? ' (총 ' + pages.length + '장)' : ''));
+  var base = '미팅상세_' + dbName + '_' + (isAll ? curMonth.replace('-', '') : SCHED_DAY.replace(/-/g, '') + (isRange ? '-' + SCHED_END.replace(/-/g, '') : ''));
+  var out = [];
+  pages.reduce(function(chain, list, pi){
+    return chain.then(function(){
+      var el = pageEl(list, pi);
+      return html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true, scrollX: 0, scrollY: 0 }).then(function(canvas){
+        el.remove();
+        return new Promise(function(res){ canvas.toBlob(function(blob){
+          var fn = base + (pages.length > 1 ? '_' + (pi + 1) + 'of' + pages.length : '') + '.png';
+          out.push({ blob: blob, fn: fn, url: URL.createObjectURL(blob), file: new File([blob], fn, { type: 'image/png' }) });
+          res();
+        }, 'image/png'); });
       });
-    }, 'image/png');
-  }).catch(function(e){ el.remove(); hideLoader(); Swal.fire('캡처 실패', String(e), 'error'); });
+    });
+  }, Promise.resolve()).then(function(){
+    hideLoader();
+    var files = out.map(function(o){ return o.file; });
+    var canShare = !!(navigator.canShare && navigator.canShare({ files: files }));
+    Swal.fire({
+      title: '미팅 상세내용 이미지' + (out.length > 1 ? ' (' + out.length + '장)' : ''),
+      html: '<div style="max-height:60vh;overflow:auto;">' + out.map(function(o, i){ return '<img src="' + o.url + '" style="width:100%;border:1px solid #e1e4ea;border-radius:8px;margin-bottom:10px;" alt="' + (i + 1) + '">'; }).join('') + '</div>',
+      width: 760,
+      showConfirmButton: canShare, confirmButtonText: '📤 공유하기', confirmButtonColor: '#007aff',
+      showDenyButton: true, denyButtonText: '💾 ' + (out.length > 1 ? '전체 저장' : '저장하기'), denyButtonColor: '#34c759',
+      showCancelButton: true, cancelButtonText: '닫기'
+    }).then(function(res){
+      if (res.isConfirmed) navigator.share({ files: files, title: title }).catch(function(){});
+      else if (res.isDenied) out.forEach(function(o, i){ setTimeout(function(){ var a = document.createElement('a'); a.href = o.url; a.download = o.fn; document.body.appendChild(a); a.click(); a.remove(); }, i * 400); });
+    });
+  }).catch(function(e){ document.querySelectorAll('.schedCanvas').forEach(function(x){ x.remove(); }); hideLoader(); Swal.fire('캡처 실패', String(e), 'error'); });
 }
 function showMeetingDetail(dbId, idx) {
   var db = DB_LIST.find(function(x){ return x.id === dbId; }); if (!db) return;
   var ms = (db.details && db.details.meetings) || []; var m = ms[idx] || {};
   function row(l, v) { return v ? '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px dashed var(--border);"><div style="width:76px;flex-shrink:0;color:var(--tx-sub);font-weight:700;">' + l + '</div><div style="flex:1;font-weight:700;word-break:break-all;">' + v + '</div></div>' : ''; }
   var others = ms.map(function(x, i){ return i === idx ? '' : '<div style="font-size:12px;color:var(--tx-sub);margin-top:2px;">· ' + (i + 1) + '차 ' + esc(fmtMeetWhen(x)) + (x.result ? ' → ' + esc(x.result) : '') + '</div>'; }).join('');
-  var mine = db.assignedFC === ME.name;
+  var canEdit = (db.assignedFC === ME.name || ME.role === '관리자') && ['배정대기', '미배정', '배정불가'].indexOf(db.status) < 0 && !!db.assignedFC;
+  var ta = 'width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;padding:8px;font-size:13px;font-weight:600;font-family:inherit;resize:vertical;';
+  var editBox = canEdit
+    ? '<div style="margin-top:10px;"><div style="font-size:12px;font-weight:800;color:var(--tx-sub);margin-bottom:4px;">미팅 관련 메모</div><textarea id="md_note" rows="2" style="' + ta + '" placeholder="장소·준비사항·상담 주제 등">' + esc(m.note || '') + '</textarea>' +
+      '<div style="font-size:12px;font-weight:800;color:var(--blue);margin:8px 0 4px;">상담내용 및 결과</div><textarea id="md_result" rows="3" style="' + ta + '" placeholder="미팅 후 상담내용 및 결과를 입력하세요">' + esc(m.result || '') + '</textarea></div>'
+    : row('미팅 관련 메모', esc(m.note)) + row('상담내용 및 결과', m.result ? '<span style="color:var(--green);">' + esc(m.result) + '</span>' : '<span style="color:var(--tx-sub);">아직 입력 전</span>');
   Swal.fire({
     title: db.customerName + ' · ' + (idx + 1) + '차 미팅',
     html: '<div style="text-align:left;font-size:14px;">' +
       row('일시', '<span style="color:var(--blue);">' + esc(fmtMeetWhen(m)) + '</span>') +
       row('담당 FC', esc(db.assignedFC)) +
+      row('배분일', esc(db.assignDate || '-')) +
       row('연락처', '<a href="tel:' + esc(db.phone) + '" style="color:var(--blue);text-decoration:none;">📞 ' + esc(db.phone) + '</a>') +
       row('DB종류', esc(db.dbType)) +
       row('주소', esc(db.address)) +
-      row('미팅 내용', esc(m.note)) +
-      row('상담 결과', m.result ? '<span style="color:var(--green);">' + esc(m.result) + '</span>' : '<span style="color:var(--tx-sub);">아직 입력 전</span>') +
       row('현재 상태', esc(db.status === '결과완료' ? rlabel(db.result) : db.status)) +
+      editBox +
       (others ? '<div style="margin-top:8px;font-size:12px;font-weight:800;">다른 미팅</div>' + others : '') +
     '</div>',
-    showConfirmButton: mine, confirmButtonText: '📝 결과 입력/수정', confirmButtonColor: '#007aff',
+    showConfirmButton: canEdit, confirmButtonText: '💾 저장', confirmButtonColor: '#007aff',
+    showDenyButton: canEdit, denyButtonText: '📝 전체 결과수정', denyButtonColor: '#6c757d',
     didOpen: function(){ if (document.activeElement) document.activeElement.blur(); },
-    showCancelButton: true, cancelButtonText: '닫기'
-  }).then(function(r){ if (r.isConfirmed) openResult(dbId); });
+    showCancelButton: true, cancelButtonText: '닫기',
+    preConfirm: function(){
+      var n = document.getElementById('md_note'), r = document.getElementById('md_result');
+      return { note: n ? n.value : '', result: r ? r.value : '' };
+    }
+  }).then(function(r){
+    if (r.isDenied) return openResult(dbId);
+    if (!r.isConfirmed) return;
+    var details = JSON.parse(JSON.stringify(db.details || {}));
+    details.meetings = (details.meetings || []).slice();
+    details.meetings[idx] = Object.assign({}, details.meetings[idx], { note: r.value.note, result: r.value.result });
+    if (!db.result || db.status !== '결과완료') return openResult(dbId);      // 결과 유형이 없거나 재통화 등은 전체 입력창으로
+    showLoader('저장 중...');
+    callApi('saveResultWithFiles', { dbId: dbId, data: { result: db.result === '청약' ? '청약' : db.result, details: details }, base64Files: [] }).then(function(res){
+      var j = {}; try { j = JSON.parse(res); } catch (e) {}
+      if (j && j.success === false) throw new Error(j.error || '저장 실패');
+      db.details = details;
+      hideLoader(); renderSchedule();
+      Swal.fire({ icon: 'success', title: '저장되었습니다', timer: 1100, showConfirmButton: false });
+    }).catch(function(err){ hideLoader(); Swal.fire({ icon: 'error', title: '저장 실패', text: err.message || '', confirmButtonColor: '#007aff' }); });
+  });
 }
 
 function pickMeetTime(input) {
