@@ -368,7 +368,6 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
       <div style="font-size:22px;font-weight:900;">월간 통계 현황</div>
       <div id="statsMonthLabel" style="font-size:13px;font-weight:700;color:var(--tx-sub);margin-top:4px;"></div>
     </div>
-    <div id="statPeriod" data-html2canvas-ignore="true"></div>
     <div id="commissionArea" class="card" style="display:none; background:#f0f7ff; border-color:#cce0ff;">
       <div style="font-size:15px;font-weight:900;color:var(--blue);margin-bottom:10px;">💰 당월 총 수수료</div>
       <div style="font-size:28px; font-weight:900; color:var(--blue);"><span id="s_totalComm">0원</span></div>
@@ -376,6 +375,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     </div>
     
     <div id="statTypeSelWrap"></div>
+    <div id="statPeriod" data-html2canvas-ignore="true"></div>
     <div id="capRegion" style="background:var(--bg-main);">
       <div id="capHeader" style="display:none;padding:4px 2px 12px;"></div>
       <div id="taGapArea"></div>
@@ -2766,7 +2766,7 @@ function buildReportData() {
     .map(function(t){ return { name: t, m: types[t] }; });
   var fcRows = Object.keys(fcs).map(function(f){ return { name: f, m: fcs[f] }; })
     .sort(function(a, b){ return (b.m.assigned - b.m.ta) - (a.m.assigned - a.m.ta) || a.name.localeCompare(b.name, 'ko'); });
-  return { typeRows: typeRows, fcRows: fcRows, sum: sum };
+  return { typeRows: typeRows, fcRows: fcRows, sum: sum, list: list };
 }
 
 function buildReportEl() {
@@ -2816,6 +2816,14 @@ function buildReportEl() {
         (sum ? row('합계', sum, 0, true, STAT_TYPE) : '') +
       '</tbody></table></div>';
   }
+  var periodTxt = fmtMonth(curMonth), distTxt = '';
+  if (STAT_FROM || STAT_TO) {
+    var yy = function(ds) { var p = String(ds).split('-'); return p.length === 3 ? p[0].slice(2) + '.' + parseInt(p[1], 10) + '.' + parseInt(p[2], 10) : ds; };
+    periodTxt = '배분일 ' + (STAT_FROM ? yy(STAT_FROM) : '처음') + ' ~ ' + (STAT_TO ? yy(STAT_TO) : '현재');
+    var cnt = {}; (d.list || []).forEach(function(db){ if (db.assignDate) cnt[db.assignDate] = (cnt[db.assignDate] || 0) + 1; });
+    var ds = Object.keys(cnt).sort();
+    if (ds.length) distTxt = '<div style="font-size:13px;font-weight:800;color:' + BLUE + ';margin-top:6px;line-height:1.6;">' + ds.map(function(k){ return yy(k) + ' ' + cnt[k] + '건 배분'; }).join(' &nbsp;·&nbsp; ') + '</div>';
+  }
   var s = d.sum;
   var kpi = function(label, val, color) { return '<div style="flex:1;background:#f8fafc;border:1px solid ' + LINE + ';border-radius:10px;padding:10px 6px;text-align:center;"><div style="font-size:12px;font-weight:700;color:#64748b;">' + label + '</div><div style="font-size:22px;font-weight:900;color:' + color + ';margin-top:2px;">' + val + '</div></div>'; };
   var el = document.createElement('div');
@@ -2824,8 +2832,8 @@ function buildReportEl() {
   el.innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid ' + NAVY + ';padding-bottom:12px;">' +
       '<div><div style="font-size:24px;font-weight:900;color:' + NAVY + ';letter-spacing:-0.5px;">헤리티지 금융지사 DB영업 통계</div>' +
-      '<div style="font-size:13px;font-weight:700;color:#64748b;margin-top:4px;">집계 기간 ' + fmtMonth(curMonth) + ' · 대상 ' + esc(STAT_TYPE === 'all' ? '전체 DB' : STAT_TYPE) + '</div></div>' +
-      '<div style="text-align:right;font-size:13px;font-weight:800;color:' + NAVY + ';">' + stamp + '<div style="font-size:11px;font-weight:600;color:#94a3b8;">기준</div></div>' +
+      '<div style="font-size:13px;font-weight:700;color:#64748b;margin-top:4px;">집계 기간 ' + periodTxt + ' · 대상 ' + esc(STAT_TYPE === 'all' ? '전체 DB' : STAT_TYPE) + '</div>' + distTxt + '</div>' +
+      '<div style="text-align:right;font-size:13px;font-weight:800;color:' + NAVY + ';">' + stamp + '<div style="font-size:11px;font-weight:600;color:#94a3b8;">기준으로 산출했습니다.</div></div>' +
     '</div>' +
     '<div style="display:flex;gap:8px;margin-top:16px;">' +
       kpi('총 DB', s.total, NAVY) + kpi('TA완료', s.ta, BLUE) + kpi('TA미입력', s.assigned - s.ta, (s.assigned - s.ta) > 0 ? RED : GREEN) +
@@ -3309,7 +3317,11 @@ function schedIsAdmin() { return ME.role === '관리자' || ME.role === '파트�
 function schedFiltered(inMonthAll) {
   var base = inMonthAll.filter(function(e){
     if (schedIsAdmin() && SCHED_FC && e.db.assignedFC !== SCHED_FC) return false;
-    if (SCHED_NORES && String(e.m.result || '').trim()) return false;
+    if (SCHED_NORES) {
+      if (String(e.m.result || '').trim()) return false;
+      var rc = rcat(e.db.result);                       // 청약결과(청약체결·청약거절)가 입력된 건은 제외
+      if (rc === '청약' || rc === '청약거절') return false;
+    }
     return true;
   });
   var isAll = SCHED_DAY === 'all', isRange = !isAll && !!SCHED_END;
