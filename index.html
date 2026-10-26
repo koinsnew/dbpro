@@ -3302,6 +3302,18 @@ function collectMeetings() {
   return out;
 }
 var SCHED_END = '', SCHED_FC = '', SCHED_NORES = false, SCHED_ARMED = false;
+function meetState(e) {
+  var r = String(e.db.result || '');
+  if (r === '거절') return '미팅거절';
+  if (r === '청약없음') return '청약거절';
+  if (r === '청약' || r === '청약체결') return '청약체결';
+  return e.n + '차 미팅';
+}
+function meetStateStyle(t) {
+  if (/거절/.test(t)) return 'background:#fff2f2;color:#dc2626;border:1px solid #ffcccc;';
+  if (t === '청약체결') return 'background:#e8f8ec;color:#15803d;border:1px solid #bbf7d0;';
+  return 'background:#e5f0ff;color:#007aff;border:1px solid #cce0ff;';
+}
 function schedPick(day) {
   if (day === 'all') { SCHED_DAY = 'all'; SCHED_END = ''; SCHED_ARMED = false; }
   else if (SCHED_ARMED && SCHED_DAY && SCHED_DAY !== 'all' && !SCHED_END && day !== SCHED_DAY) {   // 두 번째 클릭 → 기간 선택
@@ -3383,7 +3395,7 @@ function renderSchedule() {
     return '<div onclick="showMeetingDetail(\'' + e.db.id + '\',' + (e.n - 1) + ')" style="cursor:pointer;background:#fff;border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center;">' +
       '<div style="text-align:center;min-width:54px;"><div style="font-size:12px;font-weight:800;color:var(--tx-sub);">' + e.m.date.slice(5).replace('-', '/') + '</div><div style="font-size:16px;font-weight:900;color:var(--blue);">' + esc(e.m.time || '--:--') + '</div></div>' +
       '<div style="flex:1;min-width:0;">' +
-        '<div style="font-size:15px;font-weight:900;">' + esc(e.db.customerName) + ' <span style="font-size:12px;color:var(--blue);font-weight:800;">' + e.n + '차 미팅</span></div>' +
+        '<div style="font-size:15px;font-weight:900;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' + esc(e.db.customerName) + ' <span style="font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;' + meetStateStyle(meetState(e)) + '">' + esc(meetState(e)) + '</span></div>' +
         '<div style="font-size:12px;font-weight:700;color:var(--tx-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(e.db.assignedFC || '') + ' FC · ' + esc(e.db.dbType) + (e.m.note ? ' · ' + esc(e.m.note) : '') + '</div>' +
         (e.m.result ? '<div style="font-size:12px;font-weight:800;color:var(--green);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">✓ ' + esc(e.m.result) + '</div>' : '') +
       '</div>' +
