@@ -3421,6 +3421,14 @@ function captureSchedule() {
   var multiDay = isAll || isRange;
   var th = 'padding:10px 8px;background:#007aff;color:#fff;font-size:14px;font-weight:800;text-align:center;border:1px solid #0066d6;white-space:nowrap;';
   var td = 'padding:10px 8px;font-size:14px;font-weight:600;color:#1d1d1f;border:1px solid #e1e4ea;vertical-align:middle;';
+  function stateOf(e) {
+    var r = String(e.db.result || '');
+    if (r === '거절') return '미팅거절';
+    if (r === '청약없음') return '청약거절';
+    if (r === '청약' || r === '청약체결') return '청약체결';
+    return e.n + '차 미팅';
+  }
+  function stateColor(e) { var t = stateOf(e); return /거절/.test(t) ? '#dc2626' : (t === '청약체결' ? '#16a34a' : '#007aff'); }
   var mdd = function(ds) { return ds ? String(ds).slice(5).replace('-', '/') : '-'; };
 
   function pageEl(list, pi) {
@@ -3429,11 +3437,11 @@ function captureSchedule() {
       var bg = i % 2 ? '#f6f9ff' : '#fff';
       return '<tr style="background:' + bg + ';">' +
         '<td style="' + td + 'text-align:center;color:#86868b;">' + (startNo + i + 1) + '</td>' +
-        (multiDay ? '<td style="' + td + 'text-align:center;white-space:nowrap;">' + fd(e.m.date) + '</td>' : '') +
-        '<td style="' + td + 'text-align:center;font-weight:900;color:#007aff;white-space:nowrap;">' + esc(e.m.time || '--:--') + '</td>' +
+        '<td style="' + td + 'text-align:center;white-space:nowrap;line-height:1.5;">' + fd(e.m.date) + '<br><span style="font-weight:900;color:#007aff;">' + esc(e.m.time || '--:--') + '</span></td>' +
         '<td style="' + td + 'text-align:center;font-weight:900;white-space:nowrap;">' + esc(e.db.customerName) + '</td>' +
         '<td style="' + td + 'text-align:center;white-space:nowrap;">' + mdd(e.db.assignDate) + '</td>' +
         '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(e.db.assignedFC || '-') + '</td>' +
+        '<td style="' + td + 'text-align:center;white-space:nowrap;font-weight:800;color:' + stateColor(e) + ';">' + esc(stateOf(e)) + '</td>' +
         (types.length > 1 ? '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(e.db.dbType || '') + '</td>' : '') +
         '<td style="' + td + 'word-break:keep-all;">' + esc(e.m.note || '') + '</td>' +
         '<td style="' + td + 'word-break:keep-all;color:#1a9e3f;">' + esc(e.m.result || '') + '</td></tr>';
@@ -3446,7 +3454,7 @@ function captureSchedule() {
         '<div style="font-size:13px;font-weight:700;color:#86868b;margin-top:4px;">' + (schedIsAdmin() ? (SCHED_FC ? esc(SCHED_FC) + ' FC' : '전체 FC') : esc(ME.name) + ' FC') + ' · 총 ' + items.length + '건' + (pages.length > 1 ? ' · ' + (pi + 1) + '/' + pages.length + ' 페이지' : '') + ' · 배분일·FC 순 정리</div></div>' +
         '<div style="font-size:13px;font-weight:800;color:#007aff;">헤리티지 금융지사</div></div>' +
       '<table style="width:100%;border-collapse:collapse;table-layout:auto;"><thead><tr>' +
-        '<th style="' + th + '">No</th>' + (multiDay ? '<th style="' + th + '">미팅일</th>' : '') + '<th style="' + th + '">시간</th><th style="' + th + '">고객명</th><th style="' + th + '">배분일</th><th style="' + th + '">담당 FC</th>' +
+        '<th style="' + th + '">No</th><th style="' + th + '">미팅일시</th><th style="' + th + '">고객명</th><th style="' + th + '">배분일</th><th style="' + th + '">담당 FC</th><th style="' + th + '">진행상태</th>' +
         (types.length > 1 ? '<th style="' + th + '">DB종류</th>' : '') + '<th style="' + th + 'width:28%;">미팅 관련 메모</th><th style="' + th + 'width:28%;">상담내용 및 결과</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div style="text-align:right;font-size:11px;font-weight:700;color:#aeaeb2;margin-top:14px;">Heritage DB System · 데이터 PRO</div>';
     document.body.appendChild(el);
