@@ -3307,6 +3307,7 @@ function meetState(e) {
   if (r === '거절') return '미팅거절';
   if (r === '청약없음') return '청약거절';
   if (r === '청약' || r === '청약체결') return '청약체결';
+  if (r === '청약예정') return '청약예정';
   return latestMeetN(e.db) + '차 미팅';       // 2차·3차 미팅이 입력되면 현재상태도 따라 올라감
 }
 function latestMeetN(db) {
@@ -3316,6 +3317,7 @@ function latestMeetN(db) {
 }
 function meetStateStyle(t) {
   if (/거절/.test(t)) return 'background:#fff2f2;color:#dc2626;border:1px solid #ffcccc;';
+  if (t === '청약예정') return 'background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;';
   if (t === '청약체결') return 'background:#e8f8ec;color:#15803d;border:1px solid #bbf7d0;';
   return 'background:#e5f0ff;color:#007aff;border:1px solid #cce0ff;';
 }
@@ -3445,7 +3447,7 @@ function captureSchedule() {
     if (r === '청약' || r === '청약체결') return '청약체결';
     return meetState(e);
   }
-  function stateColor(e) { var t = stateOf(e); return /거절/.test(t) ? '#dc2626' : (t === '청약체결' ? '#16a34a' : '#007aff'); }
+  function stateColor(e) { var t = stateOf(e); return /거절/.test(t) ? '#dc2626' : (t === '청약체결' ? '#16a34a' : (t === '청약예정' ? '#c2410c' : '#007aff')); }
   var mdd = function(ds) { return ds ? String(ds).slice(5).replace('-', '/') : '-'; };
 
   function pageEl(list, pi) {
