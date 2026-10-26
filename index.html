@@ -1150,6 +1150,7 @@ function renderList() {
        if (curResultFilter === 'TA완료') return !!r || isRecall;
        if (isRecall) return false;
        if (curResultFilter === '미팅') return r.includes('AP');
+       if (curResultFilter === '청약예정') return r === '청약예정';
        if (curResultFilter === '청약') return r === '청약';
        if (curResultFilter === '부재') return r.includes('부재');
        if (curResultFilter === '결번') return r.includes('결번');
@@ -1278,7 +1279,7 @@ function renderChart(dataList) {
   c.style.display = 'block';
   c.style.height = 'auto';
 
-  let t = { assign: dataList.length, ta_all: 0, ap: 0, pc: 0, contract: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, unassigned: 0, recall: 0, cr: 0 };
+  let t = { assign: dataList.length, ta_all: 0, ap: 0, pc: 0, contract: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, unassigned: 0, recall: 0, cr: 0, cp: 0 };
   dataList.forEach(d => {
     if (d.status === '배정대기') {
       t.unassigned++;
@@ -1290,6 +1291,7 @@ function renderChart(dataList) {
       else if (r.indexOf('AP') >= 0) t.ap++;
       else if (r === '청약') t.contract++;
       else if (r === '청약거절') t.cr++;
+      else if (r === '청약예정') t.cp++;
       else if (r.indexOf('부재') >= 0) t.absent++;
       else if (r.indexOf('결번') >= 0) t.wrongNum++;
       else if (r === '거절') t.reject++;
@@ -1302,6 +1304,7 @@ function renderChart(dataList) {
     { label:'총 배정', val:t.assign, color:'#007aff' },
     { label:'TA완료', val:t.ta_all, color:'#5ac8fa' },
     { label:'미팅', val:t.ap, color:'#34c759' },
+    { label:'청약예정', val:t.cp, color:'#ff9500' },
     { label:'청약', val:t.contract, color:'#ff3b30' }
   ];
 
@@ -1940,6 +1943,7 @@ function showStatList(fcName, key, label) {
     if (key === 'ap') return r.indexOf('AP') >= 0;
     if (key === 'contract') return r === '청약';
     if (key === 'cr') return r === '청약거절';
+    if (key === 'cp') return r === '청약예정';
     if (key === 'absent') return r.indexOf('부재') >= 0;
     if (key === 'wrongNum') return r.indexOf('결번') >= 0;
     if (key === 'reject') return r === '거절';
@@ -2048,7 +2052,7 @@ function loadStats() {
   statList.forEach(db => {
     if(db.assignedFC) {
       if(!fcMap[db.assignedFC]) {
-        fcMap[db.assignedFC] = { total: 0, ta: 0, ap: 0, pc: 0, contract: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, unassigned: 0, recall: 0, cr: 0 };
+        fcMap[db.assignedFC] = { total: 0, ta: 0, ap: 0, pc: 0, contract: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, unassigned: 0, recall: 0, cr: 0, cp: 0 };
       }
       fcMap[db.assignedFC].total++;
       
@@ -2062,6 +2066,7 @@ function loadStats() {
         if(r.includes('AP')) fcMap[db.assignedFC].ap++;
         else if(r.includes('PC')) fcMap[db.assignedFC].pc++;
         else if(r === '청약거절') fcMap[db.assignedFC].cr++;
+        else if(r === '청약예정') fcMap[db.assignedFC].cp++;
         else if(r.includes('청약')) fcMap[db.assignedFC].contract++;
         else if(r.includes('부재')) fcMap[db.assignedFC].absent++;
         else if(r.includes('결번')) fcMap[db.assignedFC].wrongNum++;
@@ -2088,9 +2093,10 @@ function loadStats() {
         '</div>' +
         taProgressHtml(fc, d) +
         '<div class="no-cap" style="font-size:11px;color:var(--tx-sub);font-weight:700;margin-bottom:8px;">👆 항목을 누르면 해당 DB 목록을 볼 수 있어요</div>' +
-        '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; text-align:center; margin-bottom:12px;">' +
+        '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; text-align:center; margin-bottom:12px;">' +
           '<div onclick="showStatList(\'' + fc + '\',\'ta\',\'TA완료\')" style="cursor:pointer; background:#f5f5f7; padding:10px; border-radius:12px;"><div style="font-size:11px; font-weight:700; color:var(--tx-sub);">TA</div><div class="stat-num" style="font-size:16px; font-weight:900;">' + d.ta + '</div></div>' +
           '<div onclick="showStatList(\'' + fc + '\',\'ap\',\'미팅\')" style="cursor:pointer; background:#e5f0ff; padding:10px; border-radius:12px;"><div style="font-size:11px; font-weight:700; color:var(--blue);">미팅</div><div class="stat-num" style="font-size:16px; font-weight:900; color:var(--blue);">' + d.ap + '</div></div>' +
+          '<div onclick="showStatList(\'' + fc + '\',\'cp\',\'청약예정\')" style="cursor:pointer; background:#fff7ed; padding:10px; border-radius:12px;"><div style="font-size:11px; font-weight:700; color:#c2410c;">청약예정</div><div class="stat-num" style="font-size:16px; font-weight:900; color:#c2410c;">' + d.cp + '</div></div>' +
           '<div onclick="showStatList(\'' + fc + '\',\'contract\',\'청약\')" style="cursor:pointer; background:#e8f8ec; padding:10px; border-radius:12px;"><div style="font-size:11px; font-weight:700; color:var(--green);">청약</div><div class="stat-num" style="font-size:16px; font-weight:900; color:var(--green);">' + d.contract + '</div></div>' +
         '</div>' +
         '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; text-align:center;">' +
@@ -2662,7 +2668,7 @@ function renderStatsExtras(monthList, fcMap) {
   var map = {};
   list.forEach(function(db){
     var t = db.dbType || '(미지정)';
-    if (!map[t]) map[t] = { total: 0, noFC: 0, wait: 0, ta: 0, ap: 0, pc: 0, contract: 0, fail: 0, recall: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, cr: 0 };
+    if (!map[t]) map[t] = { total: 0, noFC: 0, wait: 0, ta: 0, ap: 0, pc: 0, contract: 0, fail: 0, recall: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, cr: 0, cp: 0 };
     var m = map[t]; m.total++;
     if (!db.assignedFC) { m.noFC++; return; }
     if (db.status === '배정대기') { m.wait++; return; }
@@ -2672,6 +2678,7 @@ function renderStatsExtras(monthList, fcMap) {
     if (db.status === '재통화') { /* 재통화는 별도 집계 */ }
     else if (r.indexOf('AP') >= 0) m.ap++;
     else if (r === '청약거절') m.cr++;
+    else if (r === '청약예정') m.cp++;
     else if (r.indexOf('청약') >= 0) m.contract++;
     else if (r.indexOf('부재') >= 0) { m.fail++; m.absent++; }
     else if (r.indexOf('결번') >= 0) { m.fail++; m.wrongNum++; }
@@ -2683,7 +2690,7 @@ function renderStatsExtras(monthList, fcMap) {
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b, 'ko');
   });
   if (!types.length) { area.innerHTML = ''; return; }
-  var allSum = { total: 0, noFC: 0, wait: 0, ta: 0, ap: 0, pc: 0, contract: 0, fail: 0, recall: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, cr: 0 };
+  var allSum = { total: 0, noFC: 0, wait: 0, ta: 0, ap: 0, pc: 0, contract: 0, fail: 0, recall: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, cr: 0, cp: 0 };
   types.forEach(function(t){ Object.keys(allSum).forEach(function(k){ allSum[k] += map[t][k]; }); });
   if (STAT_TYPE !== 'all' && types.indexOf(STAT_TYPE) < 0) STAT_TYPE = 'all';
   var sel = '<select id="statTypeSel" class="inp inp-arrow no-cap" style="padding:10px 12px;font-size:14px;font-weight:800;margin-bottom:12px;border-color:var(--blue);color:var(--blue);" onchange="STAT_TYPE=this.value; loadStats();">' +
@@ -2717,8 +2724,8 @@ function typeStatCard(t, m) {
         (m.wait ? '<span onclick="showTypeStatList(\'wait\',\'미수락\')" class="stat-num" style="cursor:pointer;font-size:12px;font-weight:800;color:#a16207;background:#fefce8;padding:4px 8px;border-radius:12px;">미수락 ' + m.wait + '</span>' : '') +
       '</div>' +
     '</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px;">' +
-      cell('TA완료', m.ta, 'var(--blue)', 'ta') + cell('TA미입력', noTA, noTA > 0 ? 'var(--red)' : 'var(--green)', 'noTA') + cell('미팅', m.ap, 'var(--blue)', 'ap') + cell('청약', m.contract, 'var(--green)', 'contract') +
+    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px;">' +
+      cell('TA완료', m.ta, 'var(--blue)', 'ta') + cell('TA미입력', noTA, noTA > 0 ? 'var(--red)' : 'var(--green)', 'noTA') + cell('미팅', m.ap, 'var(--blue)', 'ap') + cell('청약예정', m.cp || 0, '#c2410c', 'cp') + cell('청약', m.contract, 'var(--green)', 'contract') +
     '</div>' +
     '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:10px;">' + cell('부재', m.absent || 0, 'var(--red)', 'absent') + cell('재통화', m.recall || 0, '#c2410c', 'recall') + cell('결번', m.wrongNum || 0, 'var(--red)', 'wrongNum') + cell('미팅거절', m.reject || 0, 'var(--red)', 'reject') + cell('청약거절', m.cr || 0, '#b91c1c', 'cr') + cell('기타', m.other || 0, 'var(--tx-main)', 'other') + '</div>' +
     '<div style="height:8px;background:#ffe1e1;border-radius:6px;overflow:hidden;margin-bottom:8px;"><div style="height:100%;width:' + taPct + '%;background:var(--green);"></div></div>' +
@@ -2727,7 +2734,7 @@ function typeStatCard(t, m) {
       '<span style="color:var(--blue);">미팅률 ' + meet + '%</span>' +
       '<span style="color:var(--green);">청약률 ' + con + '%</span>' +
     '</div>' +
-    (mr.adj ? '<div class="no-cap" style="font-size:11px;font-weight:700;color:var(--tx-sub);margin-top:8px;">※ 미팅률 = (미팅+청약+청약거절) ÷ (TA완료 − 부재·결번·미팅거절·기타) = ' + mr.hit + ' ÷ ' + mr.base + '</div>' : '') +
+    (mr.adj ? '<div class="no-cap" style="font-size:11px;font-weight:700;color:var(--tx-sub);margin-top:8px;">※ 미팅률 = (미팅+청약예정+청약+청약거절) ÷ (TA완료 − 부재·결번·미팅거절·기타) = ' + mr.hit + ' ÷ ' + mr.base + '</div>' : '') +
   '</div>';
 }
 // ----- 캡처용 표 리포트 -----
@@ -2737,7 +2744,7 @@ function buildReportData() {
   var sc = myScopeType(); if (sc) list = list.filter(function(db){ return String(db.dbType || '').indexOf(sc) >= 0; });
   if (!isAdmin && !isPartner) list = list.filter(function(db){ return db.assignedFC === ME.name; });
   if (STAT_TYPE !== 'all') list = list.filter(function(db){ return (db.dbType || '(미지정)') === STAT_TYPE; });
-  function blank() { return { total: 0, noFC: 0, assigned: 0, ta: 0, ap: 0, pc: 0, contract: 0, recall: 0, fail: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, cr: 0 }; }
+  function blank() { return { total: 0, noFC: 0, assigned: 0, ta: 0, ap: 0, pc: 0, contract: 0, recall: 0, fail: 0, absent: 0, wrongNum: 0, reject: 0, other: 0, cr: 0, cp: 0 }; }
   function add(m, db) {
     m.total++;
     if (!db.assignedFC) { m.noFC++; return; }
@@ -2748,6 +2755,7 @@ function buildReportData() {
     m.ta++;
     if (r.indexOf('AP') >= 0) m.ap++;
     else if (r === '청약거절') m.cr++;
+    else if (r === '청약예정') m.cp++;
     else if (r.indexOf('청약') >= 0) m.contract++;
     else if (r.indexOf('부재') >= 0) { m.fail++; m.absent++; }
     else if (r.indexOf('결번') >= 0) { m.fail++; m.wrongNum++; }
@@ -2794,6 +2802,7 @@ function buildReportEl() {
       '<td style="' + td + '">' + bar(pct(m.ta, m.assigned)) + '</td>' +
       '<td style="' + td + 'font-weight:900;color:' + BLUE + ';">' + Math.round(meetRateOf(m, rtype).pct) + '%</td>' +
       '<td style="' + td + w + 'color:' + BLUE + ';">' + m.ap + '</td>' +
+      '<td style="' + td + w + 'color:' + ORANGE + ';">' + m.cp + '</td>' +
       '<td style="' + td + w + 'color:' + GREEN + ';">' + m.contract + '</td>' +
       '<td style="' + td + w + 'color:' + ORANGE + ';">' + m.recall + '</td>' +
       '<td style="' + td + w + 'color:' + RED + ';">' + m.absent + '</td>' +
@@ -2810,7 +2819,7 @@ function buildReportEl() {
       '<table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid ' + LINE + ';">' +
         '<thead><tr>' +
           '<th style="' + th + 'text-align:left;padding-left:12px;">' + firstCol + '</th><th style="' + th + '">배정</th><th style="' + th + '">TA완료</th><th style="' + th + '">TA미입력</th><th style="' + th + '">TA율</th><th style="' + th + '">미팅률</th>' +
-          '<th style="' + th + '">미팅</th><th style="' + th + '">청약</th><th style="' + th + '">재통화</th><th style="' + th + '">부재</th><th style="' + th + '">결번</th><th style="' + th + '">미팅거절</th><th style="' + th + '">청약거절</th><th style="' + th + '">기타</th>' +
+          '<th style="' + th + '">미팅</th><th style="' + th + '">청약예정</th><th style="' + th + '">청약</th><th style="' + th + '">재통화</th><th style="' + th + '">부재</th><th style="' + th + '">결번</th><th style="' + th + '">미팅거절</th><th style="' + th + '">청약거절</th><th style="' + th + '">기타</th>' +
         '</tr></thead><tbody>' +
         rows.map(function(r, i){ return row(r.name, r.m, i, false, firstCol === 'DB종류' ? r.name : STAT_TYPE); }).join('') +
         (sum ? row('합계', sum, 0, true, STAT_TYPE) : '') +
@@ -2837,7 +2846,7 @@ function buildReportEl() {
     '</div>' +
     '<div style="display:flex;gap:8px;margin-top:16px;">' +
       kpi('총 DB', s.total, NAVY) + kpi('TA완료', s.ta, BLUE) + kpi('TA미입력', s.assigned - s.ta, (s.assigned - s.ta) > 0 ? RED : GREEN) +
-      kpi('TA율', pct(s.ta, s.assigned) + '%', BLUE) + kpi('미팅률', Math.round(meetRateOf(s, STAT_TYPE).pct) + '%', BLUE) + kpi('미팅', s.ap, BLUE) + kpi('청약', s.contract, GREEN) +
+      kpi('TA율', pct(s.ta, s.assigned) + '%', BLUE) + kpi('미팅률', Math.round(meetRateOf(s, STAT_TYPE).pct) + '%', BLUE) + kpi('미팅', s.ap, BLUE) + kpi('청약예정', s.cp, ORANGE) + kpi('청약', s.contract, GREEN) +
     '</div>' +
     table('DB종류별 현황', 'DB종류', d.typeRows, d.typeRows.length > 1 ? s : null) +
     table('FC별 TA 현황 (미입력 많은 순)', 'FC', d.fcRows, d.fcRows.length > 1 ? s : null) +
@@ -2943,6 +2952,7 @@ function showTypeStatList(key, label) {
     if (key === 'ap') return r.indexOf('AP') >= 0;
     if (key === 'contract') return r === '청약';
     if (key === 'cr') return r === '청약거절';
+    if (key === 'cp') return r === '청약예정';
     var _rc = db.status === '재통화';
     if (key === 'absent') return !_rc && r.indexOf('부재') >= 0;
     if (key === 'wrongNum') return !_rc && r.indexOf('결번') >= 0;
@@ -3178,7 +3188,7 @@ function isLuvmomType(t) { return String(t || '').indexOf('럽맘') >= 0; }
 function meetRateOf(m, typeName) {
   if (isLuvmomType(typeName)) {
     var base = (m.ta || 0) - (m.absent || 0) - (m.wrongNum || 0) - (m.reject || 0) - (m.other || 0);
-    var hit = (m.ap || 0) + (m.contract || 0) + (m.cr || 0);
+    var hit = (m.ap || 0) + (m.cp || 0) + (m.contract || 0) + (m.cr || 0);
     return { pct: base > 0 ? hit / base * 100 : 0, base: base, hit: hit, adj: true };
   }
   return { pct: m.ta ? (m.ap || 0) / m.ta * 100 : 0, base: m.ta || 0, hit: m.ap || 0, adj: false };
@@ -3188,7 +3198,8 @@ function meetRateOf(m, typeName) {
 function rcat(result) {
   var r = String(result || '');
   if (r === '청약없음') return '청약거절';
-  if (r === '청약예정' || r === 'PC') return 'AP';
+  if (r === 'PC') return 'AP';
+  if (r === '청약예정') return '청약예정';
   if (r.indexOf('청약') >= 0) return '청약';
   return r;
 }
