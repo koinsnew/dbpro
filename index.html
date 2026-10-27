@@ -112,6 +112,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 .fn-zero-num { position: absolute; left: 12px; top: 0; height: 34px; display: flex; align-items: center; color: #9aa0a6; font-size: 16px; font-weight: 900; }
 
 .stat-num { text-decoration: underline; text-decoration-color: rgba(0,0,0,0.28); text-underline-offset: 3px; text-decoration-thickness: 2px; }
+#filterGrid select.inp { padding-left:10px !important; padding-right:6px !important; font-size:14px !important; min-width:0; text-overflow:clip; }
 .fn-chips { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
 .fn-chip { flex: 1; min-width: calc(33% - 8px); background: #f8f9fa; border: 1px solid var(--border); border-radius: 10px; padding: 9px 2px; text-align: center; font-size: 12px; font-weight: 700; color: var(--tx-sub); display: flex; flex-direction: column; align-items: center; gap: 4px; overflow:hidden;}
 .fn-chip b { color: #111; font-size: 16px; font-weight: 900; }
@@ -192,6 +193,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     <div id="filterGrid" style="display:grid; gap:8px; margin-bottom:16px;">
       <select id="dateSelect" class="inp inp-no-arrow" style="padding:16px; font-size:16px; font-weight:800; border-color:var(--blue); color:var(--blue); box-shadow:0 2px 8px rgba(0,122,255,0.15);" onchange="selectDate(this.value)"></select>
       <select id="fcSelect" class="inp inp-no-arrow" style="display:none; padding:16px; font-size:16px; font-weight:800; border-color:var(--tx-main); color:var(--tx-main); box-shadow:0 2px 8px rgba(0,0,0,0.05);" onchange="selectFC(this.value)"></select>
+      <input type="search" id="dbSearch" class="inp" placeholder="🔍 검색" autocomplete="off" oninput="dbSearchInput(this.value)" style="padding:16px 12px; font-size:15px; font-weight:700; min-width:0; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
     </div>
     
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px;">
@@ -750,12 +752,12 @@ function handleLogin(isAutoStart) {
       if(u.role === '관리자') {
         document.getElementById('ni-input').style.display = 'flex';
         document.getElementById('commissionArea').style.display = 'block';
-        document.getElementById('filterGrid').style.gridTemplateColumns = '1fr 1fr';
+        document.getElementById('filterGrid').style.gridTemplateColumns = '1fr 1fr 1.15fr';
         document.getElementById('reminderBtn').style.display = 'inline-block';
       } else {
         document.getElementById('ni-input').style.display = 'none';
         document.getElementById('commissionArea').style.display = 'none';
-        document.getElementById('filterGrid').style.gridTemplateColumns = '1fr'; 
+        document.getElementById('filterGrid').style.gridTemplateColumns = '1fr 1.2fr'; 
         document.getElementById('reminderBtn').style.display = 'none';
       }
       document.getElementById('ni-apply').style.display = (u.role === '파트너') ? 'none' : 'flex';
@@ -1080,6 +1082,31 @@ function cardSteps(db) {
   return h;
 }
 
+// ===== DB 검색 (이름·연락처·생년월일·주소·비고·FC·DB종류 등) =====
+var SEARCH_Q = '', _searchT = null;
+function dbSearchInput(v) {
+  SEARCH_Q = v || '';
+  clearTimeout(_searchT);
+  _searchT = setTimeout(function(){ renderList(); }, 180);
+}
+function searchDB(q, admin) {
+  var t = String(q).trim().toLowerCase(); if (!t) return [];
+  var digits = t.replace(/[^0-9]/g, '');
+  var terms = t.split(/\s+/).filter(Boolean);
+  var list = DB_LIST;
+  var sc = myScopeType(); if (sc) list = list.filter(function(db){ return String(db.dbType || '').indexOf(sc) >= 0; });
+  if (!admin) list = list.filter(function(db){ return db.assignedFC === ME.name; });
+  return list.filter(function(db){
+    var hay = [db.customerName, db.phone, db.birth, db.address, db.note, db.request, db.dbType, db.assignedFC, db.status, rlabel(db.result), db.assignDate, db.permDate, db.avail, db.currentPremium].join(' ').toLowerCase();
+    var hayDigits = hay.replace(/[^0-9]/g, '');
+    return terms.every(function(w){
+      if (hay.indexOf(w) >= 0) return true;
+      var wd = w.replace(/[^0-9]/g, '');
+      return wd.length >= 3 && String(db.phone || '').replace(/[^0-9]/g, '').indexOf(wd) >= 0;
+    });
+  });
+}
+
 function renderList() {
   const admin = (ME.role === '관리자');
   updateBirthAlert();
@@ -1093,6 +1120,8 @@ function renderList() {
   
   let myViewList = dateFiltered;
   if(!admin) myViewList = dateFiltered.filter(db => db.assignedFC === ME.name);
+  var SQ = String(SEARCH_Q || '').trim();
+  if (SQ) myViewList = searchDB(SQ, admin);
 
   if(curDate && admin) document.getElementById('excelBtn').style.display = 'inline-block';
   else document.getElementById('excelBtn').style.display = 'none';
@@ -1109,11 +1138,14 @@ function renderList() {
   }
 
   let finalFiltered = myViewList;
-  if(admin && curFC !== 'all') {
+  if(admin && curFC !== 'all' && !SQ) {
     finalFiltered = finalFiltered.filter(db => db.assignedFC === curFC);
   }
 
-  if(finalFiltered.length > 0) {
+  if (SQ) {
+    document.getElementById('dbTypeBreakdown').style.display = 'none';
+    document.getElementById('chartContainer').style.display = 'none';
+  } else if(finalFiltered.length > 0) {
     const typeCounts = {};
     TYPE_LIST.forEach(function(t){ typeCounts[t.type] = 0; });
     finalFiltered.forEach(d => { typeCounts[d.dbType] = (typeCounts[d.dbType] || 0) + 1; });
@@ -1137,9 +1169,11 @@ function renderList() {
     document.getElementById('chartContainer').style.display = 'none';
   }
 
-  let renderData = finalFiltered.filter(d => curDBTypeFilter === 'all' || d.dbType === curDBTypeFilter);
+  let renderData = finalFiltered.filter(d => SQ || curDBTypeFilter === 'all' || d.dbType === curDBTypeFilter);
+  var searchTotal = renderData.length;
+  if (SQ && renderData.length > 50) renderData = renderData.slice(0, 50);   // 너무 많으면 화면이 느려져 50건까지만
   
-  if (curResultFilter !== 'all' && curResultFilter !== '총 배정') {
+  if (!SQ && curResultFilter !== 'all' && curResultFilter !== '총 배정') {
     renderData = renderData.filter(db => {
        if (curResultFilter === '배정대기') return db.status === '배정대기';
        if (db.status === '배정대기') return false; 
@@ -1162,7 +1196,7 @@ function renderList() {
   }
 
   document.getElementById('dbListArea').innerHTML = renderData.length === 0 
-    ? '<div style="text-align:center;padding:40px;color:var(--tx-sub);font-size:14px;font-weight:700;">해당하는 DB 데이터가 없습니다.</div>'
+    ? '<div style="text-align:center;padding:40px;color:var(--tx-sub);font-size:14px;font-weight:700;">' + (SQ ? '“' + esc(SQ) + '” 검색 결과가 없습니다.' : '해당하는 DB 데이터가 없습니다.') + '</div>'
     : renderData.map(db => {
         let badge = '<span class="badge b-wait">' + db.status + '</span>';
         if(db.status === '진행중') badge = '<span class="badge b-prog">진행중</span>';
@@ -1256,6 +1290,7 @@ function renderList() {
           detailHtml + btns + adminBtns +
         '</div>';
     }).join('');
+  if (SQ && renderData.length) document.getElementById('dbListArea').insertAdjacentHTML('afterbegin', '<div class="no-cap" style="font-size:13px;font-weight:800;color:var(--blue);margin:0 2px 10px;">🔍 “' + esc(SQ) + '” 검색 결과 ' + searchTotal + '건' + (searchTotal > renderData.length ? ' 중 ' + renderData.length + '건 표시' : '') + ' <span style="color:var(--tx-sub);font-weight:700;">(월·FC·필터와 상관없이 전체 DB에서 검색)</span></div>');
 }
 
 function animateCounts(scope) {
