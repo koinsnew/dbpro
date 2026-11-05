@@ -82,7 +82,7 @@ button, [onclick] { touch-action: manipulation; }
 .day-scroll::-webkit-scrollbar { display: none; }
 
 .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size:12px; font-weight: 700; white-space: nowrap; }
-.b-wait { background: #fff2f2; color: var(--red); border: 1px solid #ffcccc; }
+.b-wait { background: #fff7e6; color: #b45309; border: 1px solid #fcd9a0; }
 .b-prog { background: #e5f0ff; color: var(--blue); border: 1px solid #cce0ff; }
 .b-done { background: #e8f8ec; color: var(--green); border: 1px solid #cceadd; }
 .b-type { background: #f5f5f7; color: var(--tx-main); border: 1px solid var(--border); }
@@ -187,7 +187,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 </div>
 
 <div id="mainApp" style="display:none;padding-bottom:80px;">
-  <div class="hdr">
+  <div class="hdr" role="banner">
     <div style="min-width:0;flex-shrink:1;margin-right:12px;display:flex;flex-direction:column;justify-content:center;">
       <div style="display:inline-block;width:max-content;">
         <div style="font-size:18px;font-weight:900;letter-spacing:-0.5px;line-height:1;margin-bottom:2px;text-align:center;">데이터</div>
@@ -200,12 +200,12 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     
     <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
       <div style="display:flex;align-items:center;background:#fbfbfd;border:1px solid var(--border);border-radius:10px;height:30px;">
-        <button onclick="shiftMonth(-1)" aria-label="이전 달" style="border:none;background:none;padding:0 10px;min-height:44px;margin:-8px 0;font-size:16px;font-weight:900;color:var(--tx-sub);cursor:pointer;">‹</button>
+        <button onclick="shiftMonth(-1)" aria-label="이전 달" style="border:none;background:none;padding:0 6px;min-height:44px;margin:-8px -2px;font-size:16px;font-weight:900;color:var(--tx-sub);cursor:pointer;">‹</button>
         <span style="position:relative;display:inline-flex;align-items:center;">
           <span id="hdr_month_lbl" style="font-size:12px;font-weight:800;white-space:nowrap;letter-spacing:-0.3px;"></span>
           <input type="month" id="hdr_month" onchange="changeMonth()" onclick="try{this.showPicker()}catch(e){}" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;">
         </span>
-        <button onclick="shiftMonth(1)" aria-label="다음 달" style="border:none;background:none;padding:0 10px;min-height:44px;margin:-8px 0;font-size:16px;font-weight:900;color:var(--tx-sub);cursor:pointer;">›</button>
+        <button onclick="shiftMonth(1)" aria-label="다음 달" style="border:none;background:none;padding:0 6px;min-height:44px;margin:-8px -2px;font-size:16px;font-weight:900;color:var(--tx-sub);cursor:pointer;">›</button>
       </div>
       <button onclick="loadData('데이터를 최신화 중입니다...')" aria-label="새로고침" title="새로고침" class="btn btn-ghost" style="padding:2px 6px;font-size:22px;line-height:1;border:none;background:none;">🔄</button>
       <button onclick="openCardTool()" class="btn btn-ghost" style="padding:6px 8px;font-size:12px;font-weight:900;border-radius:8px;white-space:nowrap;color:var(--blue);border-color:#cce0ff;background:#f0f7ff;">MY</button>
@@ -213,7 +213,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     </div>
   </div>
 
-  <div id="pg-list" style="display:none;padding:20px;">
+  <div id="pg-list" role="main" aria-label="DB 목록" style="display:none;padding:20px;">
     <div id="birthAlert"></div>
     <div id="acceptAllBar"></div>
     <div id="filterGrid" style="display:grid; gap:8px; margin-bottom:16px;">
@@ -233,7 +233,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     <div id="dbListArea"></div>
   </div>
 
-  <div id="pg-sched" style="display:none;padding:20px;">
+  <div id="pg-sched" role="main" aria-label="미팅 일정" style="display:none;padding:20px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div style="font-size:22px;font-weight:900;">미팅 일정</div>
       <div style="display:flex;align-items:center;gap:8px;">
@@ -246,7 +246,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     <div id="schedList"></div>
   </div>
 
-  <div id="pg-apply" style="display:none;padding:20px;">
+  <div id="pg-apply" role="main" aria-label="DB 신청" style="display:none;padding:20px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div style="font-size:22px;font-weight:900;">DB 신청 <span style="font-size:12px;font-weight:700;color:var(--tx-sub);">(선착순 실시간)</span></div>
       <button onclick="loadBatches()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;">🔄 새로고침</button>
@@ -281,7 +281,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     <div id="myClaimArea"></div>
   </div>
 
-  <div id="pg-input" style="display:none;padding:20px;">
+  <div id="pg-input" role="main" aria-label="DB 입력" style="display:none;padding:20px;">
     <div style="font-size:22px;font-weight:900;margin-bottom:24px;">신규 DB 등록</div>
     
     <div class="tab-container">
@@ -390,10 +390,10 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     </div>
   </div>
 
-  <div id="pg-stats" style="display:none;padding:20px;">
+  <div id="pg-stats" role="main" aria-label="통계" style="display:none;padding:20px;">
     <div id="statsCapture" style="background:var(--bg-main);">
     <div style="margin-bottom:20px;">
-      <div style="font-size:22px;font-weight:900;">월간 통계 현황</div>
+      <h1 style="font-size:22px;font-weight:900;margin:0;">월간 통계 현황</h1>
       <div id="statsMonthLabel" style="font-size:13px;font-weight:700;color:var(--tx-sub);margin-top:4px;"></div>
     </div>
     <div id="commissionArea" class="card" style="display:none; background:#f0f7ff; border-color:#cce0ff;">
@@ -1419,9 +1419,9 @@ function renderChart(dataList) {
   const stages = [
     { label:'총 배정', val:t.assign, color:'#0066d6' },
     { label:'TA완료', val:t.ta_all, color:'#5ac8fa' },
-    { label:'미팅', val:t.ap, color:'#1a7f37' },
+    { label:'미팅', val:t.ap, color:'#0e7490' },
     { label:'청약예정', val:t.cp, color:'#b45309' },
-    { label:'청약', val:t.contract, color:'#d70015' }
+    { label:'청약', val:t.contract, color:'#1a7f37' }
   ];
 
   let html = '<div class="fn-card"><div class="fn-title">📊 DB 영업 진행사항 <span style="font-size:12px;color:var(--tx-sub);font-weight:600;margin-left:8px;">(항목 클릭 시 필터링)</span></div><div class="fn-list">';
@@ -2168,7 +2168,7 @@ function loadStats() {
             '</div>' +
             '<div style="text-align:right; margin-left:10px; flex-shrink:0;">' +
               '<div style="font-size:12px; font-weight:700; color:var(--tx-sub);">' + commLabel + '</div>' +
-              '<div style="font-size:18px; font-weight:900; color:var(--red);">' + shownComm.toLocaleString() + '원</div>' +
+              '<div style="font-size:18px; font-weight:900; color:var(--green);">' + shownComm.toLocaleString() + '원</div>' +
               '<div style="font-size:12px; color:var(--tx-sub);">보험료 ' + premSum.toLocaleString() + '원</div>' +
             '</div>' +
           '</div>' + adminBtn +
@@ -2291,7 +2291,7 @@ function renderBatches(d) {
     html = BATCHES.map(function (x, i) {
       var sold = x.remaining <= 0;
       var right = sold
-        ? '<div style="text-align:center;"><div style="font-size:12px;font-weight:800;color:var(--red);">모두 신청 완료</div><div style="font-size:24px;font-weight:900;color:var(--red);">0</div></div>'
+        ? '<div style="text-align:center;"><div style="font-size:12px;font-weight:800;color:var(--tx-sub);">모두 신청 완료</div><div style="font-size:24px;font-weight:900;color:var(--red);">0</div></div>'
         : '<div style="display:flex;gap:6px;align-items:center;"><input id="q_' + i + '" type="number" min="1" max="' + x.remaining + '" value="1" class="inp" style="width:60px;padding:8px;text-align:center;"><button onclick="applyBatch(' + i + ')" class="btn btn-primary" style="padding:8px 14px;font-size:13px;">신청</button></div>';
       return '<div class="card">' +
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">' +
@@ -2321,7 +2321,7 @@ function renderBatches(d) {
         '<div><div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + fmtMonth(c.month) + ' · ' + c.round + ' · ' + c.ts + '</div>' +
         '<div style="font-size:15px;font-weight:900;">' + c.dbType + ' <span style="color:var(--blue);">' + c.qty + '개</span></div></div>' +
         '<div style="text-align:right;"><span class="badge b-done">신청완료</span>' +
-        '<div style="font-size:15px;font-weight:900;color:var(--red);margin-top:4px;">' + (c.amount||0).toLocaleString() + '원</div>' +
+        '<div style="font-size:15px;font-weight:900;color:var(--green);margin-top:4px;">' + (c.amount||0).toLocaleString() + '원</div>' +
         '<button onclick="cancelClaim(' + c.id + ')" class="btn btn-ghost" style="margin-top:6px;padding:4px 10px;font-size:12px;color:var(--red);border-color:#ffcccc;">신청 취소</button>' +
         '</div>' +
       '</div>';
@@ -2790,7 +2790,7 @@ function renderStatsExtras(monthList, fcMap) {
       gap.innerHTML = rows.length ? '<div class="card">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
           '<div style="font-size:16px;font-weight:900;">🚨 FC별 TA 미입력 현황 <span style="font-size:13px;color:var(--blue);">· ' + esc(STAT_TYPE === 'all' ? '전체 DB' : STAT_TYPE) + '</span></div>' +
-          '<div style="font-size:13px;font-weight:900;color:var(--red);">합계 ' + sumNo + '건</div>' +
+          '<div style="font-size:13px;font-weight:900;color:#b45309;">합계 ' + sumNo + '건</div>' +
         '</div>' +
         rows.map(function(r){
           var pct = r.total ? Math.round(r.ta / r.total * 100) : 0;
@@ -2798,7 +2798,7 @@ function renderStatsExtras(monthList, fcMap) {
             '<div style="width:64px;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + r.fc + '</div>' +
             '<div style="flex:1;height:10px;background:#ffe1e1;border-radius:6px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:var(--green);"></div></div>' +
             '<div style="width:46px;text-align:right;font-size:12px;font-weight:700;color:var(--tx-sub);">' + r.ta + '/' + r.total + '</div>' +
-            '<div style="width:62px;text-align:right;font-size:13px;font-weight:900;color:' + (r.no > 0 ? 'var(--red)' : 'var(--green)') + ';">' + (r.no > 0 ? '미입력 ' + r.no : '완료 ✓') + '</div>' +
+            '<div style="width:62px;text-align:right;font-size:13px;font-weight:900;color:' + (r.no > 0 ? '#b45309' : 'var(--green)') + ';">' + (r.no > 0 ? '미입력 ' + r.no : '완료 ✓') + '</div>' +
           '</div>';
         }).join('') +
         '<div style="font-size:12px;color:var(--tx-sub);font-weight:600;margin-top:8px;">초록 막대 = TA(결과) 입력 완료 비율 · 미입력이 많은 순</div>' +
@@ -2872,7 +2872,7 @@ function typeStatCard(t, m) {
       '</div>' +
     '</div>' +
     '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px;">' +
-      cell('TA완료', m.ta, 'var(--blue)', 'ta') + cell('TA미입력', noTA, noTA > 0 ? 'var(--red)' : 'var(--green)', 'noTA') + cell('미팅', m.ap, 'var(--blue)', 'ap') + cell('청약예정', m.cp || 0, '#c2410c', 'cp') + cell('청약', m.contract, 'var(--green)', 'contract') +
+      cell('TA완료', m.ta, 'var(--blue)', 'ta') + cell('TA미입력', noTA, noTA > 0 ? '#b45309' : 'var(--green)', 'noTA') + cell('미팅', m.ap, 'var(--blue)', 'ap') + cell('청약예정', m.cp || 0, '#c2410c', 'cp') + cell('청약', m.contract, 'var(--green)', 'contract') +
     '</div>' +
     '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:10px;">' + cell('부재', m.absent || 0, 'var(--red)', 'absent') + cell('재통화', m.recall || 0, '#c2410c', 'recall') + cell('결번', m.wrongNum || 0, 'var(--red)', 'wrongNum') + cell('미팅거절', m.reject || 0, 'var(--red)', 'reject') + cell('청약거절', m.cr || 0, '#b91c1c', 'cr') + cell('기타', m.other || 0, 'var(--tx-main)', 'other') + '</div>' +
     '<div style="height:8px;background:#ffe1e1;border-radius:6px;overflow:hidden;margin-bottom:8px;"><div style="height:100%;width:' + taPct + '%;background:var(--green);"></div></div>' +
