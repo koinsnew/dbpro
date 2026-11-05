@@ -50,6 +50,28 @@ select.inp-no-arrow { background-image: none; appearance: none; -webkit-appearan
 .btn-full { width: 100%; }
 
 .card { background: var(--bg-card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 16px; transition: all 0.3s; }
+/* DB 카드: 기본은 접힌 한 줄 + 행동, 탭하면 상세 */
+.dbc { padding: 14px 16px; margin-bottom: 10px; }
+.dbc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; }
+.dbc-name { font-size: 17px; font-weight: 900; letter-spacing: -0.3px; word-break: keep-all; }
+.dbc-chev { flex-shrink: 0; width: 44px; height: 44px; margin: -8px -10px -8px 0; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--tx-sub); font-size: 14px; }
+.dbc-chev span { display: inline-block; transition: transform .2s cubic-bezier(.16,1,.3,1); }
+.dbc.open .dbc-chev span { transform: rotate(180deg); }
+.dbc-sub { font-size: 13px; font-weight: 700; color: var(--tx-sub); margin: 2px 0 10px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.dbc-sub .mt { color: #1d4ed8; font-weight: 800; }
+.dbc-actions { display: flex; gap: 8px; align-items: stretch; }
+.dbc-actions .btn { min-height: 44px; font-size: 14px; padding: 10px 12px; }
+.dbc-call { flex: 1.15; text-decoration: none; color: var(--blue); border: 1px solid #cce0ff; background: #f0f7ff; border-radius: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; font-size: 14px; white-space: nowrap; }
+.dbc-more { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.dbc.open .dbc-more { display: block; }
+.dbc-more .row { font-size: 14px; font-weight: 600; margin-bottom: 6px; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.55; }
+.dbc-todo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; font-weight: 800; color: #1d4ed8; background: #eef4ff; border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
+.dbc-todo b { font-size: 16px; font-weight: 900; }
+.fn-toggle { width: 100%; background: transparent; border: none; text-align: left; cursor: pointer; padding: 2px 2px; display: block; font-family: inherit; color: inherit; }
+.fn-toggle .t1 { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 900; }
+.fn-toggle .t2 { font-size: 13px; font-weight: 700; color: var(--tx-sub); margin-top: 4px; }
+.fn-toggle .chev { display: inline-block; transition: transform .2s cubic-bezier(.16,1,.3,1); color: var(--tx-sub); font-size: 13px; }
+.fn-toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
 .card-contracted { background: #f0f7ff; border: 2px solid #cce0ff; box-shadow: 0 8px 24px rgba(0,122,255,0.15); }
 
 .day-scroll { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 12px; scrollbar-width: none; }
@@ -1171,6 +1193,12 @@ function renderList() {
 
   let renderData = finalFiltered.filter(d => SQ || curDBTypeFilter === 'all' || d.dbType === curDBTypeFilter);
   var searchTotal = renderData.length;
+  var todoW = 0, todoR = 0;
+  if (!admin && !SQ && curResultFilter === 'all') {
+    var pri = function(d){ return (d.status === '배정대기' && d.assignedFC === ME.name) ? 0 : (((d.status === '진행중' || d.status === '재통화') && d.assignedFC === ME.name) ? 1 : 2); };
+    renderData.forEach(function(d){ var p = pri(d); if (p === 0) todoW++; else if (p === 1) todoR++; });
+    renderData = renderData.map(function(d, i){ return { d: d, i: i, p: pri(d) }; }).sort(function(a, b){ return a.p - b.p || a.i - b.i; }).map(function(x){ return x.d; });
+  }
   if (SQ && renderData.length > 50) renderData = renderData.slice(0, 50);   // 너무 많으면 화면이 느려져 50건까지만
   
   if (!SQ && curResultFilter !== 'all' && curResultFilter !== '총 배정') {
@@ -1202,7 +1230,7 @@ function renderList() {
         if(db.status === '진행중') badge = '<span class="badge b-prog">진행중</span>';
         if(db.status === '재통화') badge = '<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;">📞 재통화</span>';
         if(db.status === '결과완료') badge = resultBadge(db.result);
-        if(admin) badge = '<span onclick="openStatusChange(\'' + db.id + '\')" title="진행상태 변경" style="cursor:pointer;white-space:nowrap;">' + badge + '<span style="font-size:10px;color:var(--tx-sub);margin-left:2px;">▼</span></span>';
+        if(admin) badge = '<span data-stop="1" onclick="event.stopPropagation();openStatusChange(\'' + db.id + '\')" title="진행상태 변경" style="cursor:pointer;white-space:nowrap;">' + badge + '<span style="font-size:10px;color:var(--tx-sub);margin-left:2px;">▼</span></span>';
 
         const stepHtml = cardSteps(db);
 
@@ -1263,33 +1291,63 @@ function renderList() {
         let cardStyle = isContracted ? 'card card-contracted' : 'card';
         let manualTag = (db.details && db.details.isManual) ? `<span class="badge" style="background:#fefce8;color:#a16207;border:1px solid #fef08a;margin-left:4px;">수동배정</span>` : '';
 
-        return '<div id="card_' + db.id + '" class="' + cardStyle + '">' +
-          '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">' +
-            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
-              '<span style="font-size:18px;font-weight:900;">' + db.customerName + '</span>' +
-              (db.birth ? '<span style="font-size:13px;color:var(--tx-sub);font-weight:700;">' + db.birth + '</span>' : '') +
+        var isOpen = !!OPEN_CARDS[db.id] || (SQ && searchTotal <= 3);
+        var mine = db.assignedFC === ME.name;
+        var ms = ((db.details && db.details.meetings) || []).filter(function(m){ return m && m.date; });
+        var nextMeet = ms.length ? ms[ms.length - 1] : null;
+        // 접힌 상태에서 보이는 행동: 한 줄에 전화 + 핵심 행동 하나
+        var act = '';
+        if (db.status === '배정대기' && mine) {
+          act = '<button onclick="respondDB(\'' + db.id + '\', true, \'' + db.dbType + '\')" class="btn btn-primary" style="flex:1;">수락</button>' +
+                '<button onclick="respondDB(\'' + db.id + '\', false, \'' + db.dbType + '\')" class="btn btn-ghost" style="flex:.8;color:var(--red);border-color:#ffcccc;">거절</button>';
+        } else if ((db.status === '진행중' || db.status === '재통화') && mine) {
+          act = '<button onclick="openResult(\'' + db.id + '\')" class="btn btn-primary" style="flex:1;">결과 입력</button>';
+        } else if (db.status === '결과완료' && (mine || admin)) {
+          act = '<button onclick="openResult(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;color:var(--blue);border-color:var(--blue);">결과수정</button>';
+        } else if (admin && !db.assignedFC) {
+          act = stagedBtnHtml(db).replace('padding:8px;font-size:13px;', '');
+        } else if (admin && ['배정대기','미배정','배정불가'].indexOf(db.status) < 0) {
+          act = '<button onclick="openResult(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;color:var(--blue);border-color:var(--blue);">결과수정</button>';
+        }
+        var detailActs = '';
+        if (admin) {
+          detailActs = '<div class="no-cap" style="display:flex;gap:8px;margin-top:12px;border-top:1px dashed var(--border);padding-top:12px;">' +
+            '<button onclick="openEditDB(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;min-height:44px;font-size:13px;">재배정</button>' +
+            '<button onclick="deleteDB(\'' + db.id + '\')" class="btn btn-ghost" style="flex:1;min-height:44px;font-size:13px;color:var(--red);">삭제</button>' +
+          '</div>';
+        }
+        detailActs += '<div class="no-cap" style="margin-top:10px;"><button onclick="shareCard(\'' + db.id + '\')" class="btn btn-ghost" style="width:100%;min-height:44px;font-size:13px;">📷 사진으로 저장·공유</button></div>';
+        var subParts = [];
+        if (admin) subParts.push('<span>' + esc(db.assignedFC || '미배정') + (manualTag ? ' · 수동' : '') + '</span>');
+        subParts.push('<span>배분 ' + esc(db.assignDate ? String(db.assignDate).slice(5).replace('-', '/') : '-') + '</span>');
+        if (nextMeet) subParts.push('<span class="mt">' + ms.length + '차 미팅 ' + esc(fmtMeetWhen(nextMeet)) + '</span>');
+
+        return '<div id="card_' + db.id + '" class="' + cardStyle + ' dbc' + (isOpen ? ' open' : '') + '">' +
+          '<div class="dbc-top" onclick="toggleCard(\'' + db.id + '\', event)">' +
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;">' +
+              '<span class="dbc-name">' + db.customerName + '</span>' +
               '<span class="badge b-type">' + db.dbType + '</span>' +
-              (shareNote(db.dbType) ? '<span class="badge share-badge">💰 ' + shareNote(db.dbType) + '</span>' : '') +
-            '</div>' +
-            '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">' +
-              '<button class="no-cap" onclick="shareCard(\'' + db.id + '\')" title="사진으로 저장·공유" style="border:1px solid var(--border);background:#fff;border-radius:8px;width:30px;height:28px;font-size:15px;line-height:1;cursor:pointer;padding:0;">📷</button>' +
               badge +
             '</div>' +
+            '<button type="button" class="dbc-chev no-cap" data-stop="1" aria-expanded="' + isOpen + '" aria-label="' + (isOpen ? '상세 접기' : '상세 펼치기') + '" onclick="toggleCard(\'' + db.id + '\')"><span>▼</span></button>' +
           '</div>' +
-          '<div style="font-size:13px;color:var(--tx-sub);margin-bottom:6px;font-weight:700;">퍼미션: ' + db.permDate + ' | 배분: ' + (db.assignDate || '-') + '</div>' +
-          stepHtml +
-          '<div style="font-size:15px;font-weight:800;margin-bottom:6px;">' +
-            '<a href="tel:' + db.phone + '" style="color:var(--blue);text-decoration:none;display:inline-block;">📞 ' + db.phone + '</a>' +
+          '<div class="dbc-sub">' + subParts.join('') + '</div>' +
+          '<div class="dbc-actions no-cap"><a class="dbc-call" href="tel:' + db.phone + '">📞 ' + db.phone + '</a>' + act + '</div>' +
+          '<div class="dbc-more">' +
+            (db.birth ? '<div class="row" style="color:var(--tx-sub);">생년월일 ' + db.birth + (shareNote(db.dbType) ? ' · 💰 ' + shareNote(db.dbType) : '') + (admin && manualTag ? manualTag : '') + '</div>' : '') +
+            '<div class="row" style="color:var(--tx-sub);font-size:13px;">퍼미션 ' + db.permDate + ' | 배분 ' + (db.assignDate || '-') + '</div>' +
+            stepHtml +
+            '<div class="row">📍 ' + safeAddr + '</div>' +
+            '<div class="row">💰 기납입: ' + (db.currentPremium || '-') + '</div>' +
+            (db.avail ? `<div class="row" style="font-weight:700;background:#f5f5f7;padding:6px 10px;border-radius:8px;">📅 ${db.avail}</div>` : '') +
+            (db.request ? `<div class="row" style="font-weight:700;background:#fefce8;color:#854d0e;padding:8px;border-radius:8px;">🔔 요청: ${db.request}</div>` : '') +
+            (db.note ? `<div class="row" style="color:var(--tx-sub);font-size:13px;">비고: ${db.note}</div>` : '') +
+            (admin ? `<div class="row" style="color:var(--blue);font-weight:900;">담당 FC: ${db.assignedFC || '미배정'}</div>` : '') +
+            detailHtml + detailActs +
           '</div>' +
-          '<div style="font-size:14px;font-weight:600;margin-bottom:6px;">📍 ' + safeAddr + '</div>' +
-          '<div style="font-size:14px;font-weight:600;margin-bottom:6px;">💰 기납입: ' + (db.currentPremium || '-') + '</div>' +
-          (db.avail ? `<div style="font-size:13px;font-weight:700;color:var(--tx-main);margin-bottom:8px;background:#f5f5f7;padding:6px 10px;border-radius:8px;display:inline-block;">📅 ${db.avail}</div>` : '') +
-          (db.request ? `<div style="font-size:13px;font-weight:700;background:#fefce8;color:#a16207;padding:8px;border-radius:8px;margin-bottom:8px;">🔔 요청: ${db.request}</div>` : '') +
-          (db.note ? `<div style="font-size:13px;font-weight:600;color:var(--tx-sub);margin-bottom:8px;">비고: ${db.note}</div>` : '') +
-          (admin ? `<div style="font-size:14px;color:var(--blue);font-weight:900;margin-top:8px;">담당 FC: ${db.assignedFC || '미배정'} ${manualTag}</div>` : '') +
-          detailHtml + btns + adminBtns +
         '</div>';
     }).join('');
+  if (!admin && !SQ && (todoW || todoR)) document.getElementById('dbListArea').insertAdjacentHTML('afterbegin', '<div class="dbc-todo no-cap">지금 처리할 DB <b>' + (todoW + todoR) + '</b>건' + (todoW ? ' <span>· 수락 대기 ' + todoW + '</span>' : '') + (todoR ? ' <span>· 결과 입력 ' + todoR + '</span>' : '') + '</div>');
   if (SQ && renderData.length) document.getElementById('dbListArea').insertAdjacentHTML('afterbegin', '<div class="no-cap" style="font-size:13px;font-weight:800;color:var(--blue);margin:0 2px 10px;">🔍 “' + esc(SQ) + '” 검색 결과 ' + searchTotal + '건' + (searchTotal > renderData.length ? ' 중 ' + renderData.length + '건 표시' : '') + ' <span style="color:var(--tx-sub);font-weight:700;">(월·FC·필터와 상관없이 전체 DB에서 검색)</span></div>');
 }
 
@@ -1309,6 +1367,25 @@ function animateCounts(scope) {
   });
 }
 
+var CHART_OPEN = false;
+try { CHART_OPEN = localStorage.getItem('dp_chart_open') === '1'; } catch (e) {}
+function toggleChart() {
+  CHART_OPEN = !CHART_OPEN;
+  try { localStorage.setItem('dp_chart_open', CHART_OPEN ? '1' : '0'); } catch (e) {}
+  var b = document.getElementById('fnBody'), t = document.querySelector('#chartContainer .fn-toggle');
+  var open = CHART_OPEN || curResultFilter !== 'all';
+  if (b) b.style.display = open ? 'block' : 'none';
+  if (t) t.setAttribute('aria-expanded', open);
+}
+var OPEN_CARDS = {};
+function toggleCard(id, ev) {
+  if (ev && ev.target && ev.target.closest && ev.target.closest('a,.dbc-actions,[data-stop]')) return;
+  var el = document.getElementById('card_' + id); if (!el) return;
+  var open = !el.classList.contains('open');
+  el.classList.toggle('open', open);
+  OPEN_CARDS[id] = open;
+  var b = el.querySelector('.dbc-chev'); if (b) { b.setAttribute('aria-expanded', open); b.setAttribute('aria-label', open ? '상세 접기' : '상세 펼치기'); }
+}
 function renderChart(dataList) {
   const c = document.getElementById('chartContainer');
   c.style.display = 'block';
@@ -1382,7 +1459,11 @@ function renderChart(dataList) {
   });
   html += '</div></div>';
 
-  c.innerHTML = html;
+  var open = CHART_OPEN || curResultFilter !== 'all';
+  var sumTxt = '총 ' + t.assign + ' · TA완료 ' + t.ta_all + ' · 미팅 ' + t.ap + ' · 청약예정 ' + t.cp + ' · 청약 ' + t.contract;
+  c.innerHTML = '<button type="button" class="fn-toggle no-cap" aria-expanded="' + open + '" aria-controls="fnBody" onclick="toggleChart()">' +
+      '<div class="t1"><span>📊 DB 영업 진행사항</span><span class="chev">▼</span></div><div class="t2">' + sumTxt + (curResultFilter !== 'all' ? ' · 필터 ' + esc(curResultFilter) : '') + '</div></button>' +
+    '<div id="fnBody" style="display:' + (open ? 'block' : 'none') + ';margin-top:12px;">' + html + '</div>';
   requestAnimationFrame(function() {
     var fills = c.querySelectorAll('.fn-fill[data-w]');
     for (var k = 0; k < fills.length; k++) fills[k].style.width = fills[k].getAttribute('data-w') + '%';
@@ -3291,14 +3372,16 @@ function shareCard(id) {
   var db = DB_LIST.find(function(x){ return x.id === id; });
   if (!card || !db) return;
   showLoader('사진을 만드는 중...');
+  var wasOpen = card.classList.contains('open'); card.classList.add('open');
   html2canvas(card, {
     scale: 2, backgroundColor: '#f5f5f7', useCORS: true, scrollX: 0, scrollY: -window.scrollY,
     ignoreElements: function(n){ return (n.classList && n.classList.contains('no-cap')) || n.tagName === 'BUTTON'; }
   }).then(function(canvas){
+    if (!wasOpen) card.classList.remove('open');
     hideLoader();
     var safe = String(db.customerName || 'DB').replace(/[\\/:*?"<>|\s]/g, '');
     shareCanvas(canvas, 'DB_' + safe + '_' + (db.assignDate || '') + '.png', db.customerName + ' 고객 DB');
-  }).catch(function(e){ hideLoader(); Swal.fire('사진 만들기 실패', String(e), 'error'); });
+  }).catch(function(e){ if (!wasOpen) card.classList.remove('open'); hideLoader(); Swal.fire('사진 만들기 실패', String(e), 'error'); });
 }
 
 // ===== 미팅 입력 =====
