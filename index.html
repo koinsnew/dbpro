@@ -995,7 +995,7 @@ function sendReminder() {
     return '<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;">' +
       '<input type="checkbox" class="rm-item" value="' + db.id + '">' +
       '<div style="flex:1;min-width:0;">' +
-        '<div style="font-size:14px;font-weight:900;">' + db.customerName + ' <span style="font-size:12px;color:var(--blue);font-weight:700;">' + db.assignedFC + ' FC</span></div>' +
+        '<div style="font-size:14px;font-weight:900;">' + esc(db.customerName) + ' <span style="font-size:12px;color:var(--blue);font-weight:700;">' + esc(db.assignedFC) + ' FC</span></div>' +
         '<div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + db.dbType + ' · 배분 ' + (db.assignDate||'-') + '</div>' +
       '</div>' +
     '</label>';
@@ -1904,10 +1904,10 @@ function addContractField(data) {
          '<button type="button" onclick="this.parentElement.parentElement.remove()" style="background:transparent; border:none; color:var(--red); font-weight:700; font-size:12px; cursor:pointer;">삭제</button>' +
       '</div>' +
       '<div style="margin-bottom:8px;"><div class="fl" style="font-size:12px;">청약일자</div><input type="date" class="inp c-date" value="' + (data.date || '') + '" style="padding:8px; font-size:13px;"></div>' +
-      '<div style="margin-bottom:8px;"><div class="fl" style="font-size:12px;">계약자명</div><input type="text" class="inp c-name" placeholder="홍길동" value="' + (data.name || '') + '" style="padding:8px; font-size:13px;"></div>' +
+      '<div style="margin-bottom:8px;"><div class="fl" style="font-size:12px;">계약자명</div><input type="text" class="inp c-name" placeholder="홍길동" value="' + esc(data.name || '') + '" style="padding:8px; font-size:13px;"></div>' +
       '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">' +
-         '<div><div class="fl" style="font-size:12px;">보험사</div><input type="text" class="inp c-comp" placeholder="삼성생명" value="' + (data.comp || '') + '" style="padding:8px; font-size:13px;"></div>' +
-         '<div><div class="fl" style="font-size:12px;">상품명</div><input type="text" class="inp c-prod" placeholder="종신" value="' + (data.prod || '') + '" style="padding:8px; font-size:13px;"></div>' +
+         '<div><div class="fl" style="font-size:12px;">보험사</div><input type="text" class="inp c-comp" placeholder="삼성생명" value="' + esc(data.comp || '') + '" style="padding:8px; font-size:13px;"></div>' +
+         '<div><div class="fl" style="font-size:12px;">상품명</div><input type="text" class="inp c-prod" placeholder="종신" value="' + esc(data.prod || '') + '" style="padding:8px; font-size:13px;"></div>' +
       '</div>' +
       '<div><div class="fl" style="font-size:12px;">월 보험료 (원)</div><input type="number" class="inp c-prem" placeholder="숫자만 입력" value="' + (data.prem || '') + '" style="padding:8px; font-size:13px;"></div>';
   container.appendChild(div);
@@ -2179,7 +2179,7 @@ function loadStats() {
       var premSum = 0;
       var lines = cs.map(function (c) {
         var p = Number(String(c.prem || '').replace(/[^0-9]/g, '')) || 0; premSum += p;
-        return '<div style="font-size:13px; font-weight:600; color:var(--tx-sub); margin-top:2px;">· ' + (c.name || '') + ' / ' + (c.comp || '') + ' ' + (c.prod || '') + ' / ' + (p > 0 ? p.toLocaleString() + '원' : '-') + '</div>';
+        return '<div style="font-size:13px; font-weight:600; color:var(--tx-sub); margin-top:2px;">· ' + esc(c.name || '') + ' / ' + esc(c.comp || '') + ' ' + esc(c.prod || '') + ' / ' + (p > 0 ? p.toLocaleString() + '원' : '-') + '</div>';
       }).join('');
       var comm = Number(String((db.details && db.details.commission) || '').replace(/[^0-9]/g, '')) || 0;
       totalCommission += comm;
@@ -2189,8 +2189,8 @@ function loadStats() {
       return '<div style="background:#fff; border:1px solid var(--border); border-left:4px solid var(--blue); padding:16px; border-radius:12px; margin-bottom:8px;">' +
           '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
             '<div style="flex:1; min-width:0;">' +
-              '<div style="font-size:12px; font-weight:700; color:var(--tx-sub); margin-bottom:4px;">' + (db.assignDate || '') + ' | ' + db.assignedFC + ' FC</div>' +
-              '<div style="font-size:16px; font-weight:900; color:var(--tx-main);">' + db.customerName + ' 고객님</div>' +
+              '<div style="font-size:12px; font-weight:700; color:var(--tx-sub); margin-bottom:4px;">' + esc(db.assignDate || '') + ' | ' + esc(db.assignedFC) + ' FC</div>' +
+              '<div style="font-size:16px; font-weight:900; color:var(--tx-main);">' + esc(db.customerName) + ' 고객님</div>' +
               lines +
             '</div>' +
             '<div style="text-align:right; margin-left:10px; flex-shrink:0;">' +
@@ -2458,8 +2458,8 @@ function renderAssignList() {
   box.innerHTML = list.map(function(db){
     return '<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;">' +
       '<input type="checkbox" class="as-item" value="' + db.id + '">' +
-      '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:900;">' + db.customerName + ' <span style="font-size:12px;color:var(--blue);font-weight:700;">' + db.dbType + '</span></div>' +
-      '<div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + (db.phone||'') + ' · ' + (db.status||'') + '</div></div>' +
+      '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:900;">' + esc(db.customerName) + ' <span style="font-size:12px;color:var(--blue);font-weight:700;">' + esc(db.dbType) + '</span></div>' +
+      '<div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + esc(db.phone||'') + ' · ' + esc(db.status||'') + '</div></div>' +
     '</label>';
   }).join('');
 }
@@ -2823,7 +2823,7 @@ function renderStatsExtras(monthList, fcMap) {
         rows.map(function(r){
           var pct = r.total ? Math.round(r.ta / r.total * 100) : 0;
           return '<div onclick="showStatList(' + jstr(r.fc) + ',\'noTA\',\'TA 미입력\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--border);">' +
-            '<div style="width:64px;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + r.fc + '</div>' +
+            '<div style="width:64px;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(r.fc) + '</div>' +
             '<div style="flex:1;height:10px;background:#ffe1e1;border-radius:6px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:var(--green);"></div></div>' +
             '<div style="width:46px;text-align:right;font-size:12px;font-weight:700;color:var(--tx-sub);">' + r.ta + '/' + r.total + '</div>' +
             '<div style="width:62px;text-align:right;font-size:13px;font-weight:900;color:' + (r.no > 0 ? '#b45309' : 'var(--green)') + ';">' + (r.no > 0 ? '미입력 ' + r.no : '완료 ✓') + '</div>' +
@@ -3098,10 +3098,10 @@ function openStatListModal(title, list) {
       if (ME.role === '관리자' && _lbl) resultBadge = '<span onclick="openStatusChange(\'' + db.id + '\')" title="진행상태 변경" style="cursor:pointer;white-space:nowrap;">' + resultBadge + '<span style="font-size:10px;color:var(--tx-sub);margin-left:2px;">▼</span></span>';
       return '<div class="sl-item">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
-            '<div style="font-size:15px;font-weight:900;">' + db.customerName + ' <span style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + (db.birth||'') + '</span></div>' +
+            '<div style="font-size:15px;font-weight:900;">' + esc(db.customerName) + ' <span style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + esc(db.birth||'') + '</span></div>' +
             resultBadge +
           '</div>' +
-          '<div style="font-size:13px;font-weight:700;"><a href="tel:' + db.phone + '" style="color:var(--blue);text-decoration:none;">📞 ' + db.phone + '</a> · <span class="badge b-type">' + db.dbType + '</span>' + (shareNote(db.dbType) ? ' <span class="badge share-badge">💰 ' + shareNote(db.dbType) + '</span>' : '') + '</div>' +
+          '<div style="font-size:13px;font-weight:700;"><a href="tel:' + esc(String(db.phone||'').replace(/[^0-9+*#-]/g, '')) + '" style="color:var(--blue);text-decoration:none;">📞 ' + esc(db.phone) + '</a> · <span class="badge b-type">' + esc(db.dbType) + '</span>' + (shareNote(db.dbType) ? ' <span class="badge share-badge">💰 ' + shareNote(db.dbType) + '</span>' : '') + '</div>' +
           statDetailHtml(db) +
         '</div>';
     }).join('');
@@ -3719,7 +3719,7 @@ function showMeetingDetail(dbId, idx) {
       '<div style="font-size:12px;font-weight:800;color:var(--blue);margin:8px 0 4px;">상담내용 및 결과</div><textarea id="md_result" rows="3" style="' + ta + '" placeholder="미팅 후 상담내용 및 결과를 입력하세요">' + esc(m.result || '') + '</textarea></div>'
     : row('미팅 관련 메모', esc(m.note)) + row('상담내용 및 결과', m.result ? '<span style="color:var(--green);">' + esc(m.result) + '</span>' : '<span style="color:var(--tx-sub);">아직 입력 전</span>');
   Swal.fire({
-    title: db.customerName + ' · ' + (idx + 1) + '차 미팅',
+    title: esc(db.customerName) + ' · ' + (idx + 1) + '차 미팅',
     html: '<div style="text-align:left;font-size:14px;">' +
       row('일시', '<span style="color:var(--blue);">' + esc(fmtMeetWhen(m)) + '</span>') +
       row('담당 FC', esc(db.assignedFC)) +
