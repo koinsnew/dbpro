@@ -2983,8 +2983,8 @@ function buildReportEl() {
   var wk = ['일', '월', '화', '수', '목', '금', '토'][now.getDay()];
   var stamp = now.getFullYear() + '년 ' + (now.getMonth() + 1) + '월 ' + now.getDate() + '일(' + wk + ') ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
   var NAVY = '#14213d', BLUE = '#1d4ed8', RED = '#8a3b3b', GREEN = '#15803d', ORANGE = '#4338ca', GRAY = '#4b5563', LINE = '#e5e7eb';
-  var th = 'padding:10px 6px;font-size:13px;font-weight:800;color:#fff;background:' + NAVY + ';text-align:center;white-space:nowrap;';
-  var td = 'padding:9px 6px;font-size:14px;font-weight:700;text-align:center;border-bottom:1px solid ' + LINE + ';white-space:nowrap;';
+  var th = 'padding:10px 4px;font-size:13px;font-weight:800;color:#fff;background:' + NAVY + ';text-align:center;white-space:nowrap;';
+  var td = 'padding:9px 4px;font-size:14px;font-weight:700;text-align:center;border-bottom:1px solid ' + LINE + ';white-space:nowrap;';
   function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
   function bar(p) {
     var c = p >= 80 ? GREEN : (p >= 50 ? '#f59e0b' : RED);
@@ -3010,6 +3010,7 @@ function buildReportEl() {
       '<td style="' + td + w + 'color:' + RED + ';">' + m.reject + '</td>' +
       '<td style="' + td + w + 'color:' + RED + ';">' + m.cr + '</td>' +
       '<td style="' + td + w + 'color:#64748b;">' + m.other + '</td>' +
+      '<td style="' + td + w + 'color:#64748b;">' + (m.as || 0) + '</td>' +
     '</tr>';
   }
   function table(title, firstCol, rows, sum) {
@@ -3019,7 +3020,7 @@ function buildReportEl() {
       '<table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid ' + LINE + ';">' +
         '<thead><tr>' +
           '<th style="' + th + 'text-align:left;padding-left:12px;">' + firstCol + '</th><th style="' + th + '">배정</th><th style="' + th + '">TA완료</th><th style="' + th + '">TA미입력</th><th style="' + th + '">TA율</th><th style="' + th + '">미팅률</th>' +
-          '<th style="' + th + '">미팅</th><th style="' + th + '">청약예정</th><th style="' + th + '">청약</th><th style="' + th + '">재통화</th><th style="' + th + '">부재</th><th style="' + th + '">결번</th><th style="' + th + '">미팅거절</th><th style="' + th + '">청약거절</th><th style="' + th + '">기타</th>' +
+          '<th style="' + th + '">미팅</th><th style="' + th + '">청약예정</th><th style="' + th + '">청약</th><th style="' + th + '">재통화</th><th style="' + th + '">부재</th><th style="' + th + '">결번</th><th style="' + th + '">미팅거절</th><th style="' + th + '">청약거절</th><th style="' + th + '">기타</th><th style="' + th + '">AS</th>' +
         '</tr></thead><tbody>' +
         rows.map(function(r, i){ return row(r.name, r.m, i, false, firstCol === 'DB종류' ? r.name : STAT_TYPE); }).join('') +
         (sum ? row('합계', sum, 0, true, STAT_TYPE) : '') +
@@ -3037,7 +3038,7 @@ function buildReportEl() {
   var kpi = function(label, val, color) { return '<div style="flex:1;background:#f8fafc;border:1px solid ' + LINE + ';border-radius:10px;padding:10px 6px;text-align:center;"><div style="font-size:12px;font-weight:700;color:#64748b;">' + label + '</div><div style="font-size:22px;font-weight:900;color:' + color + ';margin-top:2px;">' + val + '</div></div>'; };
   var el = document.createElement('div');
   el.id = 'reportCanvas';
-  el.style.cssText = 'position:absolute;left:0;top:0;width:900px;background:#ffffff;padding:28px 26px 22px;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#0f172a;z-index:-1;';
+  el.style.cssText = 'position:absolute;left:0;top:0;width:960px;background:#ffffff;padding:28px 26px 22px;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#0f172a;z-index:-1;';
   el.innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid ' + NAVY + ';padding-bottom:12px;">' +
       '<div><div style="font-size:24px;font-weight:900;color:' + NAVY + ';letter-spacing:-0.5px;">헤리티지 금융지사 DB영업 통계</div>' +
@@ -3484,7 +3485,7 @@ function addMeetingField(m) {
   div.innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
       '<div class="m-title" style="font-size:13px;font-weight:900;color:var(--blue);"></div>' +
-      '<button type="button" onclick="this.closest(\'.meeting-item\').remove(); renumberMeetings();" style="background:transparent;border:none;color:var(--red);font-weight:700;font-size:12px;cursor:pointer;">삭제</button>' +
+      '<button type="button" onclick="this.closest(\'.meeting-item\').remove(); renumberMeetings();" style="background:transparent;border:none;color:var(--red);font-weight:700;font-size:13px;min-height:44px;padding:0 10px;cursor:pointer;">삭제</button>' +
     '</div>' +
     '<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:8px;margin-bottom:8px;">' +
       '<div><div class="fl" style="font-size:12px;">미팅 날짜</div><input type="date" class="inp m-date" value="' + esc(m.date) + '" style="padding:8px;font-size:13px;"></div>' +
