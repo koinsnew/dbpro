@@ -14,24 +14,24 @@
   --bg-main: #f5f5f7;
   --bg-card: #ffffff;
   --border: rgba(0, 0, 0, 0.12);
-  --blue: #007aff;
-  --blue-hover: #0056b3;
-  --green: #34c759;
-  --red: #ff3b30;
+  --blue: #0066d6;
+  --blue-hover: #004fa8;
+  --green: #1a7f37;
+  --red: #d70015;
   --tx-main: #000000;
   --tx-sub: #4b5563;
   --radius: 18px;
   --shadow: 0 8px 30px rgba(0,0,0,0.06);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-main); color: var(--tx-main); min-height: 100vh; -webkit-font-smoothing: antialiased; margin: 0; }
+body { font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Segoe UI", Roboto, sans-serif; word-break: keep-all; overflow-wrap: break-word; line-height: 1.55; background: var(--bg-main); color: var(--tx-main); min-height: 100vh; -webkit-font-smoothing: antialiased; margin: 0; }
 
 #fullLoader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .spinner { width: 40px; height: 40px; border: 4px solid rgba(0,122,255,0.2); border-top-color: var(--blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @keyframes systemBoot { 0% { opacity: 0; transform: scale(0.9) translateY(30px); filter: blur(10px); } 100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); } }
-.anim-tech { animation: systemBoot 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; box-shadow: 0 0 50px rgba(0, 122, 255, 0.15), inset 0 0 20px rgba(255,255,255,0.5); border: 1px solid rgba(0, 122, 255, 0.3); position: relative; overflow: hidden; }
+.anim-tech { animation: systemBoot 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; box-shadow: 0 12px 40px rgba(0, 102, 214, 0.12); border: 1px solid rgba(0, 122, 255, 0.3); position: relative; overflow: hidden; }
 .anim-item-1 { animation: systemBoot 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
 .anim-item-2 { animation: systemBoot 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
 .anim-item-3 { animation: systemBoot 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
@@ -41,6 +41,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
 select.inp-arrow { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234b5563%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 16px top 50%; background-size: 10px auto; }
 select.inp-no-arrow { background-image: none; appearance: none; -webkit-appearance: none; -moz-appearance: none; text-align: center; }
 
+:focus-visible { outline: 3px solid #0066d6; outline-offset: 2px; border-radius: 8px; }
+.inp:focus-visible { outline: none; }
+.btn, .dbc-call { min-height: 44px; }
+button, [onclick] { touch-action: manipulation; }
 .btn { border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; padding: 14px 20px; font-size: 15px; }
 .btn:active { transform: scale(0.97); }
 .btn-primary { background: var(--blue); color: #fff; box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
@@ -77,14 +81,14 @@ select.inp-no-arrow { background-image: none; appearance: none; -webkit-appearan
 .day-scroll { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 12px; scrollbar-width: none; }
 .day-scroll::-webkit-scrollbar { display: none; }
 
-.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size:12px; font-weight: 700; white-space: nowrap; }
 .b-wait { background: #fff2f2; color: var(--red); border: 1px solid #ffcccc; }
 .b-prog { background: #e5f0ff; color: var(--blue); border: 1px solid #cce0ff; }
 .b-done { background: #e8f8ec; color: var(--green); border: 1px solid #cceadd; }
 .b-type { background: #f5f5f7; color: var(--tx-main); border: 1px solid var(--border); }
 
 .bnav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 100; }
-.bni { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 12px 0; color: var(--tx-sub); font-size: 11px; font-weight: 600; cursor: pointer; }
+.bni { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 12px 0; color: var(--tx-sub); font-size:12px; font-weight: 600; cursor: pointer; }
 .bni.on { color: var(--blue); font-weight: 800; }
 
 .hdr { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); padding: 16px 20px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
@@ -114,13 +118,13 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 .bulk-card { background:#fbfbfd; border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:12px; }
 .bulk-head { font-size:13px; font-weight:900; color:var(--blue); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
 .bulk-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
-.bulk-card .fl { font-size:11px; margin-bottom:3px; }
+.bulk-card .fl { font-size:12px; margin-bottom:3px; }
 .bulk-card .row1 { margin-bottom:8px; }
 .bulk-card .row1:last-child { margin-bottom:0; }
 .bulk-fc { border:1px solid #cce0ff !important; background:#f0f7ff !important; color:var(--blue) !important; font-weight:800; }
 
 .drop-zone { border: 2px dashed var(--blue); border-radius: 12px; padding: 20px; text-align: center; color: var(--blue); background: #f0f7ff; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.drop-zone.dragover { background: #cce0ff; border-color: #0056b3; }
+.drop-zone.dragover { background: #cce0ff; border-color: #004fa8; }
 .dz-msg { font-size: 13px; font-weight: 700; pointer-events: none; }
 
 .fn-card { padding: 6px 4px 4px; }
@@ -141,7 +145,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 .fn-chip-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
 .db-steps { display: flex; align-items: center; gap: 5px; margin: 10px 0 12px; flex-wrap: wrap; }
-.db-step { font-size: 11px; font-weight: 800; padding: 5px 11px; border-radius: 20px; background: #f1f3f5; color: #9aa0a6; border: 1px solid transparent; }
+.db-step { font-size:12px; font-weight: 800; padding: 5px 11px; border-radius: 20px; background: #f1f3f5; color: #9aa0a6; border: 1px solid transparent; }
 .db-step.s-done { background: #e5f0ff; color: var(--blue); }
 .db-step.s-now { background: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(0,122,255,0.3); }
 .db-step.s-fail { background: #fff2f2; color: var(--red); border-color: #ffcccc; }
@@ -191,21 +195,21 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
           <span>P</span><span>R</span><span>O</span>
         </div>
       </div>
-      <div style="font-size:11px;font-weight:700;color:var(--tx-sub);margin-top:5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;" id="hdrInfo"></div>
+      <div style="font-size:12px;font-weight:700;color:var(--tx-sub);margin-top:5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;" id="hdrInfo"></div>
     </div>
     
     <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
       <div style="display:flex;align-items:center;background:#fbfbfd;border:1px solid var(--border);border-radius:10px;height:30px;">
-        <button onclick="shiftMonth(-1)" style="border:none;background:none;padding:0 5px;font-size:16px;font-weight:900;color:var(--tx-sub);cursor:pointer;">‹</button>
+        <button onclick="shiftMonth(-1)" aria-label="이전 달" style="border:none;background:none;padding:0 10px;min-height:44px;margin:-8px 0;font-size:16px;font-weight:900;color:var(--tx-sub);cursor:pointer;">‹</button>
         <span style="position:relative;display:inline-flex;align-items:center;">
           <span id="hdr_month_lbl" style="font-size:12px;font-weight:800;white-space:nowrap;letter-spacing:-0.3px;"></span>
           <input type="month" id="hdr_month" onchange="changeMonth()" onclick="try{this.showPicker()}catch(e){}" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;">
         </span>
-        <button onclick="shiftMonth(1)" style="border:none;background:none;padding:0 5px;font-size:16px;font-weight:900;color:var(--tx-sub);cursor:pointer;">›</button>
+        <button onclick="shiftMonth(1)" aria-label="다음 달" style="border:none;background:none;padding:0 10px;min-height:44px;margin:-8px 0;font-size:16px;font-weight:900;color:var(--tx-sub);cursor:pointer;">›</button>
       </div>
       <button onclick="loadData('데이터를 최신화 중입니다...')" aria-label="새로고침" title="새로고침" class="btn btn-ghost" style="padding:2px 6px;font-size:22px;line-height:1;border:none;background:none;">🔄</button>
-      <button onclick="openCardTool()" class="btn btn-ghost" style="padding:6px 8px;font-size:11px;font-weight:900;border-radius:8px;white-space:nowrap;color:var(--blue);border-color:#cce0ff;background:#f0f7ff;">MY</button>
-      <button onclick="window.handleLogout()" class="btn btn-ghost" style="padding:6px;font-size:11px;border-radius:8px;white-space:nowrap;">로그아웃</button>
+      <button onclick="openCardTool()" class="btn btn-ghost" style="padding:6px 8px;font-size:12px;font-weight:900;border-radius:8px;white-space:nowrap;color:var(--blue);border-color:#cce0ff;background:#f0f7ff;">MY</button>
+      <button onclick="window.handleLogout()" class="btn btn-ghost" style="padding:6px;font-size:12px;border-radius:8px;white-space:nowrap;">로그아웃</button>
     </div>
   </div>
 
@@ -219,7 +223,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     </div>
     
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px;">
-      <button id="reminderBtn" onclick="sendReminder()" class="btn btn-ghost" style="display:none; padding:8px 12px;font-size:13px;font-weight:800;color:#ff9500;border-color:#ffdfb3;background:#fff9f0;white-space:nowrap;">🔔 미수락 알림발송</button>
+      <button id="reminderBtn" onclick="sendReminder()" class="btn btn-ghost" style="display:none; padding:8px 12px;font-size:13px;font-weight:800;color:#b45309;border-color:#ffdfb3;background:#fff9f0;white-space:nowrap;">🔔 미수락 알림발송</button>
       <button id="excelBtn" onclick="downloadExcel()" class="btn btn-ghost" style="display:none; padding:8px 12px;font-size:13px;font-weight:800;color:var(--green);border-color:#cceadd;background:#e8f8ec;white-space:nowrap;">📥 엑셀 다운로드</button>
     </div>
 
@@ -381,7 +385,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
           <button onclick="setAllFC()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;white-space:nowrap;">👥 전체 FC 일괄지정</button>
         </div>
         <div id="previewBox"></div>
-        <button onclick="submitBulkDB()" class="btn btn-primary btn-full" style="background:#34c759; margin-top:12px;">일괄 대량 등록 및 배정 실행</button>
+        <button onclick="submitBulkDB()" class="btn btn-primary btn-full" style="background:#1a7f37; margin-top:12px;">일괄 대량 등록 및 배정 실행</button>
       </div>
     </div>
   </div>
@@ -395,7 +399,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     <div id="commissionArea" class="card" style="display:none; background:#f0f7ff; border-color:#cce0ff;">
       <div style="font-size:15px;font-weight:900;color:var(--blue);margin-bottom:10px;">💰 당월 총 수수료</div>
       <div style="font-size:28px; font-weight:900; color:var(--blue);"><span id="s_totalComm">0원</span></div>
-      <div id="commHint" style="font-size:11px;color:var(--tx-sub);margin-top:8px;font-weight:600;"></div>
+      <div id="commHint" style="font-size:12px;color:var(--tx-sub);margin-top:8px;font-weight:600;"></div>
     </div>
     
     <div id="statTypeSelWrap"></div>
@@ -413,8 +417,8 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
   </div>
 
   <nav class="bnav">
-    <div class="bni on" id="ni-list" onclick="goPage('list')"><span style="font-size:20px;margin-bottom:2px;">🗂️</span>DB</div>
-    <div class="bni" id="ni-sched" onclick="goPage('sched')"><span style="font-size:20px;margin-bottom:2px;">📅</span>일정</div>
+    <div class="bni on" id="ni-list" aria-label="DB 목록" onclick="goPage('list')"><span style="font-size:20px;margin-bottom:2px;">🗂️</span>DB</div>
+    <div class="bni" id="ni-sched" aria-label="일정" onclick="goPage('sched')"><span style="font-size:20px;margin-bottom:2px;">📅</span>일정</div>
     <div class="bni" id="ni-apply" onclick="goPage('apply')"><span style="font-size:20px;margin-bottom:2px;">🧾</span>DB신청</div>
     <div class="bni" id="ni-input" style="display:none;" onclick="goPage('input')"><span style="font-size:20px;margin-bottom:2px;">➕</span>DB입력</div>
     <div class="bni" id="ni-stats" onclick="goPage('stats')"><span style="font-size:20px;margin-bottom:2px;">📊</span>통계</div>
@@ -573,7 +577,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     </div>
     <label class="chk-label" style="margin-bottom:12px;font-weight:800;"><input type="checkbox" id="rm_all" onchange="toggleAllReminder(this)"> 전체 선택</label>
     <div id="rm_list" style="max-height:50vh;overflow-y:auto;"></div>
-    <button onclick="sendReminderSelected()" class="btn btn-primary btn-full" style="margin-top:16px;background:#ff9500;">선택 건 알림 발송</button>
+    <button onclick="sendReminderSelected()" class="btn btn-primary btn-full" style="margin-top:16px;background:#b45309;">선택 건 알림 발송</button>
   </div>
 </div>
 
@@ -708,7 +712,7 @@ function handleDrop(e, inputId, msgId) {
 function updateFileCount(input, msgId) {
   const msg = document.getElementById(msgId);
   if(!msg) return;
-  if(input.files && input.files.length > 0) msg.innerHTML = '<span style="color:#34c759;">✅ 첨부 완료: ' + input.files.length + '개 파일</span>';
+  if(input.files && input.files.length > 0) msg.innerHTML = '<span style="color:#1a7f37;">✅ 첨부 완료: ' + input.files.length + '개 파일</span>';
   else msg.innerText = '파일 첨부 (여기로 파일을 드래그하거나 클릭하세요)';
 }
 
@@ -744,7 +748,7 @@ function handleLogin(isAutoStart) {
 
   if(!name) {
     hideLoader();
-    Swal.fire({icon:'warning', title:'이름을 입력하세요', confirmButtonColor:'#007aff'});
+    Swal.fire({icon:'warning', title:'이름을 입력하세요', confirmButtonColor:'#0066d6'});
     return;
   }
 
@@ -754,7 +758,7 @@ function handleLogin(isAutoStart) {
       if(!u || u.password !== pw) {
         hideLoader();
         document.getElementById('loginScreen').style.display = 'flex';
-        Swal.fire({icon:'error', title:'정보 불일치', text:'이름이나 비밀번호를 확인해주세요.', confirmButtonColor:'#007aff'});
+        Swal.fire({icon:'error', title:'정보 불일치', text:'이름이나 비밀번호를 확인해주세요.', confirmButtonColor:'#0066d6'});
         return;
       }
       
@@ -789,7 +793,7 @@ function handleLogin(isAutoStart) {
     })
     .withFailureHandler(function(error) {
       hideLoader();
-      Swal.fire({icon:'error', title:'서버 연결 실패', text: error.message, confirmButtonColor:'#007aff'});
+      Swal.fire({icon:'error', title:'서버 연결 실패', text: error.message, confirmButtonColor:'#0066d6'});
     })
     .getUserList();
 }
@@ -921,7 +925,7 @@ function loadData(loadingMsg) {
   function setMsg(m) { var t = document.getElementById('loaderText'); if (t) t.innerText = m; }
   function fail(error) {
     clearTimeout(slowTimer); hideLoader(); syncChip('');
-    Swal.fire({ icon: 'error', title: '데이터 로드 실패', text: (error && error.message) || '', showCancelButton: true, confirmButtonText: '다시 시도', cancelButtonText: '닫기', confirmButtonColor: '#007aff' })
+    Swal.fire({ icon: 'error', title: '데이터 로드 실패', text: (error && error.message) || '', showCancelButton: true, confirmButtonText: '다시 시도', cancelButtonText: '닫기', confirmButtonColor: '#0066d6' })
       .then(function (r) { if (r.isConfirmed) loadData(baseMsg); });
   }
   function startFetch(background) {
@@ -1176,7 +1180,7 @@ function renderList() {
 
     document.getElementById('dbTypeBreakdown').innerHTML = dbCards.map(c => 
       '<div onclick="toggleDbType(\'' + c.type + '\')" style="background:' + (curDBTypeFilter === c.type ? 'var(--blue)' : '#fff') + '; color:' + (curDBTypeFilter === c.type ? '#fff' : 'inherit') + '; border:1px solid ' + (curDBTypeFilter === c.type ? 'var(--blue)' : 'var(--border)') + '; border-radius:12px; padding:12px; text-align:center; cursor:pointer; transition:all 0.2s;">' +
-        '<div style="font-size:11px;font-weight:700;color:' + (curDBTypeFilter === c.type ? '#e5f0ff' : 'var(--tx-sub)') + ';margin-bottom:2px;">' + c.type + '</div>' +
+        '<div style="font-size:12px;font-weight:700;color:' + (curDBTypeFilter === c.type ? '#e5f0ff' : 'var(--tx-sub)') + ';margin-bottom:2px;">' + c.type + '</div>' +
         '<div style="font-size:18px;font-weight:900;">' + c.count + '</div>' +
       '</div>'
     ).join('');
@@ -1413,14 +1417,14 @@ function renderChart(dataList) {
 
   const base = Math.max(t.assign, 1);
   const stages = [
-    { label:'총 배정', val:t.assign, color:'#007aff' },
+    { label:'총 배정', val:t.assign, color:'#0066d6' },
     { label:'TA완료', val:t.ta_all, color:'#5ac8fa' },
-    { label:'미팅', val:t.ap, color:'#34c759' },
-    { label:'청약예정', val:t.cp, color:'#ff9500' },
-    { label:'청약', val:t.contract, color:'#ff3b30' }
+    { label:'미팅', val:t.ap, color:'#1a7f37' },
+    { label:'청약예정', val:t.cp, color:'#b45309' },
+    { label:'청약', val:t.contract, color:'#d70015' }
   ];
 
-  let html = '<div class="fn-card"><div class="fn-title">📊 DB 영업 진행사항 <span style="font-size:11px;color:var(--tx-sub);font-weight:600;margin-left:8px;">(항목 클릭 시 필터링)</span></div><div class="fn-list">';
+  let html = '<div class="fn-card"><div class="fn-title">📊 DB 영업 진행사항 <span style="font-size:12px;color:var(--tx-sub);font-weight:600;margin-left:8px;">(항목 클릭 시 필터링)</span></div><div class="fn-list">';
   
   stages.forEach((s, i) => {
     const pct = Math.round((s.val / base) * 100);
@@ -1475,7 +1479,7 @@ async function submitDB() {
   const isManual = document.getElementById('i_isManual').checked;
   const manualFC = document.getElementById('i_manualFC').value;
   
-  if (isManual && !manualFC) return Swal.fire({icon:'warning', title:'FC 선택', text:'직접 배정할 FC를 선택하세요.', confirmButtonColor:'#007aff'});
+  if (isManual && !manualFC) return Swal.fire({icon:'warning', title:'FC 선택', text:'직접 배정할 FC를 선택하세요.', confirmButtonColor:'#0066d6'});
 
   const d = {
     permDate: document.getElementById('i_permDate').value,
@@ -1492,7 +1496,7 @@ async function submitDB() {
     isManual: isManual,
     manualFC: manualFC
   };
-  if(!d.permDate || !d.assignDate || !d.customerName || !d.phone) return Swal.fire({icon:'warning', title:'필수 항목 누락', text:'퍼미션, 배분 날짜와 고객정보를 입력하세요.', confirmButtonColor:'#007aff'});
+  if(!d.permDate || !d.assignDate || !d.customerName || !d.phone) return Swal.fire({icon:'warning', title:'필수 항목 누락', text:'퍼미션, 배분 날짜와 고객정보를 입력하세요.', confirmButtonColor:'#0066d6'});
 
   showLoader('DB 등록 및 파일을 저장 중입니다...');
   try {
@@ -1502,7 +1506,7 @@ async function submitDB() {
       .withSuccessHandler(function(res) {
         const r = JSON.parse(res);
         if(r.success) {
-          Swal.fire({icon:'success', title:'DB 등록 완료', text: r.assignedFC ? r.assignedFC + ' FC에게 배정되었습니다.' : '적합한 수신 FC가 없습니다.', confirmButtonColor:'#007aff'});
+          Swal.fire({icon:'success', title:'DB 등록 완료', text: r.assignedFC ? r.assignedFC + ' FC에게 배정되었습니다.' : '적합한 수신 FC가 없습니다.', confirmButtonColor:'#0066d6'});
           ['i_name','i_birth','i_phone','i_address','i_premium','i_request','i_note','i_files'].forEach(id => {
              if(document.getElementById(id)) document.getElementById(id).value = '';
           });
@@ -1514,12 +1518,12 @@ async function submitDB() {
       })
       .withFailureHandler(function(error) {
         hideLoader();
-        Swal.fire({icon:'error', title:'서버 연결 실패', text: error.message, confirmButtonColor:'#007aff'});
+        Swal.fire({icon:'error', title:'서버 연결 실패', text: error.message, confirmButtonColor:'#0066d6'});
       })
       .saveDB(d, base64Files);
   } catch(e) {
      hideLoader();
-     Swal.fire({icon:'error', title:'파일 읽기 실패', text: '파일 처리 중 문제가 발생했습니다.', confirmButtonColor:'#007aff'});
+     Swal.fire({icon:'error', title:'파일 읽기 실패', text: '파일 처리 중 문제가 발생했습니다.', confirmButtonColor:'#0066d6'});
   }
 }
 
@@ -1636,7 +1640,7 @@ function renderBulkCards() {
     const av = d.parsedAvail || '무관';
     const avSel = availArr.map(a => '<option value="' + a + '" ' + (a===av?'selected':'') + '>' + a + '</option>').join('');
     return '<div class="bulk-card">' +
-      '<div class="bulk-head"><span>#' + (i+1) + '</span><span style="font-size:11px;color:var(--tx-sub);">' + esc(d.customerName||'이름?') + ' / ' + esc(d.phone||'번호?') + '</span></div>' +
+      '<div class="bulk-head"><span>#' + (i+1) + '</span><span style="font-size:12px;color:var(--tx-sub);">' + esc(d.customerName||'이름?') + ' / ' + esc(d.phone||'번호?') + '</span></div>' +
       '<div class="bulk-grid2">' +
         '<div><div class="fl">고객명</div><input id="bk_name_' + i + '" class="inp inp-sm" value="' + esc(d.customerName) + '"></div>' +
         '<div><div class="fl">전화번호</div><input id="bk_phone_' + i + '" class="inp inp-sm" value="' + esc(d.phone) + '"></div>' +
@@ -1678,7 +1682,7 @@ function setAllFC() {
     showCancelButton: true,
     confirmButtonText: '전체 적용',
     cancelButtonText: '취소',
-    confirmButtonColor: '#007aff'
+    confirmButtonColor: '#0066d6'
   }).then(res => {
     if (res.isConfirmed && res.value) {
       parsedBulkData.forEach((_, i) => {
@@ -1741,7 +1745,7 @@ async function submitBulkDB() {
       .withSuccessHandler(function(res) {
         const r = JSON.parse(res);
         if(r.success) {
-          Swal.fire({icon:'success', title:'대량 등록 완료', text: r.count + '건이 등록 및 배정되었습니다.', confirmButtonColor:'#34c759'});
+          Swal.fire({icon:'success', title:'대량 등록 완료', text: r.count + '건이 등록 및 배정되었습니다.', confirmButtonColor:'#1a7f37'});
           document.getElementById('b_rawData').value = '';
           document.getElementById('b_isManual').checked = false;
           document.getElementById('bulkAllocRows').innerHTML = '';
@@ -1752,18 +1756,18 @@ async function submitBulkDB() {
           loadData('목록을 갱신 중입니다...');
         } else {
           hideLoader();
-          Swal.fire({icon:'error', title:'등록 실패', text: r.error, confirmButtonColor:'#007aff'});
+          Swal.fire({icon:'error', title:'등록 실패', text: r.error, confirmButtonColor:'#0066d6'});
         }
       })
       .withFailureHandler(function(error) {
         hideLoader();
-        Swal.fire({icon:'error', title:'서버 연결 실패', text: error.message, confirmButtonColor:'#007aff'});
+        Swal.fire({icon:'error', title:'서버 연결 실패', text: error.message, confirmButtonColor:'#0066d6'});
       })
       .saveBulkDB(finalData, { assignDate: assignDate, dbType: dbType });
 
   } catch(e) {
     hideLoader();
-    Swal.fire({icon:'error', title:'파일 처리 실패', text: '파일을 준비하는 중 문제가 발생했습니다.', confirmButtonColor:'#007aff'});
+    Swal.fire({icon:'error', title:'파일 처리 실패', text: '파일을 준비하는 중 문제가 발생했습니다.', confirmButtonColor:'#0066d6'});
   }
 }
 
@@ -1820,7 +1824,7 @@ async function submitEditDB() {
       .updateDB(curEditDBId, d, base64Files);
   } catch(e) {
      hideLoader();
-     Swal.fire({icon:'error', title:'파일 읽기 실패', text: '파일 처리 중 문제가 발생했습니다.', confirmButtonColor:'#007aff'});
+     Swal.fire({icon:'error', title:'파일 읽기 실패', text: '파일 처리 중 문제가 발생했습니다.', confirmButtonColor:'#0066d6'});
   }
 }
 
@@ -1833,7 +1837,7 @@ function deleteDB(id) {
     var _d = DB_LIST.find(function(x){ return x.id === id; });
     Swal.fire({ icon: 'warning', title: (_d ? esc(_d.customerName) + ' DB를 삭제할까요?' : 'DB를 삭제할까요?'),
       html: '<div style="font-size:14px;line-height:1.55;word-break:keep-all;">' + (_d ? esc(_d.dbType) + ' · ' + esc(_d.assignedFC || '미배정') + '<br>' : '') + '삭제하면 되돌릴 수 없습니다.</div>',
-      showCancelButton: true, confirmButtonText: '삭제', cancelButtonText: '취소', focusCancel: true, reverseButtons: true, confirmButtonColor: '#ff3b30'
+      showCancelButton: true, confirmButtonText: '삭제', cancelButtonText: '취소', focusCancel: true, reverseButtons: true, confirmButtonColor: '#d70015'
     }).then(function(r){
       if (!r.isConfirmed) return;
       showLoader('삭제 처리 중입니다...');
@@ -1873,13 +1877,13 @@ function addContractField(data) {
          '<div style="font-size:13px; font-weight:800; color:var(--blue);">📝 청약 ' + (idx+1) + '</div>' +
          '<button type="button" onclick="this.parentElement.parentElement.remove()" style="background:transparent; border:none; color:var(--red); font-weight:700; font-size:12px; cursor:pointer;">삭제</button>' +
       '</div>' +
-      '<div style="margin-bottom:8px;"><div class="fl" style="font-size:11px;">청약일자</div><input type="date" class="inp c-date" value="' + (data.date || '') + '" style="padding:8px; font-size:13px;"></div>' +
-      '<div style="margin-bottom:8px;"><div class="fl" style="font-size:11px;">계약자명</div><input type="text" class="inp c-name" placeholder="홍길동" value="' + (data.name || '') + '" style="padding:8px; font-size:13px;"></div>' +
+      '<div style="margin-bottom:8px;"><div class="fl" style="font-size:12px;">청약일자</div><input type="date" class="inp c-date" value="' + (data.date || '') + '" style="padding:8px; font-size:13px;"></div>' +
+      '<div style="margin-bottom:8px;"><div class="fl" style="font-size:12px;">계약자명</div><input type="text" class="inp c-name" placeholder="홍길동" value="' + (data.name || '') + '" style="padding:8px; font-size:13px;"></div>' +
       '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">' +
-         '<div><div class="fl" style="font-size:11px;">보험사</div><input type="text" class="inp c-comp" placeholder="삼성생명" value="' + (data.comp || '') + '" style="padding:8px; font-size:13px;"></div>' +
-         '<div><div class="fl" style="font-size:11px;">상품명</div><input type="text" class="inp c-prod" placeholder="종신" value="' + (data.prod || '') + '" style="padding:8px; font-size:13px;"></div>' +
+         '<div><div class="fl" style="font-size:12px;">보험사</div><input type="text" class="inp c-comp" placeholder="삼성생명" value="' + (data.comp || '') + '" style="padding:8px; font-size:13px;"></div>' +
+         '<div><div class="fl" style="font-size:12px;">상품명</div><input type="text" class="inp c-prod" placeholder="종신" value="' + (data.prod || '') + '" style="padding:8px; font-size:13px;"></div>' +
       '</div>' +
-      '<div><div class="fl" style="font-size:11px;">월 보험료 (원)</div><input type="number" class="inp c-prem" placeholder="숫자만 입력" value="' + (data.prem || '') + '" style="padding:8px; font-size:13px;"></div>';
+      '<div><div class="fl" style="font-size:12px;">월 보험료 (원)</div><input type="number" class="inp c-prem" placeholder="숫자만 입력" value="' + (data.prem || '') + '" style="padding:8px; font-size:13px;"></div>';
   container.appendChild(div);
 }
 
@@ -1889,7 +1893,7 @@ function closeResult(force) {
   if (force !== true && RES_DIRTY) {
     Swal.fire({ icon: 'warning', title: '입력한 내용이 저장되지 않았어요', text: '닫으면 지금까지 입력한 내용이 사라집니다.',
       showCancelButton: true, confirmButtonText: '닫기', cancelButtonText: '계속 입력', focusCancel: true, reverseButtons: true,
-      confirmButtonColor: '#ff3b30' }).then(function(r){ if (r.isConfirmed) { RES_DIRTY = false; m.style.display = 'none'; } });
+      confirmButtonColor: '#d70015' }).then(function(r){ if (r.isConfirmed) { RES_DIRTY = false; m.style.display = 'none'; } });
     return;
   }
   RES_DIRTY = false; m.style.display = 'none';
@@ -1975,7 +1979,7 @@ function toggleResFields() {
 async function submitResult() {
   const checked = document.querySelector('input[name="resType"]:checked');
   const type = checked ? checked.value : null;
-  if(!type) return Swal.fire({icon:'warning', title:'결과를 선택하세요', confirmButtonColor:'#007aff'});
+  if(!type) return Swal.fire({icon:'warning', title:'결과를 선택하세요', confirmButtonColor:'#0066d6'});
 
   const details = { otherNote: document.getElementById('r_otherNote').value, contracts: [] };
   var _prev = (DB_LIST.find(function(x){ return x.id === curDBId; }) || {}).details || {};
@@ -1986,7 +1990,7 @@ async function submitResult() {
     details.meetings = Array.prototype.map.call(_mItems, function(el){ return { date: el.querySelector('.m-date').value, time: el.querySelector('.m-time').value, note: el.querySelector('.m-note').value, result: el.querySelector('.m-result').value }; })
       .filter(function(m){ return m.date || m.time || m.note || m.result; });
   } else if (_prev.meetings) details.meetings = _prev.meetings;
-  if (type === 'AP' && !(details.meetings || []).some(function(m){ return m.date; })) return Swal.fire({icon:'warning', title:'미팅 날짜를 입력하세요', confirmButtonColor:'#007aff'});
+  if (type === 'AP' && !(details.meetings || []).some(function(m){ return m.date; })) return Swal.fire({icon:'warning', title:'미팅 날짜를 입력하세요', confirmButtonColor:'#0066d6'});
   
   if (type === '청약체결' || type === '청약') {
     const items = document.querySelectorAll('.contract-item');
@@ -2017,24 +2021,24 @@ async function submitResult() {
           };
           if (type === '재통화') {
             google.script.run
-              .withSuccessHandler(function(r2){ var j; try { j = JSON.parse(r2); } catch(e) { j = {}; } if (j.success) _done(); else { hideLoader(); Swal.fire({icon:'error', title:'재통화 저장 실패', text: (j.error || '') + ' (Apps Script 최신 버전 배포 필요)', confirmButtonColor:'#007aff'}); } })
-              .withFailureHandler(function(e){ hideLoader(); Swal.fire({icon:'error', title:'재통화 저장 실패', text: e.message, confirmButtonColor:'#007aff'}); })
+              .withSuccessHandler(function(r2){ var j; try { j = JSON.parse(r2); } catch(e) { j = {}; } if (j.success) _done(); else { hideLoader(); Swal.fire({icon:'error', title:'재통화 저장 실패', text: (j.error || '') + ' (Apps Script 최신 버전 배포 필요)', confirmButtonColor:'#0066d6'}); } })
+              .withFailureHandler(function(e){ hideLoader(); Swal.fire({icon:'error', title:'재통화 저장 실패', text: e.message, confirmButtonColor:'#0066d6'}); })
               .setDBStatus(curDBId, '재통화');
           } else _done();
         } else {
           hideLoader();
-          Swal.fire({icon:'error', title:'저장 실패', text: r.error, confirmButtonColor:'#007aff'});
+          Swal.fire({icon:'error', title:'저장 실패', text: r.error, confirmButtonColor:'#0066d6'});
         }
       })
       .withFailureHandler(function(error) {
         hideLoader();
-        Swal.fire({icon:'error', title:'서버 연결 실패', text: '파일 용량이 너무 크거나 연결이 불안정합니다.', confirmButtonColor:'#007aff'});
+        Swal.fire({icon:'error', title:'서버 연결 실패', text: '파일 용량이 너무 크거나 연결이 불안정합니다.', confirmButtonColor:'#0066d6'});
       })
       .saveResultWithFiles(curDBId, { result: (type === '재통화' ? 'TA완료' : type), details: details }, base64Files);
 
   } catch (e) {
     hideLoader();
-    Swal.fire({icon:'error', title:'파일 읽기 실패', text: '파일을 처리하는 중 문제가 발생했습니다.', confirmButtonColor:'#007aff'});
+    Swal.fire({icon:'error', title:'파일 읽기 실패', text: '파일을 처리하는 중 문제가 발생했습니다.', confirmButtonColor:'#0066d6'});
   }
 }
 
@@ -2045,7 +2049,7 @@ function openCommission(dbId, current) {
     inputValue: current || '',
     inputLabel: '이 청약 건의 수수료(원)',
     inputPlaceholder: '숫자만 입력',
-    showCancelButton: true, confirmButtonText: '저장', cancelButtonText: '취소', confirmButtonColor: '#007aff'
+    showCancelButton: true, confirmButtonText: '저장', cancelButtonText: '취소', confirmButtonColor: '#0066d6'
   }).then(function (res) {
     if (!res.isConfirmed) return;
     showLoader('수수료 저장 중...');
@@ -2124,7 +2128,7 @@ function renderStatPeriod() {
     '<span style="font-weight:800;">~</span>' +
     '<input type="date" id="statTo" class="inp" value="' + STAT_TO + '" onchange="statPeriodChange()" style="flex:1;min-width:120px;padding:6px 8px;font-size:13px;margin:0;">' +
     (on ? '<button onclick="statPeriodReset()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;font-weight:800;white-space:nowrap;">초기화</button>' : '') +
-    '</div>' + (on ? '<div class="no-cap" style="font-size:11px;font-weight:700;color:var(--blue);margin:-6px 0 10px 4px;">선택한 기간에 배분받은 DB만 집계 중 (월 선택보다 우선)</div>' : '');
+    '</div>' + (on ? '<div class="no-cap" style="font-size:12px;font-weight:700;color:var(--blue);margin:-6px 0 10px 4px;">선택한 기간에 배분받은 DB만 집계 중 (월 선택보다 우선)</div>' : '');
 }
 function loadStats() {
   renderStatPeriod();
@@ -2163,9 +2167,9 @@ function loadStats() {
               lines +
             '</div>' +
             '<div style="text-align:right; margin-left:10px; flex-shrink:0;">' +
-              '<div style="font-size:11px; font-weight:700; color:var(--tx-sub);">' + commLabel + '</div>' +
+              '<div style="font-size:12px; font-weight:700; color:var(--tx-sub);">' + commLabel + '</div>' +
               '<div style="font-size:18px; font-weight:900; color:var(--red);">' + shownComm.toLocaleString() + '원</div>' +
-              '<div style="font-size:11px; color:var(--tx-sub);">보험료 ' + premSum.toLocaleString() + '원</div>' +
+              '<div style="font-size:12px; color:var(--tx-sub);">보험료 ' + premSum.toLocaleString() + '원</div>' +
             '</div>' +
           '</div>' + adminBtn +
         '</div>';
@@ -2235,12 +2239,12 @@ function loadStats() {
           '<div onclick="showStatList(\'' + fc + '\',\'total\',\'총 배정\')" style="cursor:pointer; font-size:13px; font-weight:700; color:var(--blue); background:#e5f0ff; padding:4px 10px; border-radius:12px; text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:2px;">총 배정: ' + d.total + '건</div>' +
         '</div>' +
         taProgressHtml(fc, d) +
-        '<div class="no-cap" style="font-size:11px;color:var(--tx-sub);font-weight:700;margin-bottom:8px;">👆 항목을 누르면 해당 DB 목록을 볼 수 있어요</div>' +
+        '<div class="no-cap" style="font-size:12px;color:var(--tx-sub);font-weight:700;margin-bottom:8px;">👆 항목을 누르면 해당 DB 목록을 볼 수 있어요</div>' +
         '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; text-align:center; margin-bottom:12px;">' +
-          '<div onclick="showStatList(\'' + fc + '\',\'ta\',\'TA완료\')" style="cursor:pointer; background:#f5f5f7; padding:10px; border-radius:12px;"><div style="font-size:11px; font-weight:700; color:var(--tx-sub);">TA</div><div class="stat-num" style="font-size:16px; font-weight:900;">' + d.ta + '</div></div>' +
-          '<div onclick="showStatList(\'' + fc + '\',\'ap\',\'미팅\')" style="cursor:pointer; background:#e5f0ff; padding:10px; border-radius:12px;"><div style="font-size:11px; font-weight:700; color:var(--blue);">미팅</div><div class="stat-num" style="font-size:16px; font-weight:900; color:var(--blue);">' + d.ap + '</div></div>' +
-          '<div onclick="showStatList(\'' + fc + '\',\'cp\',\'청약예정\')" style="cursor:pointer; background:#fff7ed; padding:10px; border-radius:12px;"><div style="font-size:11px; font-weight:700; color:#c2410c;">청약예정</div><div class="stat-num" style="font-size:16px; font-weight:900; color:#c2410c;">' + d.cp + '</div></div>' +
-          '<div onclick="showStatList(\'' + fc + '\',\'contract\',\'청약\')" style="cursor:pointer; background:#e8f8ec; padding:10px; border-radius:12px;"><div style="font-size:11px; font-weight:700; color:var(--green);">청약</div><div class="stat-num" style="font-size:16px; font-weight:900; color:var(--green);">' + d.contract + '</div></div>' +
+          '<div onclick="showStatList(\'' + fc + '\',\'ta\',\'TA완료\')" style="cursor:pointer; background:#f5f5f7; padding:10px; border-radius:12px;"><div style="font-size:12px; font-weight:700; color:var(--tx-sub);">TA</div><div class="stat-num" style="font-size:16px; font-weight:900;">' + d.ta + '</div></div>' +
+          '<div onclick="showStatList(\'' + fc + '\',\'ap\',\'미팅\')" style="cursor:pointer; background:#e5f0ff; padding:10px; border-radius:12px;"><div style="font-size:12px; font-weight:700; color:var(--blue);">미팅</div><div class="stat-num" style="font-size:16px; font-weight:900; color:var(--blue);">' + d.ap + '</div></div>' +
+          '<div onclick="showStatList(\'' + fc + '\',\'cp\',\'청약예정\')" style="cursor:pointer; background:#fff7ed; padding:10px; border-radius:12px;"><div style="font-size:12px; font-weight:700; color:#c2410c;">청약예정</div><div class="stat-num" style="font-size:16px; font-weight:900; color:#c2410c;">' + d.cp + '</div></div>' +
+          '<div onclick="showStatList(\'' + fc + '\',\'contract\',\'청약\')" style="cursor:pointer; background:#e8f8ec; padding:10px; border-radius:12px;"><div style="font-size:12px; font-weight:700; color:var(--green);">청약</div><div class="stat-num" style="font-size:16px; font-weight:900; color:var(--green);">' + d.contract + '</div></div>' +
         '</div>' +
         '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; text-align:center;">' +
           '<div onclick="showStatList(\'' + fc + '\',\'absent\',\'부재\')" style="cursor:pointer; background:#fff2f2; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:var(--red); white-space:nowrap;">부재</div><div class="stat-num" style="font-size:14px; font-weight:800; color:var(--red);">' + d.absent + '</div></div>' +
@@ -2318,7 +2322,7 @@ function renderBatches(d) {
         '<div style="font-size:15px;font-weight:900;">' + c.dbType + ' <span style="color:var(--blue);">' + c.qty + '개</span></div></div>' +
         '<div style="text-align:right;"><span class="badge b-done">신청완료</span>' +
         '<div style="font-size:15px;font-weight:900;color:var(--red);margin-top:4px;">' + (c.amount||0).toLocaleString() + '원</div>' +
-        '<button onclick="cancelClaim(' + c.id + ')" class="btn btn-ghost" style="margin-top:6px;padding:4px 10px;font-size:11px;color:var(--red);border-color:#ffcccc;">신청 취소</button>' +
+        '<button onclick="cancelClaim(' + c.id + ')" class="btn btn-ghost" style="margin-top:6px;padding:4px 10px;font-size:12px;color:var(--red);border-color:#ffcccc;">신청 취소</button>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -2360,7 +2364,7 @@ function applyBatch(i) {
   if (!qty || qty < 1) return Swal.fire('수량 확인', '신청 수량을 1개 이상 입력하세요.', 'warning');
   if (qty > x.remaining) return Swal.fire('수량 초과', '잔여 수량(' + x.remaining + '개)보다 많이 신청할 수 없습니다.', 'warning');
   if (MY_CLAIM_QTY + qty > 50) return Swal.fire('신청 제한', '인당 최대 50건까지만 신청할 수 있습니다. (현재 ' + MY_CLAIM_QTY + '건)', 'warning');
-  Swal.fire({ title: 'DB 신청', text: x.dbType + ' ' + qty + '개를 신청하시겠습니까?', icon: 'question', showCancelButton: true, confirmButtonText: '신청', cancelButtonText: '취소', confirmButtonColor: '#007aff' }).then(function (res) {
+  Swal.fire({ title: 'DB 신청', text: x.dbType + ' ' + qty + '개를 신청하시겠습니까?', icon: 'question', showCancelButton: true, confirmButtonText: '신청', cancelButtonText: '취소', confirmButtonColor: '#0066d6' }).then(function (res) {
     if (!res.isConfirmed) return;
     showLoader('신청 처리 중...');
     google.script.run
@@ -2376,7 +2380,7 @@ function applyBatch(i) {
 }
 
 function cancelClaim(claimId) {
-  Swal.fire({ title: '신청 취소', text: '이 신청을 취소하시겠습니까? (잔여 수량이 복구됩니다)', icon: 'warning', showCancelButton: true, confirmButtonText: '신청 취소', cancelButtonText: '닫기', confirmButtonColor: '#ff3b30' }).then(function (res) {
+  Swal.fire({ title: '신청 취소', text: '이 신청을 취소하시겠습니까? (잔여 수량이 복구됩니다)', icon: 'warning', showCancelButton: true, confirmButtonText: '신청 취소', cancelButtonText: '닫기', confirmButtonColor: '#d70015' }).then(function (res) {
     if (!res.isConfirmed) return;
     showLoader('취소 처리 중...');
     google.script.run
@@ -2556,7 +2560,7 @@ function luvmomCard(d, i, fcOpts) {
   }).join('');
   return '<div class="bulk-card">' +
     '<div class="bulk-head"><span>#' + (i+1) + ' <span class="badge" style="background:#fdf2f8;color:#be185d;border:1px solid #fbcfe8;">럽맘</span></span>' +
-    '<span style="font-size:11px;color:var(--tx-sub);">' + esc(d.customerName||'이름?') + ' / ' + esc(d.phone||'번호?') + '</span></div>' +
+    '<span style="font-size:12px;color:var(--tx-sub);">' + esc(d.customerName||'이름?') + ' / ' + esc(d.phone||'번호?') + '</span></div>' +
     '<div class="bulk-grid2" style="margin-bottom:8px;">' + cells + '</div>' +
     '<div class="row1"><div class="fl" style="color:var(--blue);">담당 FC 배정 (DB별 개별 지정)</div><select id="bk_fc_' + i + '" class="inp inp-sm inp-arrow bulk-fc">' + fcOpts + '</select></div>' +
     '<div class="drop-zone" style="margin-top:12px; padding:12px;" id="dz_bulk_' + i + '" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, \'bk_files_' + i + '\', \'msg_bulk_' + i + '\')" onclick="document.getElementById(\'bk_files_' + i + '\').click()">' +
@@ -2663,7 +2667,7 @@ function quickAssign(dbId) {
   bulkAssignees().forEach(function (f) { opts[f] = f; });
   var staged = STAGED[dbId];
   Swal.fire({ title: 'FC 배정', text: '선택만 해 두고, 모두 고른 뒤 한꺼번에 저장돼요.', input: 'select', inputOptions: opts, inputValue: staged || '', inputPlaceholder: 'FC를 선택하세요',
-    showCancelButton: true, showDenyButton: !!staged, denyButtonText: '배정 예정 취소', confirmButtonText: '선택', cancelButtonText: '닫기', confirmButtonColor: '#007aff',
+    showCancelButton: true, showDenyButton: !!staged, denyButtonText: '배정 예정 취소', confirmButtonText: '선택', cancelButtonText: '닫기', confirmButtonColor: '#0066d6',
     inputValidator: function (v) { return v ? undefined : 'FC를 선택하세요'; } }).then(function (res) {
     if (res.isDenied) delete STAGED[dbId];
     else if (res.isConfirmed) STAGED[dbId] = res.value;
@@ -2683,7 +2687,7 @@ function updateStageBar() {
   bar.style.display = 'flex';
   bar.innerHTML = '<div style="flex:1;font-size:13px;font-weight:800;">📌 배정 예정 ' + n + '건 <span style="font-weight:600;opacity:.7;">(아직 저장 전)</span></div>' +
     '<button onclick="clearStaged()" style="border:1px solid rgba(255,255,255,.4);background:none;color:#fff;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:800;cursor:pointer;">취소</button>' +
-    '<button onclick="saveStaged()" style="border:none;background:#007aff;color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:900;cursor:pointer;">💾 한꺼번에 저장</button>';
+    '<button onclick="saveStaged()" style="border:none;background:#0066d6;color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:900;cursor:pointer;">💾 한꺼번에 저장</button>';
 }
 function clearStaged() { STAGED = {}; renderList(); }
 function saveStaged() {
@@ -2692,14 +2696,14 @@ function saveStaged() {
   var fcs = Object.keys(byFC);
   if (!fcs.length) return;
   var summary = fcs.map(function (f) { return f + ' ' + byFC[f].length + '건'; }).join(', ');
-  Swal.fire({ title: '배정 저장', text: summary + ' — 저장할까요?', icon: 'question', showCancelButton: true, confirmButtonText: '저장', cancelButtonText: '취소', confirmButtonColor: '#007aff' }).then(function (r) {
+  Swal.fire({ title: '배정 저장', text: summary + ' — 저장할까요?', icon: 'question', showCancelButton: true, confirmButtonText: '저장', cancelButtonText: '취소', confirmButtonColor: '#0066d6' }).then(function (r) {
     if (!r.isConfirmed) return;
     showLoader('배정 저장 중...');
     var total = 0, fail = [];
     (function next(i) {
       if (i >= fcs.length) {
         hideLoader();
-        if (fail.length) Swal.fire({ icon: 'warning', title: total + '건 저장, 일부 실패', text: fail.join(' / ') + ' (실패한 건은 배정 예정으로 남아 있어요)', confirmButtonColor: '#007aff' });
+        if (fail.length) Swal.fire({ icon: 'warning', title: total + '건 저장, 일부 실패', text: fail.join(' / ') + ' (실패한 건은 배정 예정으로 남아 있어요)', confirmButtonColor: '#0066d6' });
         else Swal.fire({ icon: 'success', title: total + '건 배정을 저장했어요', timer: 1600, showConfirmButton: false });
         loadData('갱신 중...');
         return;
@@ -2728,7 +2732,7 @@ function updateAcceptAll() {
 function acceptAllMine() {
   var list = pendingForMe();
   if (!list.length) return;
-  Swal.fire({ title: '일괄 수락', text: '수락 대기 중인 DB ' + list.length + '건을 모두 수락할까요?', icon: 'question', showCancelButton: true, confirmButtonText: '모두 수락', cancelButtonText: '취소', confirmButtonColor: '#007aff' }).then(function (r) {
+  Swal.fire({ title: '일괄 수락', text: '수락 대기 중인 DB ' + list.length + '건을 모두 수락할까요?', icon: 'question', showCancelButton: true, confirmButtonText: '모두 수락', cancelButtonText: '취소', confirmButtonColor: '#0066d6' }).then(function (r) {
     if (!r.isConfirmed) return;
     showLoader('일괄 수락 중입니다...');
     function done(n) { hideLoader(); Swal.fire({ icon: 'success', title: n + '건을 수락했어요', timer: 1500, showConfirmButton: false }); loadData('데이터를 최신화 중입니다...'); }
@@ -2756,14 +2760,14 @@ function taProgressHtml(fc, d) {
   var waiting = d.unassigned;
   var inProg = Math.max(noTA - waiting, 0);
   var badge = noTA > 0
-    ? '<span style="background:#ff3b30;color:#fff;font-size:12px;font-weight:900;padding:4px 10px;border-radius:20px;white-space:nowrap;">TA 미입력 ' + noTA + '건</span>'
+    ? '<span style="background:#d70015;color:#fff;font-size:12px;font-weight:900;padding:4px 10px;border-radius:20px;white-space:nowrap;">TA 미입력 ' + noTA + '건</span>'
     : '<span style="background:#e8f8ec;color:var(--green);font-size:12px;font-weight:900;padding:4px 10px;border-radius:20px;white-space:nowrap;">TA 모두 완료 ✓</span>';
   return '<div onclick="showStatList(' + jstr(fc) + ',\'noTA\',\'TA 미입력\')" style="cursor:pointer;background:' + (noTA > 0 ? '#fff7f7' : '#f6fbf7') + ';border:1px solid ' + (noTA > 0 ? '#ffd0d0' : '#cceadd') + ';border-radius:12px;padding:12px;margin-bottom:12px;">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
       '<div style="font-size:13px;font-weight:800;">TA 진행 <span style="color:var(--blue);">' + d.ta + '</span> / ' + d.total + '건 <span style="color:var(--tx-sub);font-weight:700;">(' + pct + '%)</span></div>' + badge +
     '</div>' +
     '<div style="height:10px;background:#ffe1e1;border-radius:6px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:var(--green);border-radius:6px;"></div></div>' +
-    (noTA > 0 ? '<div style="font-size:11px;font-weight:700;color:var(--tx-sub);margin-top:6px;">수락 후 결과 미입력 ' + inProg + '건 · 미수락 ' + waiting + '건</div>' : '') +
+    (noTA > 0 ? '<div style="font-size:12px;font-weight:700;color:var(--tx-sub);margin-top:6px;">수락 후 결과 미입력 ' + inProg + '건 · 미수락 ' + waiting + '건</div>' : '') +
   '</div>';
 }
 
@@ -2793,11 +2797,11 @@ function renderStatsExtras(monthList, fcMap) {
           return '<div onclick="showStatList(' + jstr(r.fc) + ',\'noTA\',\'TA 미입력\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--border);">' +
             '<div style="width:64px;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + r.fc + '</div>' +
             '<div style="flex:1;height:10px;background:#ffe1e1;border-radius:6px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:var(--green);"></div></div>' +
-            '<div style="width:46px;text-align:right;font-size:11px;font-weight:700;color:var(--tx-sub);">' + r.ta + '/' + r.total + '</div>' +
+            '<div style="width:46px;text-align:right;font-size:12px;font-weight:700;color:var(--tx-sub);">' + r.ta + '/' + r.total + '</div>' +
             '<div style="width:62px;text-align:right;font-size:13px;font-weight:900;color:' + (r.no > 0 ? 'var(--red)' : 'var(--green)') + ';">' + (r.no > 0 ? '미입력 ' + r.no : '완료 ✓') + '</div>' +
           '</div>';
         }).join('') +
-        '<div style="font-size:11px;color:var(--tx-sub);font-weight:600;margin-top:8px;">초록 막대 = TA(결과) 입력 완료 비율 · 미입력이 많은 순</div>' +
+        '<div style="font-size:12px;color:var(--tx-sub);font-weight:600;margin-top:8px;">초록 막대 = TA(결과) 입력 완료 비율 · 미입력이 많은 순</div>' +
       '</div>' : '';
     } else gap.innerHTML = '';
   }
@@ -2877,7 +2881,7 @@ function typeStatCard(t, m) {
       '<span style="color:var(--blue);">미팅률 ' + meet + '%</span>' +
       '<span style="color:var(--green);">청약률 ' + con + '%</span>' +
     '</div>' +
-    (mr.adj ? '<div class="no-cap" style="font-size:11px;font-weight:700;color:var(--tx-sub);margin-top:8px;">※ 미팅률 = (미팅+청약예정+청약+청약거절) ÷ (TA완료 − 부재·결번·미팅거절·기타) = ' + mr.hit + ' ÷ ' + mr.base + '</div>' : '') +
+    (mr.adj ? '<div class="no-cap" style="font-size:12px;font-weight:700;color:var(--tx-sub);margin-top:8px;">※ 미팅률 = (미팅+청약예정+청약+청약거절) ÷ (TA완료 − 부재·결번·미팅거절·기타) = ' + mr.hit + ' ÷ ' + mr.base + '</div>' : '') +
   '</div>';
 }
 // ----- 캡처용 표 리포트 -----
@@ -2985,7 +2989,7 @@ function buildReportEl() {
     '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid ' + NAVY + ';padding-bottom:12px;">' +
       '<div><div style="font-size:24px;font-weight:900;color:' + NAVY + ';letter-spacing:-0.5px;">헤리티지 금융지사 DB영업 통계</div>' +
       '<div style="font-size:13px;font-weight:700;color:#64748b;margin-top:4px;">집계 기간 ' + periodTxt + ' · 대상 ' + esc(STAT_TYPE === 'all' ? '전체 DB' : STAT_TYPE) + '</div>' + distTxt + '</div>' +
-      '<div style="text-align:right;font-size:13px;font-weight:800;color:' + NAVY + ';">' + stamp + '<div style="font-size:11px;font-weight:600;color:#94a3b8;">기준으로 산출했습니다.</div></div>' +
+      '<div style="text-align:right;font-size:13px;font-weight:800;color:' + NAVY + ';">' + stamp + '<div style="font-size:12px;font-weight:600;color:#94a3b8;">기준으로 산출했습니다.</div></div>' +
     '</div>' +
     '<div style="display:flex;gap:8px;margin-top:16px;">' +
       kpi('총 DB', s.total, NAVY) + kpi('TA완료', s.ta, BLUE) + kpi('TA미입력', s.assigned - s.ta, (s.assigned - s.ta) > 0 ? RED : GREEN) +
@@ -2995,7 +2999,7 @@ function buildReportEl() {
     table('FC별 TA 현황 (미입력 많은 순)', 'FC', d.fcRows, d.fcRows.length > 1 ? s : null) +
     (s.noFC ? '<div style="font-size:12px;font-weight:700;color:#64748b;margin-top:10px;">※ 미배정 DB ' + s.noFC + '건은 배정 수에서 제외 · TA율 = TA완료 ÷ 배정 · 미팅률 = 미팅 ÷ TA완료 · 재통화는 TA완료에 포함</div>'
             : '<div style="font-size:12px;font-weight:700;color:#64748b;margin-top:10px;">※ TA율 = TA완료 ÷ 배정 · 미팅률 = 미팅 ÷ TA완료 · 재통화는 TA완료에 포함</div>') +
-    '<div style="text-align:right;font-size:11px;font-weight:700;color:#94a3b8;margin-top:14px;">Heritage DB System · 데이터 PRO</div>';
+    '<div style="text-align:right;font-size:12px;font-weight:700;color:#94a3b8;margin-top:14px;">Heritage DB System · 데이터 PRO</div>';
   return el;
 }
 
@@ -3017,8 +3021,8 @@ function captureStats() {
       var url = URL.createObjectURL(blob);
       Swal.fire({
         title: 'DB영업 통계 이미지', imageUrl: url, imageAlt: '통계 이미지', width: 600,
-        showConfirmButton: canShare, confirmButtonText: '📤 공유하기', confirmButtonColor: '#007aff',
-        showDenyButton: true, denyButtonText: '💾 저장하기', denyButtonColor: '#34c759',
+        showConfirmButton: canShare, confirmButtonText: '📤 공유하기', confirmButtonColor: '#0066d6',
+        showDenyButton: true, denyButtonText: '💾 저장하기', denyButtonColor: '#1a7f37',
         showCancelButton: true, cancelButtonText: '닫기'
       }).then(function(res){
         if (res.isConfirmed) navigator.share({ files: [file], title: '헤리티지 금융지사 DB영업 통계' }).catch(function(){});
@@ -3117,14 +3121,14 @@ function openStatusChange(id) {
   var opts = (db.assignedFC ? ['배정대기'] : []).concat(STATUS_OPTIONS.filter(function(v){ return db.assignedFC || v !== '재통화'; }));
   function btn(v) {
     var on = v === cur;
-    var color = /부재|결번|거절|청약없음/.test(v) ? 'var(--red)' : (v === '청약체결' ? 'var(--green)' : (v === '청약예정' ? '#ea580c' : 'var(--blue)'));
+    var color = /부재|결번|거절|청약없음/.test(v) ? 'var(--red)' : (v === '청약체결' ? 'var(--green)' : (v === '청약예정' ? '#c2410c' : 'var(--blue)'));
     return '<button type="button" onclick="applyStatusChange(\'' + id + '\',\'' + v + '\')" style="outline:none;padding:12px 4px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;border:2px solid ' + (on ? color : 'rgba(0,0,0,0.12)') + ';background:' + (on ? '#f0f7ff' : '#fff') + ';color:' + (on ? color : 'var(--tx-main)') + ';">' + rlabel(v) + (on ? ' ✓' : '') + '</button>';
   }
   Swal.fire({
     title: '진행상태 변경',
     html: '<div style="font-size:13px;font-weight:700;color:var(--tx-sub);margin-bottom:12px;">' + esc(db.assignedFC || '미배정') + ' · ' + esc(db.dbType) + ' · <strong style="color:var(--tx-main);">' + esc(db.customerName) + '</strong><br>현재: <strong style="color:var(--blue);">' + esc(rlabel(cur || '-')) + '</strong></div>' +
           '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' + opts.map(btn).join('') + '</div>' +
-          '<div style="font-size:11px;color:var(--tx-sub);font-weight:600;margin-top:10px;">청약체결을 고르면 계약 정보 입력 창이 열립니다. FC가 입력한 TA 내용은 그대로 유지됩니다.</div>',
+          '<div style="font-size:12px;color:var(--tx-sub);font-weight:600;margin-top:10px;">청약체결을 고르면 계약 정보 입력 창이 열립니다. FC가 입력한 TA 내용은 그대로 유지됩니다.</div>',
     showConfirmButton: false, showCancelButton: true, cancelButtonText: '닫기'
   });
 }
@@ -3144,7 +3148,7 @@ function applyStatusChange(id, val) {
   function ok() {
     var canUndo = cur && (cur === '배정대기' || STATUS_OPTIONS.indexOf(cur) >= 0) && cur !== '청약체결';
     Swal.fire({ icon: 'success', title: esc(db.customerName) + ' → ' + esc(rlabel(val)), timer: canUndo ? 6000 : 1500, timerProgressBar: canUndo,
-      showConfirmButton: canUndo, confirmButtonText: '되돌리기 (' + esc(rlabel(cur || '')) + ')', showCancelButton: canUndo, cancelButtonText: '확인', reverseButtons: true, confirmButtonColor: '#007aff'
+      showConfirmButton: canUndo, confirmButtonText: '되돌리기 (' + esc(rlabel(cur || '')) + ')', showCancelButton: canUndo, cancelButtonText: '확인', reverseButtons: true, confirmButtonColor: '#0066d6'
     }).then(function(r){ if (r.isConfirmed && canUndo) setTimeout(function(){ applyStatusChange(id, cur); }, 150); });
     refreshKeepPage();
   }
@@ -3213,7 +3217,7 @@ function cardPickCustomer() {
   var list = DB_LIST.filter(function (db) {
     return String(db.dbType || '').indexOf('럽맘') >= 0 && db.phone && (admin || db.assignedFC === ME.name);
   }).sort(function (a, b) { return String(b.assignDate || '').localeCompare(String(a.assignDate || '')) || String(a.customerName || '').localeCompare(String(b.customerName || ''), 'ko'); });
-  if (!list.length) return Swal.fire({ icon: 'info', title: '보낼 고객이 없어요', text: '연락처가 있는 럽맘 DB가 없습니다.', confirmButtonColor: '#007aff' });
+  if (!list.length) return Swal.fire({ icon: 'info', title: '보낼 고객이 없어요', text: '연락처가 있는 럽맘 DB가 없습니다.', confirmButtonColor: '#0066d6' });
   Swal.fire({
     title: '📤 보낼 고객 선택',
     html: '<input id="cardQ" class="inp" placeholder="이름·번호 검색" style="margin-bottom:10px;">' +
@@ -3229,7 +3233,7 @@ function cardPickCustomer() {
         box.innerHTML = rows.map(function (db) {
           return '<div data-id="' + esc(db.id) + '" style="padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
             '<div><div style="font-weight:900;font-size:15px;">' + esc(db.customerName) + '</div><div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + esc(db.phone) + (admin && db.assignedFC ? ' · ' + esc(db.assignedFC) : '') + '</div></div>' +
-            '<div style="font-size:11px;font-weight:800;color:var(--tx-sub);white-space:nowrap;">' + esc(db.assignDate || '') + '</div></div>';
+            '<div style="font-size:12px;font-weight:800;color:var(--tx-sub);white-space:nowrap;">' + esc(db.assignDate || '') + '</div></div>';
         }).join('') || '<div style="text-align:center;color:var(--tx-sub);padding:20px;font-weight:700;">검색 결과가 없습니다.</div>';
       }
       draw();
@@ -3247,7 +3251,7 @@ function cardPickCustomer() {
 }
 function cardFilesReady(d) {
   hideLoader();
-  if (d.error || !d.files) return Swal.fire({ icon: 'error', title: '이미지 생성 실패', text: d.error || '다시 시도해 주세요.', confirmButtonColor: '#007aff' });
+  if (d.error || !d.files) return Swal.fire({ icon: 'error', title: '이미지 생성 실패', text: d.error || '다시 시도해 주세요.', confirmButtonColor: '#0066d6' });
   var t = CARD_TARGET || {}, nm = t.customerName || '';
   CARD_FILES = d.files.map(function (f) { return new File([f.blob], f.filename, { type: 'image/png' }); });
   CARD_TEXT = String(d.text || '').replace('안녕하세요, 고객님.', '안녕하세요, ' + nm + ' 고객님.');
@@ -3257,7 +3261,7 @@ function cardFilesReady(d) {
           '<b style="color:var(--blue);">공유하기</b>에서 카카오톡/문자를 고르면 이미지와 문구가 함께 담깁니다. (문구는 자동 복사돼요)</div>',
     showDenyButton: true, showCancelButton: true,
     confirmButtonText: '📤 이미지+문구 공유 (카톡·문자)', denyButtonText: '💬 문자 앱으로 문구만', cancelButtonText: '닫기',
-    confirmButtonColor: '#007aff', denyButtonColor: '#34c759',
+    confirmButtonColor: '#0066d6', denyButtonColor: '#1a7f37',
     preConfirm: function () { cardShare(); return false; },
     preDeny: function () { cardSms(); return false; }
   });
@@ -3276,7 +3280,7 @@ function cardSaveFiles() {
       document.body.appendChild(a); a.click(); a.remove();
     }, i * 400);
   });
-  Swal.fire({ icon: 'info', title: '이미지를 저장했어요', text: '이 기기에서는 바로 공유가 안 돼요. 저장된 이미지를 카카오톡/문자에 첨부하고, 복사된 문구를 붙여넣어 보내 주세요.', confirmButtonColor: '#007aff' });
+  Swal.fire({ icon: 'info', title: '이미지를 저장했어요', text: '이 기기에서는 바로 공유가 안 돼요. 저장된 이미지를 카카오톡/문자에 첨부하고, 복사된 문구를 붙여넣어 보내 주세요.', confirmButtonColor: '#0066d6' });
 }
 function cardSms() {
   cardCopy();
@@ -3316,15 +3320,15 @@ function showBirthTargets() {
   openStatListModal('🍼 출산 후 접촉 대상', birthTargets());
 }
 function sendBirthMail() {
-  Swal.fire({ title: '알림 메일 발송', text: '아직 알림을 보내지 않은 대상의 담당 FC에게 메일을 보낼까요?', icon: 'question', showCancelButton: true, confirmButtonText: '발송', cancelButtonText: '취소', confirmButtonColor: '#007aff' }).then(function (r) {
+  Swal.fire({ title: '알림 메일 발송', text: '아직 알림을 보내지 않은 대상의 담당 FC에게 메일을 보낼까요?', icon: 'question', showCancelButton: true, confirmButtonText: '발송', cancelButtonText: '취소', confirmButtonColor: '#0066d6' }).then(function (r) {
     if (!r.isConfirmed) return;
     showLoader('발송 중...');
     callApi('sendBirthReminders', {}).then(function (res) {
       hideLoader();
       var j = {}; try { j = JSON.parse(res); } catch (e) {}
-      if (j.success) Swal.fire({ icon: 'success', title: j.dbCount ? (j.count + '명의 FC에게 ' + j.dbCount + '건 알림 발송') : '새로 보낼 알림이 없어요', text: j.dbCount ? '' : '이미 발송했거나 이메일이 등록되지 않은 FC입니다.', confirmButtonColor: '#007aff' });
-      else Swal.fire({ icon: 'error', title: '발송 실패', text: j.error || '', confirmButtonColor: '#007aff' });
-    }).catch(function (err) { hideLoader(); Swal.fire({ icon: 'error', title: '발송 실패', text: 'Apps Script(code.gs) 최신 버전 배포가 필요합니다. ' + err.message, confirmButtonColor: '#007aff' }); });
+      if (j.success) Swal.fire({ icon: 'success', title: j.dbCount ? (j.count + '명의 FC에게 ' + j.dbCount + '건 알림 발송') : '새로 보낼 알림이 없어요', text: j.dbCount ? '' : '이미 발송했거나 이메일이 등록되지 않은 FC입니다.', confirmButtonColor: '#0066d6' });
+      else Swal.fire({ icon: 'error', title: '발송 실패', text: j.error || '', confirmButtonColor: '#0066d6' });
+    }).catch(function (err) { hideLoader(); Swal.fire({ icon: 'error', title: '발송 실패', text: 'Apps Script(code.gs) 최신 버전 배포가 필요합니다. ' + err.message, confirmButtonColor: '#0066d6' }); });
   });
 }
 
@@ -3385,8 +3389,8 @@ function shareCanvas(canvas, name, title) {
     var url = URL.createObjectURL(blob);
     Swal.fire({
       title: title, imageUrl: url, imageAlt: title, width: 600,
-      showConfirmButton: canShare, confirmButtonText: '📤 카톡 등으로 공유', confirmButtonColor: '#007aff',
-      showDenyButton: true, denyButtonText: '💾 사진 저장', denyButtonColor: '#34c759',
+      showConfirmButton: canShare, confirmButtonText: '📤 카톡 등으로 공유', confirmButtonColor: '#0066d6',
+      showDenyButton: true, denyButtonText: '💾 사진 저장', denyButtonColor: '#1a7f37',
       showCancelButton: true, cancelButtonText: '닫기'
     }).then(function(res){
       if (res.isConfirmed) navigator.share({ files: [file], title: title }).catch(function(){});
@@ -3427,11 +3431,11 @@ function addMeetingField(m) {
       '<button type="button" onclick="this.closest(\'.meeting-item\').remove(); renumberMeetings();" style="background:transparent;border:none;color:var(--red);font-weight:700;font-size:12px;cursor:pointer;">삭제</button>' +
     '</div>' +
     '<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:8px;margin-bottom:8px;">' +
-      '<div><div class="fl" style="font-size:11px;">미팅 날짜</div><input type="date" class="inp m-date" value="' + esc(m.date) + '" style="padding:8px;font-size:13px;"></div>' +
-      '<div><div class="fl" style="font-size:11px;">시간</div><input type="text" readonly class="inp m-time" value="' + esc(m.time) + '" placeholder="시간 선택" onclick="pickMeetTime(this)" style="padding:8px;font-size:13px;cursor:pointer;background:#fff;"></div>' +
+      '<div><div class="fl" style="font-size:12px;">미팅 날짜</div><input type="date" class="inp m-date" value="' + esc(m.date) + '" style="padding:8px;font-size:13px;"></div>' +
+      '<div><div class="fl" style="font-size:12px;">시간</div><input type="text" readonly class="inp m-time" value="' + esc(m.time) + '" placeholder="시간 선택" onclick="pickMeetTime(this)" style="padding:8px;font-size:13px;cursor:pointer;background:#fff;"></div>' +
     '</div>' +
-    '<div style="margin-bottom:8px;"><div class="fl" style="font-size:11px;">미팅 관련 메모</div><textarea class="inp m-note" rows="2" placeholder="장소·준비사항·상담 주제 등" style="padding:8px;font-size:13px;">' + esc(m.note) + '</textarea></div>' +
-    '<div><div class="fl" style="font-size:11px;color:var(--blue);">상담내용 및 결과</div><textarea class="inp m-result" rows="2" placeholder="미팅 후 결과를 입력하세요" style="padding:8px;font-size:13px;">' + esc(m.result) + '</textarea></div>';
+    '<div style="margin-bottom:8px;"><div class="fl" style="font-size:12px;">미팅 관련 메모</div><textarea class="inp m-note" rows="2" placeholder="장소·준비사항·상담 주제 등" style="padding:8px;font-size:13px;">' + esc(m.note) + '</textarea></div>' +
+    '<div><div class="fl" style="font-size:12px;color:var(--blue);">상담내용 및 결과</div><textarea class="inp m-result" rows="2" placeholder="미팅 후 결과를 입력하세요" style="padding:8px;font-size:13px;">' + esc(m.result) + '</textarea></div>';
   wrap.appendChild(div);
   renumberMeetings();
 }
@@ -3478,7 +3482,7 @@ function meetStateStyle(t) {
   if (/거절/.test(t)) return 'background:#fff2f2;color:#dc2626;border:1px solid #ffcccc;';
   if (t === '청약예정') return 'background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;';
   if (t === '청약체결') return 'background:#e8f8ec;color:#15803d;border:1px solid #bbf7d0;';
-  return 'background:#e5f0ff;color:#007aff;border:1px solid #cce0ff;';
+  return 'background:#e5f0ff;color:#0066d6;border:1px solid #cce0ff;';
 }
 function schedPick(day) {
   if (day === 'all') { SCHED_DAY = 'all'; SCHED_END = ''; SCHED_ARMED = false; }
@@ -3531,8 +3535,8 @@ function renderSchedule() {
   document.getElementById('schedScope').innerText = (ME.role === '관리자' || ME.role === '파트너' ? '전체 FC' : ME.name + ' FC') + ' · 이번 달 ' + inMonth.length + '건' + ((SCHED_FC || SCHED_NORES) ? ' (필터)' : '');
 
   var first = new Date(y, mo - 1, 1).getDay(), days = new Date(y, mo, 0).getDate();
-  var h = '<div style="text-align:center;font-size:16px;font-weight:900;margin-bottom:10px;">' + fmtMonth(curMonth) + '</div><div class="no-cap" style="text-align:center;font-size:11px;font-weight:700;color:var(--tx-sub);margin:-4px 0 8px;">시작일을 누르고 종료일을 누르면 기간 일정이 나와요</div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px;font-weight:800;margin-bottom:4px;">' +
+  var h = '<div style="text-align:center;font-size:16px;font-weight:900;margin-bottom:10px;">' + fmtMonth(curMonth) + '</div><div class="no-cap" style="text-align:center;font-size:12px;font-weight:700;color:var(--tx-sub);margin:-4px 0 8px;">시작일을 누르고 종료일을 누르면 기간 일정이 나와요</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:12px;font-weight:800;margin-bottom:4px;">' +
        ['일','월','화','수','목','금','토'].map(function(w, i){ return '<div style="color:' + (i === 0 ? 'var(--red)' : (i === 6 ? 'var(--blue)' : 'var(--tx-sub)')) + ';">' + w + '</div>'; }).join('') + '</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">';
   for (var i = 0; i < first; i++) h += '<div></div>';
@@ -3544,7 +3548,7 @@ function renderSchedule() {
     h += '<div onclick="schedPick(\'' + ds + '\')" style="cursor:pointer;min-height:52px;border-radius:10px;padding:5px 2px;text-align:center;' +
          'background:' + (sel ? 'var(--blue)' : (cnt ? '#f0f7ff' : '#fafafa')) + ';border:1px solid ' + (isToday && !sel ? 'var(--blue)' : 'transparent') + ';">' +
          '<div style="font-size:13px;font-weight:800;color:' + (sel ? '#fff' : (dow === 0 ? 'var(--red)' : (dow === 6 ? 'var(--blue)' : 'var(--tx-main)'))) + ';">' + d + '</div>' +
-         (cnt ? '<div style="margin-top:4px;display:inline-block;min-width:20px;padding:1px 6px;border-radius:10px;font-size:11px;font-weight:900;background:' + (sel ? '#fff' : 'var(--blue)') + ';color:' + (sel ? 'var(--blue)' : '#fff') + ';">' + cnt + '</div>' : '') +
+         (cnt ? '<div style="margin-top:4px;display:inline-block;min-width:20px;padding:1px 6px;border-radius:10px;font-size:12px;font-weight:900;background:' + (sel ? '#fff' : 'var(--blue)') + ';color:' + (sel ? 'var(--blue)' : '#fff') + ';">' + cnt + '</div>' : '') +
          '</div>';
   }
   h += '</div>';
@@ -3561,7 +3565,7 @@ function renderSchedule() {
     return '<div onclick="showMeetingDetail(\'' + e.db.id + '\',' + (e.n - 1) + ')" style="cursor:pointer;background:#fff;border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center;">' +
       '<div style="text-align:center;min-width:54px;"><div style="font-size:12px;font-weight:800;color:var(--tx-sub);">' + e.m.date.slice(5).replace('-', '/') + '</div><div style="font-size:16px;font-weight:900;color:var(--blue);">' + esc(e.m.time || '--:--') + '</div></div>' +
       '<div style="flex:1;min-width:0;">' +
-        '<div style="font-size:15px;font-weight:900;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' + esc(e.db.customerName) + ' <span style="font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;' + meetStateStyle(meetState(e)) + '">' + esc(meetState(e)) + '</span></div>' +
+        '<div style="font-size:15px;font-weight:900;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' + esc(e.db.customerName) + ' <span style="font-size:12px;font-weight:800;padding:2px 8px;border-radius:10px;' + meetStateStyle(meetState(e)) + '">' + esc(meetState(e)) + '</span></div>' +
         '<div style="font-size:12px;font-weight:700;color:var(--tx-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(e.db.assignedFC || '') + ' FC · ' + esc(e.db.dbType) + (e.m.note ? ' · ' + esc(e.m.note) : '') + '</div>' +
         (e.m.result ? '<div style="font-size:12px;font-weight:800;color:var(--green);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">✓ ' + esc(e.m.result) + '</div>' : '') +
       '</div>' +
@@ -3597,7 +3601,7 @@ function captureSchedule() {
   var fcTxt = (schedIsAdmin() && SCHED_FC) ? SCHED_FC + ' FC ' : '';
   var title = dateTxt + ' ' + fcTxt + dbName + ' 미팅 상세내용' + (SCHED_NORES ? ' (결과 미입력)' : '');
   var multiDay = isAll || isRange;
-  var th = 'padding:10px 8px;background:#007aff;color:#fff;font-size:14px;font-weight:800;text-align:center;border:1px solid #0066d6;white-space:nowrap;';
+  var th = 'padding:10px 8px;background:#0066d6;color:#fff;font-size:14px;font-weight:800;text-align:center;border:1px solid #0066d6;white-space:nowrap;';
   var td = 'padding:10px 8px;font-size:14px;font-weight:600;color:#1d1d1f;border:1px solid #e1e4ea;vertical-align:middle;';
   function stateOf(e) {
     var r = String(e.db.result || '');
@@ -3606,7 +3610,7 @@ function captureSchedule() {
     if (r === '청약' || r === '청약체결') return '청약체결';
     return meetState(e);
   }
-  function stateColor(e) { var t = stateOf(e); return /거절/.test(t) ? '#dc2626' : (t === '청약체결' ? '#16a34a' : (t === '청약예정' ? '#c2410c' : '#007aff')); }
+  function stateColor(e) { var t = stateOf(e); return /거절/.test(t) ? '#dc2626' : (t === '청약체결' ? '#16a34a' : (t === '청약예정' ? '#c2410c' : '#0066d6')); }
   var mdd = function(ds) { return ds ? String(ds).slice(5).replace('-', '/') : '-'; };
 
   function pageEl(list, pi) {
@@ -3615,7 +3619,7 @@ function captureSchedule() {
       var bg = i % 2 ? '#f6f9ff' : '#fff';
       return '<tr style="background:' + bg + ';">' +
         '<td style="' + td + 'text-align:center;color:#86868b;">' + (startNo + i + 1) + '</td>' +
-        '<td style="' + td + 'text-align:center;white-space:nowrap;line-height:1.5;">' + fd(e.m.date) + '<br><span style="font-weight:900;color:#007aff;">' + esc(e.m.time || '--:--') + '</span></td>' +
+        '<td style="' + td + 'text-align:center;white-space:nowrap;line-height:1.5;">' + fd(e.m.date) + '<br><span style="font-weight:900;color:#0066d6;">' + esc(e.m.time || '--:--') + '</span></td>' +
         '<td style="' + td + 'text-align:center;font-weight:900;white-space:nowrap;">' + esc(e.db.customerName) + '</td>' +
         '<td style="' + td + 'text-align:center;white-space:nowrap;">' + mdd(e.db.assignDate) + '</td>' +
         '<td style="' + td + 'text-align:center;white-space:nowrap;">' + esc(e.db.assignedFC || '-') + '</td>' +
@@ -3627,14 +3631,14 @@ function captureSchedule() {
     var el = document.createElement('div'); el.className = 'schedCanvas';
     el.style.cssText = 'position:fixed;left:-10000px;top:0;width:' + (multiDay || types.length > 1 ? 1040 : 920) + 'px;background:#fff;padding:28px;font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#1d1d1f;';
     el.innerHTML =
-      '<div style="border-bottom:3px solid #007aff;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;">' +
+      '<div style="border-bottom:3px solid #0066d6;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;">' +
         '<div><div style="font-size:26px;font-weight:900;letter-spacing:-.5px;">📅 ' + esc(title) + '</div>' +
         '<div style="font-size:13px;font-weight:700;color:#86868b;margin-top:4px;">' + (schedIsAdmin() ? (SCHED_FC ? esc(SCHED_FC) + ' FC' : '전체 FC') : esc(ME.name) + ' FC') + ' · 총 ' + items.length + '건' + (pages.length > 1 ? ' · ' + (pi + 1) + '/' + pages.length + ' 페이지' : '') + ' · 배분일·FC 순 정리</div></div>' +
-        '<div style="font-size:13px;font-weight:800;color:#007aff;">헤리티지 금융지사</div></div>' +
+        '<div style="font-size:13px;font-weight:800;color:#0066d6;">헤리티지 금융지사</div></div>' +
       '<table style="width:100%;border-collapse:collapse;table-layout:auto;"><thead><tr>' +
         '<th style="' + th + '">No</th><th style="' + th + '">미팅일시</th><th style="' + th + '">고객명</th><th style="' + th + '">배분일</th><th style="' + th + '">담당 FC</th><th style="' + th + '">진행상태</th>' +
         (types.length > 1 ? '<th style="' + th + '">DB종류</th>' : '') + '<th style="' + th + 'width:28%;">미팅 관련 메모</th><th style="' + th + 'width:28%;">상담내용 및 결과</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-      '<div style="text-align:right;font-size:11px;font-weight:700;color:#aeaeb2;margin-top:14px;">Heritage DB System · 데이터 PRO</div>';
+      '<div style="text-align:right;font-size:12px;font-weight:700;color:#aeaeb2;margin-top:14px;">Heritage DB System · 데이터 PRO</div>';
     document.body.appendChild(el);
     return el;
   }
@@ -3662,8 +3666,8 @@ function captureSchedule() {
       title: '미팅 상세내용 이미지' + (out.length > 1 ? ' (' + out.length + '장)' : ''),
       html: '<div style="max-height:60vh;overflow:auto;">' + out.map(function(o, i){ return '<img src="' + o.url + '" style="width:100%;border:1px solid #e1e4ea;border-radius:8px;margin-bottom:10px;" alt="' + (i + 1) + '">'; }).join('') + '</div>',
       width: 760,
-      showConfirmButton: canShare, confirmButtonText: '📤 공유하기', confirmButtonColor: '#007aff',
-      showDenyButton: true, denyButtonText: '💾 ' + (out.length > 1 ? '전체 저장' : '저장하기'), denyButtonColor: '#34c759',
+      showConfirmButton: canShare, confirmButtonText: '📤 공유하기', confirmButtonColor: '#0066d6',
+      showDenyButton: true, denyButtonText: '💾 ' + (out.length > 1 ? '전체 저장' : '저장하기'), denyButtonColor: '#1a7f37',
       showCancelButton: true, cancelButtonText: '닫기'
     }).then(function(res){
       if (res.isConfirmed) navigator.share({ files: files, title: title }).catch(function(){});
@@ -3695,7 +3699,7 @@ function showMeetingDetail(dbId, idx) {
       editBox +
       (others ? '<div style="margin-top:8px;font-size:12px;font-weight:800;">다른 미팅</div>' + others : '') +
     '</div>',
-    showConfirmButton: canEdit, confirmButtonText: '💾 저장', confirmButtonColor: '#007aff',
+    showConfirmButton: canEdit, confirmButtonText: '💾 저장', confirmButtonColor: '#0066d6',
     showDenyButton: canEdit, denyButtonText: '📝 전체 결과수정', denyButtonColor: '#6c757d',
     didOpen: function(){ if (document.activeElement) document.activeElement.blur(); },
     showCancelButton: true, cancelButtonText: '닫기',
@@ -3717,7 +3721,7 @@ function showMeetingDetail(dbId, idx) {
       db.details = details;
       hideLoader(); renderSchedule();
       Swal.fire({ icon: 'success', title: '저장되었습니다', timer: 1100, showConfirmButton: false });
-    }).catch(function(err){ hideLoader(); Swal.fire({ icon: 'error', title: '저장 실패', text: err.message || '', confirmButtonColor: '#007aff' }); });
+    }).catch(function(err){ hideLoader(); Swal.fire({ icon: 'error', title: '저장 실패', text: err.message || '', confirmButtonColor: '#0066d6' }); });
   });
 }
 
@@ -3739,10 +3743,36 @@ function pickMeetTime(input) {
               '<option value="30"' + (cm === '30' ? ' selected' : '') + '>30분</option>' +
             '</select>' +
           '</div>',
-    showCancelButton: true, confirmButtonText: '확인', cancelButtonText: '취소', confirmButtonColor: '#007aff',
+    showCancelButton: true, confirmButtonText: '확인', cancelButtonText: '취소', confirmButtonColor: '#0066d6',
     preConfirm: function(){ return document.getElementById('mt_h').value + ':' + document.getElementById('mt_m').value; }
   }).then(function(r){ if (r.isConfirmed) { input.value = r.value; input.style.borderColor = 'var(--blue)'; input.style.color = 'var(--blue)'; } });
 }
+
+// 접근성: div/span onclick → 키보드로 조작 가능, 라벨 없는 입력칸에 이름 부여
+(function(){
+  var T = { BUTTON:1, A:1, INPUT:1, SELECT:1, TEXTAREA:1, LABEL:1 };
+  function fix(root) {
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll('[onclick]').forEach(function(el){
+      if (T[el.tagName] || el.hasAttribute('role') || el.closest('.swal2-container') === null && el.hasAttribute('data-noa11y')) return;
+      el.setAttribute('role', 'button'); if (!el.hasAttribute('tabindex')) el.tabIndex = 0;
+    });
+    root.querySelectorAll('input:not([type=hidden]):not([aria-label]), select:not([aria-label]), textarea:not([aria-label])').forEach(function(el){
+      if (el.id && document.querySelector('label[for="' + el.id + '"]')) return;
+      if (el.closest('label')) return;
+      var t = el.getAttribute('placeholder') || el.title;
+      if (!t) { var p = el.previousElementSibling; if (p && p.innerText && p.innerText.length < 30) t = p.innerText; }
+      if (!t) { var g = el.parentElement && el.parentElement.previousElementSibling; if (g && g.innerText && g.innerText.length < 30) t = g.innerText; }
+      if (t) el.setAttribute('aria-label', t.trim());
+    });
+  }
+  document.addEventListener('keydown', function(e){
+    if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.getAttribute && e.target.getAttribute('role') === 'button' && !T[e.target.tagName]) { e.preventDefault(); e.target.click(); }
+  });
+  var timer = null;
+  new MutationObserver(function(){ clearTimeout(timer); timer = setTimeout(function(){ fix(document.body); }, 150); }).observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener('DOMContentLoaded', function(){ fix(document.body); });
+})();
 </script>
 </body>
 </html>
