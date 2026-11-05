@@ -149,13 +149,13 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 .db-step { font-size:12px; font-weight: 800; padding: 5px 11px; border-radius: 20px; background: #f1f3f5; color: #9aa0a6; border: 1px solid transparent; }
 .db-step.s-done { background: #e5f0ff; color: var(--blue); }
 .db-step.s-now { background: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(0,122,255,0.3); }
-.db-step.s-fail { background: #fff2f2; color: var(--red); border-color: #ffcccc; }
+.db-step.s-fail { background: #f7eded; color: #8a3b3b; border-color: #e8d0d0; }
 .db-arrow { color: #c1c7cd; font-size: 14px; font-weight: 900; }
 
 .sl-item { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 8px; }
 .share-badge { background:#fff4e5; color:#c2410c; border:1px solid #fed7aa; }
 @media (max-width: 480px) {
-  .badge { font-size: 10px; padding: 3px 8px; }
+  .badge { font-size:12px; padding: 3px 8px; }
 }
 </style>
 </head>
@@ -218,8 +218,8 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     <div id="birthAlert"></div>
     <div id="acceptAllBar"></div>
     <div id="filterGrid" style="display:grid; gap:8px; margin-bottom:16px;">
-      <select id="dateSelect" class="inp inp-no-arrow" style="padding:16px; font-size:16px; font-weight:800; border-color:var(--blue); color:var(--blue); box-shadow:0 2px 8px rgba(0,122,255,0.15);" onchange="selectDate(this.value)"></select>
-      <select id="fcSelect" class="inp inp-no-arrow" style="display:none; padding:16px; font-size:16px; font-weight:800; border-color:var(--tx-main); color:var(--tx-main); box-shadow:0 2px 8px rgba(0,0,0,0.05);" onchange="selectFC(this.value)"></select>
+      <select id="dateSelect" aria-label="조회 월 선택" class="inp inp-no-arrow" style="padding:16px; font-size:16px; font-weight:800; border-color:var(--blue); color:var(--blue); box-shadow:0 2px 8px rgba(0,122,255,0.15);" onchange="selectDate(this.value)"></select>
+      <select id="fcSelect" aria-label="FC 선택" class="inp inp-no-arrow" style="display:none; padding:16px; font-size:16px; font-weight:800; border-color:var(--tx-main); color:var(--tx-main); box-shadow:0 2px 8px rgba(0,0,0,0.05);" onchange="selectFC(this.value)"></select>
       <input type="search" id="dbSearch" class="inp" placeholder="🔍 검색" autocomplete="off" oninput="dbSearchInput(this.value)" style="padding:16px 12px; font-size:15px; font-weight:700; min-width:0; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
     </div>
     
@@ -236,7 +236,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 
   <div id="pg-sched" role="main" aria-label="미팅 일정" style="display:none;padding:20px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="font-size:22px;font-weight:900;">미팅 일정</div>
+      <h1 style="font-size:22px;font-weight:900;margin:0;">미팅 일정</h1>
       <div style="display:flex;align-items:center;gap:8px;">
         <div id="schedScope" style="font-size:12px;font-weight:800;color:var(--tx-sub);"></div>
         <button onclick="captureSchedule()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;font-weight:800;color:var(--blue);border-color:var(--blue);white-space:nowrap;">📸 캡처</button>
@@ -249,7 +249,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 
   <div id="pg-apply" role="main" aria-label="DB 신청" style="display:none;padding:20px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div style="font-size:22px;font-weight:900;">DB 신청 <span style="font-size:12px;font-weight:700;color:var(--tx-sub);">(선착순 실시간)</span></div>
+      <h1 style="font-size:22px;font-weight:900;margin:0;">DB 신청 <span style="font-size:12px;font-weight:700;color:var(--tx-sub);">(선착순 실시간)</span></h1>
       <button onclick="loadBatches()" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;">🔄 새로고침</button>
     </div>
     <div id="batchArea"></div>
@@ -283,7 +283,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
   </div>
 
   <div id="pg-input" role="main" aria-label="DB 입력" style="display:none;padding:20px;">
-    <div style="font-size:22px;font-weight:900;margin-bottom:24px;">신규 DB 등록</div>
+    <h1 style="font-size:22px;font-weight:900;margin:0 0 24px;">신규 DB 등록</h1>
     
     <div class="tab-container">
       <button id="tabBtn_single" class="tab-btn active" onclick="toggleInputMode('single')">단건 직접 입력</button>
@@ -1278,9 +1278,9 @@ function renderList() {
     : renderData.map(db => {
         let badge = '<span class="badge b-wait">' + db.status + '</span>';
         if(db.status === '진행중') badge = '<span class="badge b-prog">진행중</span>';
-        if(db.status === '재통화') badge = '<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;">📞 재통화</span>';
+        if(db.status === '재통화') badge = '<span class="badge" style="background:#f1f2f4;color:#4b5563;border:1px solid #d8dbe0;">📞 재통화</span>';
         if(db.status === '결과완료') badge = resultBadge(db.result);
-        if(admin) badge = '<span data-stop="1" onclick="event.stopPropagation();openStatusChange(\'' + db.id + '\')" title="진행상태 변경" style="cursor:pointer;white-space:nowrap;">' + badge + '<span style="font-size:10px;color:var(--tx-sub);margin-left:2px;">▼</span></span>';
+        if(admin) badge = '<span data-stop="1" onclick="event.stopPropagation();openStatusChange(\'' + db.id + '\')" title="진행상태 변경" style="cursor:pointer;white-space:nowrap;">' + badge + '<span style="font-size:12px;color:var(--tx-sub);margin-left:2px;">▼</span></span>';
 
         const stepHtml = cardSteps(db);
 
@@ -1468,7 +1468,7 @@ function renderChart(dataList) {
     { label:'총 배정', val:t.assign, color:'#0066d6' },
     { label:'TA완료', val:t.ta_all, color:'#5ac8fa' },
     { label:'미팅', val:t.ap, color:'#0e7490' },
-    { label:'청약예정', val:t.cp, color:'#b45309' },
+    { label:'청약예정', val:t.cp, color:'#4338ca' },
     { label:'청약', val:t.contract, color:'#1a7f37' }
   ];
 
@@ -1494,20 +1494,20 @@ function renderChart(dataList) {
   html += '</div>';
 
   const chips = [
-    { label:'부재', val:t.absent, color:'#ffb300' },
-    { label:'재통화', val:t.recall, color:'#c2410c' },
-    { label:'결번', val:t.wrongNum, color:'#fd7e14' },
-    { label:'미팅거절', val:t.reject, color:'#dc3545' },
-    { label:'청약거절', val:t.cr, color:'#b91c1c' },
-    { label:'기타', val:t.other, color:'#6c757d' },
-    { label:'AS건', val:t.as, color:'#7c3aed' },
+    { label:'부재', val:t.absent, color:'#6b7280' },
+    { label:'재통화', val:t.recall, color:'#9ca3af' },
+    { label:'결번', val:t.wrongNum, color:'#4b5563' },
+    { label:'미팅거절', val:t.reject, color:'#b07070' },
+    { label:'청약거절', val:t.cr, color:'#8a3b3b' },
+    { label:'기타', val:t.other, color:'#9ca3af' },
+    { label:'AS건', val:t.as, color:'#6b7280' },
     { label:'배정대기', val:t.unassigned, color:'#9aa0a6' }
   ];
   
   html += '<div class="fn-chips">';
   chips.forEach(ch => {
     const activeStyle = (curResultFilter === ch.label) ? 'border-color:var(--blue); background:#e5f0ff;' : '';
-    const txtStyle = (ch.label === '배정대기') ? 'font-size:10px; letter-spacing:-0.5px; white-space:nowrap;' : 'white-space:nowrap;';
+    const txtStyle = (ch.label === '배정대기') ? 'font-size:12px; letter-spacing:-0.5px; white-space:nowrap;' : 'white-space:nowrap;';
     html += '<div class="fn-chip" style="cursor:pointer; transition:all 0.2s; padding:9px 2px; ' + activeStyle + '" onclick="toggleResultFilter(\'' + ch.label + '\')"><span class="fn-chip-dot" style="background:' + ch.color + ';"></span><span style="' + txtStyle + '">' + ch.label + '</span> <b data-count="' + ch.val + '">0</b></div>';
   });
   html += '</div></div>';
@@ -2209,7 +2209,7 @@ function loadStats() {
       var shownComm = Math.round(comm * commFactor);
       var commLabel = isAdmin ? '수수료' : ('수수료(' + Math.round(commFactor * 100) + '%)');
       var adminBtn = isAdmin ? '<button onclick="openCommission(\'' + db.id + '\',' + comm + ')" class="btn btn-ghost no-cap" style="margin-top:8px;padding:6px 10px;font-size:12px;border-color:var(--blue);color:var(--blue);">💵 수수료 입력</button>' : '';
-      return '<div style="background:#fff; border:1px solid var(--border); border-left:4px solid var(--blue); padding:16px; border-radius:12px; margin-bottom:8px;">' +
+      return '<div style="background:#fff; border:1px solid var(--border); padding:16px; border-radius:12px; margin-bottom:8px;">' +
           '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
             '<div style="flex:1; min-width:0;">' +
               '<div style="font-size:12px; font-weight:700; color:var(--tx-sub); margin-bottom:4px;">' + esc(db.assignDate || '') + ' | ' + esc(db.assignedFC) + ' FC</div>' +
@@ -2294,16 +2294,16 @@ function loadStats() {
         '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; text-align:center; margin-bottom:12px;">' +
           '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'ta\',\'TA완료\')" style="cursor:pointer; background:#f5f5f7; padding:10px; border-radius:12px;"><div style="font-size:12px; font-weight:700; color:var(--tx-sub);">TA</div><div class="stat-num" style="font-size:16px; font-weight:900;">' + d.ta + '</div></div>' +
           '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'ap\',\'미팅\')" style="cursor:pointer; background:#e5f0ff; padding:10px; border-radius:12px;"><div style="font-size:12px; font-weight:700; color:var(--blue);">미팅</div><div class="stat-num" style="font-size:16px; font-weight:900; color:var(--blue);">' + d.ap + '</div></div>' +
-          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'cp\',\'청약예정\')" style="cursor:pointer; background:#fff7ed; padding:10px; border-radius:12px;"><div style="font-size:12px; font-weight:700; color:#c2410c;">청약예정</div><div class="stat-num" style="font-size:16px; font-weight:900; color:#c2410c;">' + d.cp + '</div></div>' +
+          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'cp\',\'청약예정\')" style="cursor:pointer; background:#eef2ff; padding:10px; border-radius:12px;"><div style="font-size:12px; font-weight:700; color:#4338ca;">청약예정</div><div class="stat-num" style="font-size:16px; font-weight:900; color:#4338ca;">' + d.cp + '</div></div>' +
           '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'contract\',\'청약\')" style="cursor:pointer; background:#e8f8ec; padding:10px; border-radius:12px;"><div style="font-size:12px; font-weight:700; color:var(--green);">청약</div><div class="stat-num" style="font-size:16px; font-weight:900; color:var(--green);">' + d.contract + '</div></div>' +
         '</div>' +
         '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; text-align:center;">' +
-          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'absent\',\'부재\')" style="cursor:pointer; background:#fff2f2; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:var(--red); white-space:nowrap;">부재</div><div class="stat-num" style="font-size:14px; font-weight:800; color:var(--red);">' + d.absent + '</div></div>' +
-          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'recall\',\'재통화\')" style="cursor:pointer; background:#fff7ed; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:#c2410c; white-space:nowrap;">재통화</div><div class="stat-num" style="font-size:14px; font-weight:800; color:#c2410c;">' + d.recall + '</div></div>' +
-          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'wrongNum\',\'결번\')" style="cursor:pointer; background:#fff2f2; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:var(--red); white-space:nowrap;">결번</div><div class="stat-num" style="font-size:14px; font-weight:800; color:var(--red);">' + d.wrongNum + '</div></div>' +
-          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'reject\',\'미팅거절\')" style="cursor:pointer; background:#fff2f2; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:var(--red); white-space:nowrap;">미팅거절</div><div class="stat-num" style="font-size:14px; font-weight:800; color:var(--red);">' + d.reject + '</div></div>' +
-          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'cr\',\'청약거절\')" style="cursor:pointer; background:#fff2f2; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:#b91c1c; white-space:nowrap;">청약거절</div><div class="stat-num" style="font-size:14px; font-weight:800; color:#b91c1c;">' + d.cr + '</div></div>' +
-          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'other\',\'기타\')" style="cursor:pointer; background:#f5f5f7; padding:8px 4px; border-radius:10px;"><div style="font-size:10px; font-weight:700; color:var(--tx-sub); white-space:nowrap;">기타</div><div class="stat-num" style="font-size:14px; font-weight:800; color:var(--tx-main);">' + d.other + '</div></div>' +
+          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'absent\',\'부재\')" style="cursor:pointer; background:#f1f2f4; padding:8px 4px; border-radius:10px;"><div style="font-size:12px; font-weight:700; color:#4b5563; white-space:nowrap;">부재</div><div class="stat-num" style="font-size:14px; font-weight:800; color:#4b5563;">' + d.absent + '</div></div>' +
+          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'recall\',\'재통화\')" style="cursor:pointer; background:#f1f2f4; padding:8px 4px; border-radius:10px;"><div style="font-size:12px; font-weight:700; color:#4b5563; white-space:nowrap;">재통화</div><div class="stat-num" style="font-size:14px; font-weight:800; color:#4b5563;">' + d.recall + '</div></div>' +
+          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'wrongNum\',\'결번\')" style="cursor:pointer; background:#f1f2f4; padding:8px 4px; border-radius:10px;"><div style="font-size:12px; font-weight:700; color:#4b5563; white-space:nowrap;">결번</div><div class="stat-num" style="font-size:14px; font-weight:800; color:#4b5563;">' + d.wrongNum + '</div></div>' +
+          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'reject\',\'미팅거절\')" style="cursor:pointer; background:#f7eded; padding:8px 4px; border-radius:10px;"><div style="font-size:12px; font-weight:700; color:#8a3b3b; white-space:nowrap;">미팅거절</div><div class="stat-num" style="font-size:14px; font-weight:800; color:#8a3b3b;">' + d.reject + '</div></div>' +
+          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'cr\',\'청약거절\')" style="cursor:pointer; background:#f7eded; padding:8px 4px; border-radius:10px;"><div style="font-size:12px; font-weight:700; color:#8a3b3b; white-space:nowrap;">청약거절</div><div class="stat-num" style="font-size:14px; font-weight:800; color:#8a3b3b;">' + d.cr + '</div></div>' +
+          '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'other\',\'기타\')" style="cursor:pointer; background:#f5f5f7; padding:8px 4px; border-radius:10px;"><div style="font-size:12px; font-weight:700; color:var(--tx-sub); white-space:nowrap;">기타</div><div class="stat-num" style="font-size:14px; font-weight:800; color:var(--tx-main);">' + d.other + '</div></div>' +
         '</div>' +
         '<div style="display:flex; justify-content:space-evenly; gap:20px; margin-top:16px; padding-top:12px; border-top:1px dashed var(--border);">' +
            '<div style="font-size:14px; font-weight:800; color:var(--blue);">🤝 미팅률: ' + meetingRate + '%</div>' +
@@ -2368,7 +2368,7 @@ function renderBatches(d) {
     mhtml = '<div style="text-align:center;padding:20px;color:var(--tx-sub);font-weight:700;background:#fff;border-radius:12px;border:1px dashed var(--border);">아직 신청 내역이 없습니다.</div>';
   } else {
     mhtml = mc.map(function (c) {
-      return '<div style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--green);padding:14px;border-radius:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">' +
+      return '<div style="background:#fff;border:1px solid var(--border);padding:14px;border-radius:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">' +
         '<div><div style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + fmtMonth(c.month) + ' · ' + c.round + ' · ' + c.ts + '</div>' +
         '<div style="font-size:15px;font-weight:900;">' + c.dbType + ' <span style="color:var(--blue);">' + c.qty + '개</span></div></div>' +
         '<div style="text-align:right;"><span class="badge b-done">신청완료</span>' +
@@ -2397,7 +2397,7 @@ function renderBatches(d) {
     var ahtml = keys.length ? keys.map(function(fc){
       var g = byFc[fc];
       var lines = g.items.map(function(c){ return '<div style="font-size:12px;color:var(--tx-sub);font-weight:700;margin-top:2px;">· ' + fmtMonth(c.month) + ' ' + c.round + ' · ' + c.dbType + ' ' + c.qty + '개</div>'; }).join('');
-      return '<div onclick="openAssign(' + jstr(fc) + ')" style="background:#fff;border:1px solid var(--border);border-left:4px solid #7c3aed;border-radius:12px;padding:14px;margin-bottom:8px;cursor:pointer;">' +
+      return '<div onclick="openAssign(' + esc(jstr(fc)) + ')" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px;cursor:pointer;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<div style="font-size:15px;font-weight:900;">' + esc(fc) + ' <span style="font-size:12px;color:#7c3aed;font-weight:800;">신청 ' + g.qty + '건</span></div>' +
           '<span style="font-size:12px;font-weight:800;color:#7c3aed;border:1px solid #ddd6fe;background:#f5f3ff;border-radius:8px;padding:5px 10px;">DB 배분 ▶</span>' +
@@ -2811,13 +2811,13 @@ function taProgressHtml(fc, d) {
   var waiting = d.unassigned;
   var inProg = Math.max(noTA - waiting, 0);
   var badge = noTA > 0
-    ? '<span style="background:#d70015;color:#fff;font-size:12px;font-weight:900;padding:4px 10px;border-radius:20px;white-space:nowrap;">TA 미입력 ' + noTA + '건</span>'
+    ? '<span style="background:#b45309;color:#fff;font-size:12px;font-weight:900;padding:4px 10px;border-radius:20px;white-space:nowrap;">TA 미입력 ' + noTA + '건</span>'
     : '<span style="background:#e8f8ec;color:var(--green);font-size:12px;font-weight:900;padding:4px 10px;border-radius:20px;white-space:nowrap;">TA 모두 완료 ✓</span>';
-  return '<div onclick="showStatList(' + jstr(fc) + ',\'noTA\',\'TA 미입력\')" style="cursor:pointer;background:' + (noTA > 0 ? '#fff7f7' : '#f6fbf7') + ';border:1px solid ' + (noTA > 0 ? '#ffd0d0' : '#cceadd') + ';border-radius:12px;padding:12px;margin-bottom:12px;">' +
+  return '<div onclick="showStatList(' + esc(jstr(fc)) + ',\'noTA\',\'TA 미입력\')" style="cursor:pointer;background:' + (noTA > 0 ? '#fffaf0' : '#f6fbf7') + ';border:1px solid ' + (noTA > 0 ? '#f6d9a8' : '#cceadd') + ';border-radius:12px;padding:12px;margin-bottom:12px;">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
       '<div style="font-size:13px;font-weight:800;">TA 진행 <span style="color:var(--blue);">' + d.ta + '</span> / ' + d.total + '건 <span style="color:var(--tx-sub);font-weight:700;">(' + pct + '%)</span></div>' + badge +
     '</div>' +
-    '<div style="height:10px;background:#ffe1e1;border-radius:6px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:var(--green);border-radius:6px;"></div></div>' +
+    '<div style="height:10px;background:#f1e4cc;border-radius:6px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:var(--green);border-radius:6px;"></div></div>' +
     (noTA > 0 ? '<div style="font-size:12px;font-weight:700;color:var(--tx-sub);margin-top:6px;">수락 후 결과 미입력 ' + inProg + '건 · 미수락 ' + waiting + '건</div>' : '') +
   '</div>';
 }
@@ -2845,9 +2845,9 @@ function renderStatsExtras(monthList, fcMap) {
         '</div>' +
         rows.map(function(r){
           var pct = r.total ? Math.round(r.ta / r.total * 100) : 0;
-          return '<div onclick="showStatList(' + jstr(r.fc) + ',\'noTA\',\'TA 미입력\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--border);">' +
+          return '<div onclick="showStatList(' + esc(jstr(r.fc)) + ',\'noTA\',\'TA 미입력\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--border);">' +
             '<div style="width:64px;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(r.fc) + '</div>' +
-            '<div style="flex:1;height:10px;background:#ffe1e1;border-radius:6px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:var(--green);"></div></div>' +
+            '<div style="flex:1;height:10px;background:#f1e4cc;border-radius:6px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:var(--green);"></div></div>' +
             '<div style="width:46px;text-align:right;font-size:12px;font-weight:700;color:var(--tx-sub);">' + r.ta + '/' + r.total + '</div>' +
             '<div style="width:62px;text-align:right;font-size:13px;font-weight:900;color:' + (r.no > 0 ? '#b45309' : 'var(--green)') + ';">' + (r.no > 0 ? '미입력 ' + r.no : '완료 ✓') + '</div>' +
           '</div>';
@@ -2912,7 +2912,7 @@ function typeStatCard(t, m) {
   var mr = meetRateOf(m, t), meet = mr.pct.toFixed(1);
   var con = assigned ? (m.contract / assigned * 100).toFixed(1) : '0.0';
   function cell(label, val, color, key) {
-    return '<div onclick="showTypeStatList(\'' + key + '\',\'' + label + '\')" style="cursor:pointer;background:#f5f5f7;border-radius:10px;padding:8px 2px;text-align:center;"><div style="font-size:10px;font-weight:700;color:var(--tx-sub);white-space:nowrap;">' + label + '</div><div class="stat-num" style="font-size:15px;font-weight:900;color:' + (color || 'var(--tx-main)') + ';">' + val + '</div></div>';
+    return '<div onclick="showTypeStatList(\'' + key + '\',\'' + label + '\')" style="cursor:pointer;background:#f5f5f7;border-radius:10px;padding:8px 2px;text-align:center;"><div style="font-size:12px;font-weight:700;color:var(--tx-sub);white-space:nowrap;">' + label + '</div><div class="stat-num" style="font-size:15px;font-weight:900;color:' + (color || 'var(--tx-main)') + ';">' + val + '</div></div>';
   }
   return '<div class="card">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
@@ -2924,10 +2924,10 @@ function typeStatCard(t, m) {
       '</div>' +
     '</div>' +
     '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px;">' +
-      cell('TA완료', m.ta, 'var(--blue)', 'ta') + cell('TA미입력', noTA, noTA > 0 ? '#b45309' : 'var(--green)', 'noTA') + cell('미팅', m.ap, 'var(--blue)', 'ap') + cell('청약예정', m.cp || 0, '#c2410c', 'cp') + cell('청약', m.contract, 'var(--green)', 'contract') +
+      cell('TA완료', m.ta, 'var(--blue)', 'ta') + cell('TA미입력', noTA, noTA > 0 ? '#b45309' : 'var(--green)', 'noTA') + cell('미팅', m.ap, 'var(--blue)', 'ap') + cell('청약예정', m.cp || 0, '#4338ca', 'cp') + cell('청약', m.contract, 'var(--green)', 'contract') +
     '</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:10px;">' + cell('부재', m.absent || 0, 'var(--red)', 'absent') + cell('재통화', m.recall || 0, '#c2410c', 'recall') + cell('결번', m.wrongNum || 0, 'var(--red)', 'wrongNum') + cell('미팅거절', m.reject || 0, 'var(--red)', 'reject') + cell('청약거절', m.cr || 0, '#b91c1c', 'cr') + cell('기타', m.other || 0, 'var(--tx-main)', 'other') + ((m.as || 0) ? cell('AS건', m.as, '#7c3aed', 'as') : '') + '</div>' +
-    '<div style="height:8px;background:#ffe1e1;border-radius:6px;overflow:hidden;margin-bottom:8px;"><div style="height:100%;width:' + taPct + '%;background:var(--green);"></div></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:10px;">' + cell('부재', m.absent || 0, '#4b5563', 'absent') + cell('재통화', m.recall || 0, '#4b5563', 'recall') + cell('결번', m.wrongNum || 0, '#4b5563', 'wrongNum') + cell('미팅거절', m.reject || 0, '#8a3b3b', 'reject') + cell('청약거절', m.cr || 0, '#8a3b3b', 'cr') + cell('기타', m.other || 0, 'var(--tx-main)', 'other') + ((m.as || 0) ? cell('AS건', m.as, '#4b5563', 'as') : '') + '</div>' +
+    '<div style="height:8px;background:#e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:8px;"><div style="height:100%;width:' + taPct + '%;background:var(--green);"></div></div>' +
     '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;">' +
       '<span style="color:var(--tx-sub);">TA율 ' + taPct + '%</span>' +
       '<span style="color:var(--blue);">미팅률 ' + meet + '%</span>' +
@@ -2982,7 +2982,7 @@ function buildReportEl() {
   var now = new Date();
   var wk = ['일', '월', '화', '수', '목', '금', '토'][now.getDay()];
   var stamp = now.getFullYear() + '년 ' + (now.getMonth() + 1) + '월 ' + now.getDate() + '일(' + wk + ') ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-  var NAVY = '#14213d', BLUE = '#1d4ed8', RED = '#dc2626', GREEN = '#16a34a', ORANGE = '#c2410c', LINE = '#e5e7eb';
+  var NAVY = '#14213d', BLUE = '#1d4ed8', RED = '#8a3b3b', GREEN = '#15803d', ORANGE = '#4338ca', GRAY = '#4b5563', LINE = '#e5e7eb';
   var th = 'padding:10px 6px;font-size:13px;font-weight:800;color:#fff;background:' + NAVY + ';text-align:center;white-space:nowrap;';
   var td = 'padding:9px 6px;font-size:14px;font-weight:700;text-align:center;border-bottom:1px solid ' + LINE + ';white-space:nowrap;';
   function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
@@ -2998,15 +2998,15 @@ function buildReportEl() {
       '<td style="' + td + 'text-align:left;padding-left:12px;font-weight:900;color:' + NAVY + ';">' + esc(name) + '</td>' +
       '<td style="' + td + w + '">' + m.assigned + '</td>' +
       '<td style="' + td + w + 'color:' + BLUE + ';">' + m.ta + '</td>' +
-      '<td style="' + td + 'font-weight:900;color:' + (no > 0 ? RED : GREEN) + ';">' + no + '</td>' +
+      '<td style="' + td + 'font-weight:900;color:' + (no > 0 ? '#b45309' : GREEN) + ';">' + no + '</td>' +
       '<td style="' + td + '">' + bar(pct(m.ta, m.assigned)) + '</td>' +
       '<td style="' + td + 'font-weight:900;color:' + BLUE + ';">' + Math.round(meetRateOf(m, rtype).pct) + '%</td>' +
       '<td style="' + td + w + 'color:' + BLUE + ';">' + m.ap + '</td>' +
       '<td style="' + td + w + 'color:' + ORANGE + ';">' + m.cp + '</td>' +
       '<td style="' + td + w + 'color:' + GREEN + ';">' + m.contract + '</td>' +
-      '<td style="' + td + w + 'color:' + ORANGE + ';">' + m.recall + '</td>' +
-      '<td style="' + td + w + 'color:' + RED + ';">' + m.absent + '</td>' +
-      '<td style="' + td + w + 'color:' + RED + ';">' + m.wrongNum + '</td>' +
+      '<td style="' + td + w + 'color:' + GRAY + ';">' + m.recall + '</td>' +
+      '<td style="' + td + w + 'color:' + GRAY + ';">' + m.absent + '</td>' +
+      '<td style="' + td + w + 'color:' + GRAY + ';">' + m.wrongNum + '</td>' +
       '<td style="' + td + w + 'color:' + RED + ';">' + m.reject + '</td>' +
       '<td style="' + td + w + 'color:' + RED + ';">' + m.cr + '</td>' +
       '<td style="' + td + w + 'color:#64748b;">' + m.other + '</td>' +
@@ -3015,7 +3015,7 @@ function buildReportEl() {
   function table(title, firstCol, rows, sum) {
     if (!rows.length) return '';
     return '<div style="margin-top:22px;">' +
-      '<div style="font-size:16px;font-weight:900;color:' + NAVY + ';margin-bottom:8px;padding-left:8px;border-left:4px solid ' + BLUE + ';">' + title + '</div>' +
+      '<div style="font-size:16px;font-weight:900;color:' + NAVY + ';margin-bottom:8px;">' + title + '</div>' +
       '<table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid ' + LINE + ';">' +
         '<thead><tr>' +
           '<th style="' + th + 'text-align:left;padding-left:12px;">' + firstCol + '</th><th style="' + th + '">배정</th><th style="' + th + '">TA완료</th><th style="' + th + '">TA미입력</th><th style="' + th + '">TA율</th><th style="' + th + '">미팅률</th>' +
@@ -3045,7 +3045,7 @@ function buildReportEl() {
       '<div style="text-align:right;font-size:13px;font-weight:800;color:' + NAVY + ';">' + stamp + '<div style="font-size:12px;font-weight:600;color:#94a3b8;">기준으로 산출했습니다.</div></div>' +
     '</div>' +
     '<div style="display:flex;gap:8px;margin-top:16px;">' +
-      kpi('총 DB', s.total, NAVY) + kpi('TA완료', s.ta, BLUE) + kpi('TA미입력', s.assigned - s.ta, (s.assigned - s.ta) > 0 ? RED : GREEN) +
+      kpi('총 DB', s.total, NAVY) + kpi('TA완료', s.ta, BLUE) + kpi('TA미입력', s.assigned - s.ta, (s.assigned - s.ta) > 0 ? '#b45309' : GREEN) +
       kpi('TA율', pct(s.ta, s.assigned) + '%', BLUE) + kpi('미팅률', Math.round(meetRateOf(s, STAT_TYPE).pct) + '%', BLUE) + kpi('미팅', s.ap, BLUE) + kpi('청약예정', s.cp, ORANGE) + kpi('청약', s.contract, GREEN) +
     '</div>' +
     table('DB종류별 현황', 'DB종류', d.typeRows, d.typeRows.length > 1 ? s : null) +
@@ -3118,7 +3118,7 @@ function openStatListModal(title, list) {
     body.innerHTML = list.map(db => {
       var _lbl = db.status === '결과완료' ? rlabel(db.result) : db.status;
       var resultBadge = _lbl ? '<span class="badge ' + (db.status === '결과완료' ? 'b-done' : 'b-prog') + '" style="margin-left:4px;">' + _lbl + '</span>' : '';
-      if (ME.role === '관리자' && _lbl) resultBadge = '<span onclick="openStatusChange(\'' + db.id + '\')" title="진행상태 변경" style="cursor:pointer;white-space:nowrap;">' + resultBadge + '<span style="font-size:10px;color:var(--tx-sub);margin-left:2px;">▼</span></span>';
+      if (ME.role === '관리자' && _lbl) resultBadge = '<span onclick="openStatusChange(\'' + db.id + '\')" title="진행상태 변경" style="cursor:pointer;white-space:nowrap;">' + resultBadge + '<span style="font-size:12px;color:var(--tx-sub);margin-left:2px;">▼</span></span>';
       return '<div class="sl-item">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
             '<div style="font-size:15px;font-weight:900;">' + esc(db.customerName) + ' <span style="font-size:12px;color:var(--tx-sub);font-weight:700;">' + esc(db.birth||'') + '</span></div>' +
@@ -3175,7 +3175,7 @@ function openStatusChange(id) {
   var opts = (db.assignedFC ? ['배정대기'] : []).concat(STATUS_OPTIONS.filter(function(v){ return db.assignedFC || v !== '재통화'; }));
   function btn(v) {
     var on = v === cur;
-    var color = /부재|결번|거절|청약없음/.test(v) ? 'var(--red)' : (v === '청약체결' ? 'var(--green)' : (v === '청약예정' ? '#c2410c' : 'var(--blue)'));
+    var color = /부재|결번|재통화|^AS$/.test(v) ? '#4b5563' : (/거절|청약없음/.test(v) ? '#8a3b3b' : (v === '청약체결' ? 'var(--green)' : (v === '청약예정' ? '#4338ca' : (v === '배정대기' ? '#b45309' : 'var(--blue)'))));
     return '<button type="button" onclick="applyStatusChange(\'' + id + '\',\'' + v + '\')" style="outline:none;padding:12px 4px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;border:2px solid ' + (on ? color : 'rgba(0,0,0,0.12)') + ';background:' + (on ? '#f0f7ff' : '#fff') + ';color:' + (on ? color : 'var(--tx-main)') + ';">' + rlabel(v) + (on ? ' ✓' : '') + '</button>';
   }
   Swal.fire({
@@ -3410,10 +3410,11 @@ function rcat(result) {
 function resultBadge(result) {
   var r = String(result || '');
   if (r === '청약체결' || r === '청약') return '<span class="badge" style="background:#e8f8ec;color:#15803d;border:1px solid #bbf7d0;">🎉 ' + esc(r === '청약' ? '청약체결' : r) + '</span>';
-  if (r === '청약예정') return '<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;">' + esc(r) + '</span>';
-  if (r === '청약없음') return '<span class="badge" style="background:#fff2f2;color:var(--red);border:1px solid #ffcccc;">청약거절</span>';
-  if (r === 'AS') return '<span class="badge" style="background:#f3e8ff;color:#6d28d9;border:1px solid #ddd6fe;">AS건</span>';
-  if (r === '거절') return '<span class="badge b-done">미팅거절</span>';
+  if (r === '청약예정') return '<span class="badge" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;">' + esc(r) + '</span>';
+  if (r === '청약없음') return '<span class="badge" style="background:#f7eded;color:#8a3b3b;border:1px solid #e8d0d0;">청약거절</span>';
+  if (r === 'AS') return '<span class="badge" style="background:#f1f2f4;color:#4b5563;border:1px solid #d8dbe0;">AS건</span>';
+  if (r === '거절') return '<span class="badge" style="background:#f7eded;color:#8a3b3b;border:1px solid #e8d0d0;">미팅거절</span>';
+  if (r === '부재' || r === '결번' || r === '기타' || r === '재통화') return '<span class="badge" style="background:#f1f2f4;color:#4b5563;border:1px solid #d8dbe0;">' + esc(r) + '</span>';
   if (r === 'AP') return '<span class="badge" style="background:#e5f0ff;color:var(--blue);border:1px solid #cce0ff;">🤝 미팅</span>';
   return '<span class="badge b-done">' + esc(r) + '</span>';
 }
@@ -3534,8 +3535,8 @@ function latestMeetN(db) {
   return n || 1;
 }
 function meetStateStyle(t) {
-  if (/거절/.test(t)) return 'background:#fff2f2;color:#dc2626;border:1px solid #ffcccc;';
-  if (t === '청약예정') return 'background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;';
+  if (/거절/.test(t)) return 'background:#f7eded;color:#8a3b3b;border:1px solid #e8d0d0;';
+  if (t === '청약예정') return 'background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;';
   if (t === '청약체결') return 'background:#e8f8ec;color:#15803d;border:1px solid #bbf7d0;';
   return 'background:#e5f0ff;color:#0066d6;border:1px solid #cce0ff;';
 }
@@ -3617,7 +3618,7 @@ function renderSchedule() {
              (isAll ? '' : '<span onclick="schedPick(\'all\')" style="cursor:pointer;font-size:12px;font-weight:800;color:var(--tx-sub);text-decoration:underline;">이번 달 전체 보기</span>') + '</div>';
   if (!items.length) html += '<div style="text-align:center;padding:24px;color:var(--tx-sub);font-weight:700;background:#fff;border-radius:12px;border:1px dashed var(--border);">예정된 미팅이 없습니다.</div>';
   html += items.map(function(e){
-    return '<div onclick="showMeetingDetail(\'' + e.db.id + '\',' + (e.n - 1) + ')" style="cursor:pointer;background:#fff;border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center;">' +
+    return '<div onclick="showMeetingDetail(\'' + e.db.id + '\',' + (e.n - 1) + ')" style="cursor:pointer;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center;">' +
       '<div style="text-align:center;min-width:54px;"><div style="font-size:12px;font-weight:800;color:var(--tx-sub);">' + e.m.date.slice(5).replace('-', '/') + '</div><div style="font-size:16px;font-weight:900;color:var(--blue);">' + esc(e.m.time || '--:--') + '</div></div>' +
       '<div style="flex:1;min-width:0;">' +
         '<div style="font-size:15px;font-weight:900;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' + esc(e.db.customerName) + ' <span style="font-size:12px;font-weight:800;padding:2px 8px;border-radius:10px;' + meetStateStyle(meetState(e)) + '">' + esc(meetState(e)) + '</span></div>' +
@@ -3665,7 +3666,7 @@ function captureSchedule() {
     if (r === '청약' || r === '청약체결') return '청약체결';
     return meetState(e);
   }
-  function stateColor(e) { var t = stateOf(e); return /거절/.test(t) ? '#dc2626' : (t === '청약체결' ? '#16a34a' : (t === '청약예정' ? '#c2410c' : '#0066d6')); }
+  function stateColor(e) { var t = stateOf(e); return /거절/.test(t) ? '#8a3b3b' : (t === '청약체결' ? '#15803d' : (t === '청약예정' ? '#4338ca' : '#0066d6')); }
   var mdd = function(ds) { return ds ? String(ds).slice(5).replace('-', '/') : '-'; };
 
   function pageEl(list, pi) {
