@@ -434,7 +434,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     <div class="modal-handle"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
       <div id="resTitle" style="font-size:20px;font-weight:900;">결과 입력</div>
-      <button onclick="document.getElementById('mResult').style.display='none'" class="btn btn-ghost" style="padding:6px 12px;border-radius:12px;font-size:13px;">닫기</button>
+      <button onclick="closeResult()" class="btn btn-ghost" style="padding:6px 12px;border-radius:12px;font-size:13px;min-height:44px;">닫기</button>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
@@ -1824,13 +1824,24 @@ async function submitEditDB() {
   }
 }
 
+function friendlyErr(e) {
+  var m = String((e && e.message) || e || '');
+  if (/fetch|network|Failed|timeout|abort|offline/i.test(m)) return '인터넷 연결을 확인하고 다시 시도해 주세요.';
+  return m || '잠시 후 다시 시도해 주세요.';
+}
 function deleteDB(id) {
-    if(!confirm('정말 삭제하시겠습니까?')) return;
-    showLoader('삭제 처리 중입니다...');
-    google.script.run
-      .withSuccessHandler(function(res) { loadData('목록을 갱신 중입니다...'); })
-      .withFailureHandler(function(error) { hideLoader(); Swal.fire('오류', error.message, 'error'); })
-      .deleteDB(id);
+    var _d = DB_LIST.find(function(x){ return x.id === id; });
+    Swal.fire({ icon: 'warning', title: (_d ? esc(_d.customerName) + ' DB를 삭제할까요?' : 'DB를 삭제할까요?'),
+      html: '<div style="font-size:14px;line-height:1.55;word-break:keep-all;">' + (_d ? esc(_d.dbType) + ' · ' + esc(_d.assignedFC || '미배정') + '<br>' : '') + '삭제하면 되돌릴 수 없습니다.</div>',
+      showCancelButton: true, confirmButtonText: '삭제', cancelButtonText: '취소', focusCancel: true, reverseButtons: true, confirmButtonColor: '#ff3b30'
+    }).then(function(r){
+      if (!r.isConfirmed) return;
+      showLoader('삭제 처리 중입니다...');
+      google.script.run
+        .withSuccessHandler(function(res) { loadData('목록을 갱신 중입니다...'); })
+        .withFailureHandler(function(error) { hideLoader(); Swal.fire('삭제하지 못했어요', friendlyErr(error), 'error'); })
+        .deleteDB(id);
+    });
 }
 
 function respondDB(id, isAccept, dbType) {
@@ -1872,9 +1883,25 @@ function addContractField(data) {
   container.appendChild(div);
 }
 
+var RES_DIRTY = false;
+function closeResult(force) {
+  var m = document.getElementById('mResult');
+  if (force !== true && RES_DIRTY) {
+    Swal.fire({ icon: 'warning', title: '입력한 내용이 저장되지 않았어요', text: '닫으면 지금까지 입력한 내용이 사라집니다.',
+      showCancelButton: true, confirmButtonText: '닫기', cancelButtonText: '계속 입력', focusCancel: true, reverseButtons: true,
+      confirmButtonColor: '#ff3b30' }).then(function(r){ if (r.isConfirmed) { RES_DIRTY = false; m.style.display = 'none'; } });
+    return;
+  }
+  RES_DIRTY = false; m.style.display = 'none';
+}
 function openResult(id) {
   curDBId = id;
   document.getElementById('mResult').style.display = 'flex';
+  RES_DIRTY = false;
+  setTimeout(function(){
+    var box = document.querySelector('#mResult .modal-content, #mResult > div');
+    if (box && !box._dirtyBound) { box._dirtyBound = true; ['input','change'].forEach(function(ev){ box.addEventListener(ev, function(){ RES_DIRTY = true; }); }); }
+  }, 0);
   var _dbT = DB_LIST.find(function(x){ return x.id === id; });
   document.getElementById('resTitle').innerText = (_dbT && _dbT.result) ? '결과 수정' : '결과 입력';
   document.querySelectorAll('input[name="resType"]').forEach(el => el.checked = false);
@@ -1984,7 +2011,7 @@ async function submitResult() {
         const r = JSON.parse(res);
         if(r.success) {
           var _done = function(){
-            document.getElementById('mResult').style.display = 'none';
+            closeResult(true);
             Swal.fire({icon:'success', title:'결과가 잘 저장되었습니다.', timer:1500, showConfirmButton:false});
             loadData('목록을 갱신 중입니다...');
           };
@@ -3115,10 +3142,13 @@ function applyStatusChange(id, val) {
     return;
   }
   function ok() {
-    Swal.fire({ icon: 'success', title: db.customerName + ' → ' + rlabel(val), timer: 1200, showConfirmButton: false });
+    var canUndo = cur && (cur === '배정대기' || STATUS_OPTIONS.indexOf(cur) >= 0) && cur !== '청약체결';
+    Swal.fire({ icon: 'success', title: esc(db.customerName) + ' → ' + esc(rlabel(val)), timer: canUndo ? 6000 : 1500, timerProgressBar: canUndo,
+      showConfirmButton: canUndo, confirmButtonText: '되돌리기 (' + esc(rlabel(cur || '')) + ')', showCancelButton: canUndo, cancelButtonText: '확인', reverseButtons: true, confirmButtonColor: '#007aff'
+    }).then(function(r){ if (r.isConfirmed && canUndo) setTimeout(function(){ applyStatusChange(id, cur); }, 150); });
     refreshKeepPage();
   }
-  function fail(msg) { hideLoader(); Swal.fire('변경 실패', msg || '', 'error'); }
+  function fail(msg) { hideLoader(); Swal.fire('변경하지 못했어요', friendlyErr(msg), 'error'); }
   function parse(r) { try { return typeof r === 'string' ? JSON.parse(r) : r; } catch (e) { return { success: false, error: '응답 오류' }; } }
   var isResult = STATUS_RESULTS.indexOf(val) >= 0;
   function legacy() {
