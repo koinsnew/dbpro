@@ -613,7 +613,22 @@ let CLAIM_TYPES_BY_FC = {};
 // ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbzF59fHExvwWj1XskNxixQ6SQx2NzmiXvuSjcKy8nCyp9MIdYbPoWYoSizO-FyCKnNEGA/exec';
 
-function callApi(action, payload) {
+var AUTH_TOKEN = '';
+var AUTH_CRED = null;   // 토큰이 만료되면 조용히 다시 로그인하기 위해 메모리에만 보관
+function rawApi(action, payload, token) {
+  return fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: action, payload: payload || {}, token: token || '' }), redirect: 'follow' })
+    .then(function (r) { return r.text(); }).then(function (t) { return JSON.parse(t); });
+}
+function reLogin() {
+  if (!AUTH_CRED) return Promise.reject(new Error('다시 로그인해 주세요.'));
+  return rawApi('login', { name: AUTH_CRED.name, pw: AUTH_CRED.pw }).then(function (j) {
+    var r = j && j.result; if (typeof r === 'string') { try { r = JSON.parse(r); } catch (e) {} }
+    if (!(j && j.ok && r && r.success && r.token)) throw new Error('로그인이 만료됐어요. 다시 로그인해 주세요.');
+    AUTH_TOKEN = r.token;
+  });
+}
+function callApi(action, payload, _retried) {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return Promise.reject(new Error('인터넷에 연결되어 있지 않아요. 연결을 확인하고 다시 시도해 주세요.'));
   var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
   var timer = ctl ? setTimeout(function () { ctl.abort(); }, 90000) : null;
@@ -621,7 +636,7 @@ function callApi(action, payload) {
     method: 'POST',
     // text/plain => CORS preflight 회피 (Apps Script 호환)
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: action, payload: payload || {} }),
+    body: JSON.stringify({ action: action, payload: payload || {}, token: AUTH_TOKEN }),
     redirect: 'follow',
     signal: ctl ? ctl.signal : undefined
   })
@@ -635,7 +650,13 @@ function callApi(action, payload) {
     var j;
     try { j = JSON.parse(t); }
     catch (e) { throw new Error('서버 응답 해석 실패 (웹앱 배포 권한이 "모든 사용자"인지 확인하세요)'); }
-    if (!j.ok) throw new Error(j.error || '서버 오류');
+    if (!j.ok) {
+      if (/AUTH_REQUIRED/.test(String(j.error || '')) && !_retried && action !== 'login') {
+        return reLogin().then(function () { return callApi(action, payload, true); })
+          .catch(function (e) { if (typeof handleLogout === 'function') { try { handleLogout(); } catch (x) {} } throw e; });
+      }
+      throw new Error(j.error || '서버 오류');
+    }
     return j.result;
   });
 }
@@ -807,6 +828,7 @@ function handleLogin(isAutoStart) {
   google.script.run
     .withSuccessHandler(function(r) {
       var j = r; try { if (typeof r === 'string') j = JSON.parse(r); } catch (e) {}
+      if (j && j.success && j.token) { AUTH_TOKEN = j.token; AUTH_CRED = { name: name, pw: pw }; }
       onUser(j && j.success ? j.user : null);
     })
     .withFailureHandler(function(error) {
@@ -821,7 +843,7 @@ function handleLogin(isAutoStart) {
 }
 
 function handleLogout() {
-  ME = null;
+  ME = null; AUTH_TOKEN = ''; AUTH_CRED = null;
   localStorage.clear();
   document.getElementById('mainApp').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
