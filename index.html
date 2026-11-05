@@ -35,9 +35,13 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSy
 #fullLoader.is-splash .splash { display: flex; }
 #fullLoader.is-splash .spinner, #fullLoader.is-splash #loaderText { display: none; }
 #fullLoader.is-splash .splash-msg { display: block; }
-.splash-ic { width: 96px; height: 96px; border-radius: 30px; background: #1b64da; box-shadow: 0 14px 34px rgba(0,0,0,.35); display: flex; align-items: flex-end; justify-content: center; gap: 8px; padding: 0 0 25px; animation: splashPop .7s cubic-bezier(.16,1,.3,1) both; }
-.splash-ic i { display: block; width: 13px; border-radius: 4px; background: rgba(255,255,255,.55); }
-.splash-ic i:nth-child(1) { height: 24px; } .splash-ic i:nth-child(2) { height: 38px; background: rgba(255,255,255,.75); } .splash-ic i:nth-child(3) { height: 52px; background: #fff; }
+.splash-ic { width: 96px; height: 96px; border-radius: 30px; background: #1b64da; box-shadow: 0 14px 34px rgba(0,0,0,.35); display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 10px; padding: 0 22px; animation: splashPop .7s cubic-bezier(.16,1,.3,1) both; }
+.splash-ic i { display: flex; align-items: center; gap: 8px; height: 12px; }
+.splash-ic i::before { content: ''; width: 12px; height: 12px; border-radius: 50%; background: #fff; flex-shrink: 0; }
+.splash-ic i::after { content: ''; height: 8px; border-radius: 4px; background: rgba(255,255,255,.7); flex: 1; }
+.splash-ic i:nth-child(2)::after { background: rgba(255,255,255,.5); margin-right: 8px; }
+.splash-ic i:nth-child(3)::after { background: rgba(255,255,255,.32); margin-right: 16px; }
+.splash-ic i:nth-child(2)::before { opacity: .75; } .splash-ic i:nth-child(3)::before { opacity: .5; }
 .splash-title { margin-top: 30px; font-size: 30px; font-weight: 800; color: #fff; letter-spacing: -0.5px; animation: splashPop .7s .08s cubic-bezier(.16,1,.3,1) both; }
 .splash-sub { margin-top: 10px; font-size: 15px; font-weight: 500; color: rgba(255,255,255,.72); animation: splashPop .7s .16s cubic-bezier(.16,1,.3,1) both; }
 .splash-msg { display: none; margin-top: 28px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.6); min-height: 18px; }
