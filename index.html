@@ -225,7 +225,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
           <span>P</span><span>R</span><span>O</span>
         </div>
       </div>
-      <div style="font-size:12px;font-weight:700;color:var(--tx-sub);margin-top:5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;" id="hdrInfo"></div>
+      <div style="font-size:12px;font-weight:700;color:var(--tx-sub);margin-top:5px;line-height:1.2;white-space:nowrap;" id="hdrInfo"></div>
     </div>
     
     <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
@@ -3929,8 +3929,8 @@ function pickMeetTime(input) {
   }
   window.iconize = run;
   var timer = null;
-  new MutationObserver(function () { clearTimeout(timer); timer = setTimeout(function () { run(document.body); }, 60); })
-    .observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  new MutationObserver(function () { if (timer) return; timer = setTimeout(function () { timer = null; run(document.body); }, 30); })
+    .observe(document.documentElement, { childList: true, subtree: true });
   document.addEventListener('DOMContentLoaded', function () { run(document.body); });
 })();
 </script>
