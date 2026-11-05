@@ -841,7 +841,7 @@ function handleLogin(isAutoStart) {
       
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainApp').style.display = 'block';
-      document.getElementById('hdrInfo').innerText = u.name + ' · ' + u.role;
+      document.getElementById('hdrInfo').innerText = u.name;
       
       if(u.role === '관리자') {
         document.getElementById('ni-input').style.display = 'flex';
@@ -3929,8 +3929,18 @@ function pickMeetTime(input) {
   }
   window.iconize = run;
   var timer = null;
-  new MutationObserver(function () { if (timer) return; timer = setTimeout(function () { timer = null; run(document.body); }, 30); })
-    .observe(document.documentElement, { childList: true, subtree: true });
+  var OPTS = { childList: true, subtree: true, characterData: true };
+  var mo = new MutationObserver(function (recs) {
+    mo.disconnect();
+    try {
+      recs.forEach(function (r) {
+        if (r.type === 'characterData') { if (r.target.parentNode && !/^[\d,.\s]*$/.test(r.target.nodeValue)) run(r.target.parentNode); }
+        else r.addedNodes.forEach(function (n) { if (n.nodeType === 1) run(n); else if (n.nodeType === 3 && n.parentNode) run(n.parentNode); });
+      });
+    } finally { mo.observe(document.documentElement, OPTS); }
+  });
+  mo.observe(document.documentElement, OPTS);
+  mo.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
   document.addEventListener('DOMContentLoaded', function () { run(document.body); });
 })();
 </script>
