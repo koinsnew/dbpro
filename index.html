@@ -636,6 +636,7 @@ google.script = google.script || {};
 google.script.run = (function () {
   var ARGMAP = {
     getUserList:         function (a) { return {}; },
+    login:               function (a) { return { name: a[0], pw: a[1] }; },
     getAllData:          function (a) { return {}; },
     sendReminderEmails:  function (a) { return { ids: a[0] }; },
     saveDB:              function (a) { return { d: a[0], base64Files: a[1] }; },
@@ -752,16 +753,13 @@ function handleLogin(isAutoStart) {
     return;
   }
 
-  google.script.run
-    .withSuccessHandler(function(users) {
-      const u = users.find(x => x.name === name);
-      if(!u || u.password !== pw) {
-        hideLoader();
-        document.getElementById('loginScreen').style.display = 'flex';
-        Swal.fire({icon:'error', title:'정보 불일치', text:'이름이나 비밀번호를 확인해주세요.', confirmButtonColor:'#0066d6'});
-        return;
-      }
-      
+  function onUser(u) {
+    if(!u) {
+      hideLoader();
+      document.getElementById('loginScreen').style.display = 'flex';
+      Swal.fire({icon:'error', title:'정보 불일치', text:'이름이나 비밀번호를 확인해주세요.', confirmButtonColor:'#0066d6'});
+      return;
+    }
       ME = u;
       if(isAuto) {
         localStorage.setItem('dp_auto', 'true');
@@ -790,12 +788,26 @@ function handleLogin(isAutoStart) {
       
       if(!isAutoStart) Swal.fire({icon:'success', title:'로그인 성공!', timer:1200, showConfirmButton:false});
       loadData('데이터를 불러오는 중입니다...');
+  }
+  function onFail(error) {
+    hideLoader();
+    Swal.fire({icon:'error', title:'서버 연결 실패', text: friendlyErr(error), confirmButtonColor:'#0066d6'});
+  }
+  // 서버에서 비밀번호를 검증한다. 서버가 아직 예전 버전이면 예전 방식으로 대체한다.
+  google.script.run
+    .withSuccessHandler(function(r) {
+      var j = r; try { if (typeof r === 'string') j = JSON.parse(r); } catch (e) {}
+      onUser(j && j.success ? j.user : null);
     })
     .withFailureHandler(function(error) {
-      hideLoader();
-      Swal.fire({icon:'error', title:'서버 연결 실패', text: error.message, confirmButtonColor:'#0066d6'});
+      if (String((error && error.message) || error).indexOf('알 수 없는 요청') >= 0) {
+        google.script.run
+          .withSuccessHandler(function(users) { var u = users.find(x => x.name === name); onUser(u && u.password === pw ? u : null); })
+          .withFailureHandler(onFail)
+          .getUserList();
+      } else onFail(error);
     })
-    .getUserList();
+    .login(name, pw);
 }
 
 function handleLogout() {
