@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="theme-color" content="#141a4a">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,user-scalable=yes">
 <title>데이터 PRO</title>
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -28,6 +29,20 @@
 body { font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Segoe UI", Roboto, sans-serif; word-break: keep-all; overflow-wrap: break-word; line-height: 1.55; background: var(--bg-main); color: var(--tx-main); min-height: 100vh; -webkit-font-smoothing: antialiased; margin: 0; }
 
 #fullLoader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+/* 시작 화면(스플래시): 남색 방사 그라데이션 + 파란 앱 아이콘 */
+#fullLoader.is-splash { background: radial-gradient(ellipse 70% 45% at 50% 48%, #1e2a78 0%, #171e5a 55%, #141a4a 100%); backdrop-filter: none; }
+#fullLoader .splash { display: none; flex-direction: column; align-items: center; }
+#fullLoader.is-splash .splash { display: flex; }
+#fullLoader.is-splash .spinner, #fullLoader.is-splash #loaderText { display: none; }
+#fullLoader.is-splash .splash-msg { display: block; }
+.splash-ic { width: 96px; height: 96px; border-radius: 30px; background: #1b64da; box-shadow: 0 14px 34px rgba(0,0,0,.35); display: flex; align-items: flex-end; justify-content: center; gap: 8px; padding: 0 0 25px; animation: splashPop .7s cubic-bezier(.16,1,.3,1) both; }
+.splash-ic i { display: block; width: 13px; border-radius: 4px; background: rgba(255,255,255,.55); }
+.splash-ic i:nth-child(1) { height: 24px; } .splash-ic i:nth-child(2) { height: 38px; background: rgba(255,255,255,.75); } .splash-ic i:nth-child(3) { height: 52px; background: #fff; }
+.splash-title { margin-top: 30px; font-size: 30px; font-weight: 800; color: #fff; letter-spacing: -0.5px; animation: splashPop .7s .08s cubic-bezier(.16,1,.3,1) both; }
+.splash-sub { margin-top: 10px; font-size: 15px; font-weight: 500; color: rgba(255,255,255,.72); animation: splashPop .7s .16s cubic-bezier(.16,1,.3,1) both; }
+.splash-msg { display: none; margin-top: 28px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.6); min-height: 18px; }
+@keyframes splashPop { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .splash-ic, .splash-title, .splash-sub { animation: none; } }
 .spinner { width: 40px; height: 40px; border: 4px solid rgba(27, 100, 218,0.2); border-top-color: var(--blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -44,7 +59,7 @@ select.inp-no-arrow { background-image: none; appearance: none; -webkit-appearan
 
 .ic { width: 1.15em; height: 1.15em; vertical-align: -0.2em; margin-right: .3em; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; display: inline-block; flex-shrink: 0; }
 .ic:only-child { margin-right: 0; }
-.hit::after { content: ""; position: absolute; left: -14px; right: -14px; top: 50%; height: 44px; transform: translateY(-50%); }
+.hit::after { content: ""; position: absolute; left: -6px; right: -6px; top: 50%; height: 44px; transform: translateY(-50%); }
 .stat-num, table, .fn-fill, .dbc-sub, .dbc-call { font-variant-numeric: tabular-nums; }
 :focus-visible { outline: 3px solid #1b64da; outline-offset: 2px; border-radius: 8px; }
 .inp:focus-visible { outline: none; }
@@ -165,7 +180,13 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 </head>
 <body>
 
-<div id="fullLoader">
+<div id="fullLoader" class="is-splash">
+  <div class="splash" role="status" aria-live="polite">
+    <div class="splash-ic" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="splash-title">데이터 PRO</div>
+    <div class="splash-sub">헤리티지 금융지사</div>
+    <div class="splash-msg" id="splashMsg"></div>
+  </div>
   <div class="spinner"></div>
   <div id="loaderText" style="font-size:15px;font-weight:800;color:var(--blue);letter-spacing:-0.5px;">시스템에 접속 중입니다...</div>
 </div>
@@ -205,12 +226,12 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
     
     <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
       <div style="display:flex;align-items:center;background:#f9fafb;border:1px solid var(--border);border-radius:10px;height:30px;">
-        <button onclick="shiftMonth(-1)" aria-label="이전 달" style="border:none;background:none;padding:0 6px;min-height:44px;margin:-8px -2px;font-size:16px;font-weight:800;color:var(--tx-sub);cursor:pointer;">‹</button>
+        <button onclick="shiftMonth(-1)" aria-label="이전 달" data-nohit="1" style="border:none;background:none;padding:0 9px;min-height:44px;margin:-8px 0;font-size:16px;font-weight:800;color:var(--tx-sub);cursor:pointer;">‹</button>
         <span style="position:relative;display:inline-flex;align-items:center;">
           <span id="hdr_month_lbl" style="font-size:12px;font-weight:800;white-space:nowrap;letter-spacing:-0.3px;"></span>
           <input type="month" id="hdr_month" onchange="changeMonth()" onclick="try{this.showPicker()}catch(e){}" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;">
         </span>
-        <button onclick="shiftMonth(1)" aria-label="다음 달" style="border:none;background:none;padding:0 6px;min-height:44px;margin:-8px -2px;font-size:16px;font-weight:800;color:var(--tx-sub);cursor:pointer;">›</button>
+        <button onclick="shiftMonth(1)" aria-label="다음 달" data-nohit="1" style="border:none;background:none;padding:0 9px;min-height:44px;margin:-8px 0;font-size:16px;font-weight:800;color:var(--tx-sub);cursor:pointer;">›</button>
       </div>
       <button onclick="loadData('데이터를 최신화 중입니다...')" aria-label="새로고침" title="새로고침" class="btn btn-ghost" style="padding:2px 6px;font-size:22px;line-height:1;border:none;background:none;">🔄</button>
       <button onclick="openCardTool()" class="btn btn-ghost" style="padding:6px 8px;font-size:12px;font-weight:800;border-radius:8px;white-space:nowrap;color:var(--blue);border-color:#cfe0fa;background:#f0f6ff;">MY</button>
@@ -729,8 +750,11 @@ window.onload = () => {
     document.getElementById('chkAuto').checked = true;
     handleLogin(true); 
   } else {
-    document.getElementById('fullLoader').style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'flex';
+    // 시작 화면을 최소 0.9초는 보여준 뒤 로그인 화면으로
+    setTimeout(function () {
+      document.getElementById('fullLoader').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+    }, Math.max(0, 900 - performance.now()));
   }
 };
 
@@ -768,8 +792,14 @@ async function getBase64Files(fileInputId) {
 }
 
 function showLoader(msg) {
-  document.getElementById('fullLoader').style.display = 'flex';
-  document.getElementById('loaderText').innerText = msg || '시스템에 접속 중입니다...';
+  var fl = document.getElementById('fullLoader');
+  fl.style.display = 'flex';
+  var m = msg || '시스템에 접속 중입니다...';
+  document.getElementById('loaderText').innerText = m;
+  var sm = document.getElementById('splashMsg'); if (sm) sm.innerText = m;
+  // 앱이 열리기 전(접속·첫 불러오기)에는 시작 화면, 앱 사용 중 작업에는 가벼운 스피너
+  var booting = document.getElementById('mainApp').style.display === 'none';
+  fl.classList.toggle('is-splash', booting);
 }
 function hideLoader() {
   document.getElementById('fullLoader').style.display = 'none';
@@ -3829,7 +3859,7 @@ function pickMeetTime(input) {
   }
   function hit() {
     document.querySelectorAll('button,[role=button],.bni').forEach(function(el){
-      if (!el.offsetParent || el.classList.contains('hit')) return;
+      if (!el.offsetParent || el.classList.contains('hit') || el.hasAttribute('data-nohit')) return;
       var r = el.getBoundingClientRect(); if (r.width && (r.height < 44 || r.width < 44)) {
         if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
         el.classList.add('hit');
