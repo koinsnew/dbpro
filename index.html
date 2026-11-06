@@ -45,6 +45,28 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSy
 .splash-title { margin-top: 30px; font-size: 30px; font-weight: 800; color: #fff; letter-spacing: -0.5px; animation: splashPop .7s .08s cubic-bezier(.16,1,.3,1) both; }
 .splash-sub { margin-top: 10px; font-size: 15px; font-weight: 500; color: rgba(255,255,255,.72); animation: splashPop .7s .16s cubic-bezier(.16,1,.3,1) both; }
 .splash-msg { display: none; margin-top: 28px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.6); min-height: 18px; }
+/* ─── 로그인 · 알림창 (시작화면과 같은 남색 톤) ─── */
+#loginScreen { background: radial-gradient(ellipse 70% 45% at 50% 48%, #1e2a78 0%, #171e5a 55%, #141a4a 100%); }
+.lg-wrap { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; }
+.lg-wrap .splash-ic { width: 84px; height: 84px; border-radius: 26px; gap: 9px; padding: 0 19px; }
+.lg-title { margin-top: 24px; font-size: 30px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+.lg-sub { margin: 8px 0 36px; font-size: 15px; font-weight: 500; color: rgba(255,255,255,.72); }
+.lg-wrap .inp { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); color: #fff; }
+.lg-wrap .inp::placeholder { color: rgba(255,255,255,.6); }
+.lg-wrap .inp:focus { background: rgba(255,255,255,.14); border-color: #5b9bff; box-shadow: 0 0 0 4px rgba(91,155,255,.25); }
+.lg-wrap .chk-label { color: rgba(255,255,255,.8); }
+.lg-wrap .btn-primary { padding-top: 16px; padding-bottom: 16px; font-size: 16px; border-radius: 16px; box-shadow: 0 10px 24px rgba(0,0,0,.28); }
+.swal2-popup { border-radius: 24px !important; font-family: inherit !important; padding: 28px 22px 24px !important; box-shadow: 0 24px 60px rgba(15,23,42,.28) !important; }
+.swal2-title { font-weight: 800 !important; letter-spacing: -0.3px; color: var(--tx-main) !important; }
+.swal2-html-container { font-weight: 500; color: var(--tx-sub) !important; line-height: 1.55; }
+.swal2-styled { border-radius: 14px !important; font-weight: 700 !important; font-family: inherit !important; box-shadow: none !important; }
+.dp-ok { width: 76px; height: 76px; margin: 4px auto 14px; border-radius: 50%; background: #1b64da; display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 28px rgba(27,100,218,.35); animation: splashPop .5s cubic-bezier(.16,1,.3,1) both; }
+.dp-ok svg { width: 38px; height: 38px; }
+.dp-ok path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: dpDraw .45s .2s ease-out forwards; }
+@keyframes dpDraw { to { stroke-dashoffset: 0; } }
+.dp-ok-name { font-size: 22px; font-weight: 800; color: var(--tx-main); letter-spacing: -0.3px; }
+.dp-ok-sub { margin-top: 6px; font-size: 15px; font-weight: 500; color: var(--tx-sub); }
+@media (prefers-reduced-motion: reduce) { .dp-ok, .dp-ok path { animation: none; stroke-dashoffset: 0; } }
 @keyframes splashPop { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .splash-ic, .splash-title, .splash-sub { animation: none; } }
 .spinner { width: 40px; height: 40px; border: 4px solid rgba(27, 100, 218,0.2); border-top-color: var(--blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
@@ -196,21 +218,20 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); c
 </div>
 
 <div id="loginScreen" style="min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px;">
-  <div class="card anim-tech" style="width:100%;max-width:380px;padding:40px 30px;">
-    <div style="text-align:center;margin-bottom:40px;">
-      <div class="anim-item-1" style="font-size:32px;font-weight:800;color:var(--tx-main);letter-spacing:-0.5px;">데이터 PRO</div>
-      <div class="anim-item-1" style="font-size:12px;font-weight:700;color:var(--blue);margin-top:6px;">Heritage DB System</div>
-    </div>
-    <div class="anim-item-2" style="margin-bottom:16px;">
+  <div class="lg-wrap">
+    <div class="splash-ic anim-item-1" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="lg-title anim-item-1">데이터 PRO</div>
+    <div class="lg-sub anim-item-1">헤리티지 금융지사</div>
+    <div class="anim-item-2" style="margin-bottom:14px;width:100%;">
       <input id="lname" type="text" class="inp" placeholder="이름을 입력하세요" autocomplete="off">
     </div>
-    <div class="anim-item-2" style="margin-bottom:12px;">
+    <div class="anim-item-2" style="margin-bottom:14px;width:100%;">
       <input id="lpw" type="password" class="inp" placeholder="비밀번호" autocomplete="off" onkeypress="if(event.key==='Enter')window.handleLogin()">
     </div>
-    <div class="anim-item-3" style="margin-bottom:30px;text-align:left;">
+    <div class="anim-item-3" style="margin-bottom:26px;width:100%;text-align:left;">
       <label class="chk-label"><input type="checkbox" id="chkAuto"> 자동 로그인</label>
     </div>
-    <div class="anim-item-3">
+    <div class="anim-item-3" style="width:100%;">
       <button onclick="window.handleLogin()" class="btn btn-primary btn-full">시스템 접속</button>
     </div>
   </div>
@@ -856,7 +877,7 @@ function handleLogin(isAutoStart) {
       }
       document.getElementById('ni-apply').style.display = (u.role === '파트너') ? 'none' : 'flex';
       
-      if(!isAutoStart) Swal.fire({icon:'success', title:'로그인 성공!', timer:1200, showConfirmButton:false});
+      if(!isAutoStart) Swal.fire({html:'<div class="dp-ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><div class="dp-ok-name">' + esc(u.name) + '님</div><div class="dp-ok-sub">로그인되었습니다</div>', timer:1300, showConfirmButton:false, width:300});
       loadData('데이터를 불러오는 중입니다...');
   }
   function onFail(error) {
